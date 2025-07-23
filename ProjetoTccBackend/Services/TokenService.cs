@@ -16,9 +16,9 @@ namespace ProjetoTccBackend.Services
 
         public TokenService(IConfiguration configuration, ILogger<TokenService> logger)
         {
-            this._secretKey = configuration["Jwt.Key"]!;
-            this._issuer = configuration["Jwt.Issuer"]!;
-            this._audience = configuration["Jwt.Audience"]!;
+            this._secretKey = configuration["Jwt:Key"]!;
+            this._issuer = configuration["Jwt:Issuer"]!;
+            this._audience = configuration["Jwt:Audience"]!;
             this._logger = logger;
         }
 

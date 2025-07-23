@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProjetoTccBackend.Models
@@ -37,10 +38,17 @@ namespace ProjetoTccBackend.Models
         /// </summary>
         public Group Group { get; set; }
 
+        [DefaultValue(0)]
         /// <summary>
         /// Total points earned by the group in the competition.
         /// </summary>
-        public float Points { get; set; } = 0.0F;
+        public double Points { get; set; }
+
+        [DefaultValue(0)]
+        /// <summary>
+        /// Penalty points applied to the group's points in the competition.
+        /// </summary>
+        public double Penalty { get; set; } = 0;
 
         /// <summary>
         /// The order or position of the group in the competition ranking.

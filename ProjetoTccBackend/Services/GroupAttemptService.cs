@@ -2,6 +2,8 @@
 using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Enums.Judge;
 using ProjetoTccBackend.Exceptions.Judge;
+using ProjetoTccBackend.Models;
+using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
@@ -10,35 +12,72 @@ namespace ProjetoTccBackend.Services
     {
         private readonly IJudgeService _judgeService;
         private readonly IUserService _userService;
+        private readonly ICompetitionRankingService _competitionRankingService;
+        private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
 
-        public GroupAttemptService(IJudgeService judgeService, IUserService userService)
+        public GroupAttemptService(IJudgeService judgeService, IUserService userService, ICompetitionRankingService competitionRankingService, IGroupExerciseAttemptRepository groupExerciseAttemptRepository)
         {
             this._judgeService = judgeService;
             this._userService = userService;
+            this._competitionRankingService = competitionRankingService;
+            this._groupExerciseAttemptRepository = groupExerciseAttemptRepository;
         }
 
-        /// <inheritdoc/>
-        public async Task<ExerciseSubmissionResponse> SubmitExerciseAttempt(GroupExerciseAttemptRequest request)
+        
+        /// <inheritdoc />
+        public async Task<ExerciseSubmissionResponse> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptRequest request)
         {
             var loggedUser = this._userService.GetHttpContextLoggerUser();
 
-            if(loggedUser is null || loggedUser.GroupId is null)
+            if (loggedUser is null || loggedUser.GroupId is null)
             {
                 throw new UnauthorizedAccessException("Usuário não possui permissão para essa ação");
             }
-
 
             try
             {
                 var response = await this._judgeService.SendGroupExerciseAttempt(request);
 
-                return new ExerciseSubmissionResponse()
+                var exerciseResponse = new ExerciseSubmissionResponse()
                 {
                     ExerciseId = request.ExerciseId,
                     Accepted = response.Equals(JudgeSubmissionResponse.Accepted),
                     JudgeResponse = response,
                     GroupId = loggedUser.GroupId.Value,
                 };
+
+                var lastGroupAttempt = this._groupExerciseAttemptRepository
+                    .GetLastGroupCompetitionAttempt(
+                        (int)loggedUser.GroupId!,
+                        currentCompetition.Id
+                    );
+
+
+                DateTime time = (lastGroupAttempt is null)
+                    ? currentCompetition.StartTime
+                    : lastGroupAttempt.SubmissionTime;
+
+                TimeSpan duration = DateTime.Now.Subtract(time);
+
+
+                GroupExerciseAttempt attempt = new GroupExerciseAttempt()
+                {
+                    Accepted = exerciseResponse.Accepted,
+                    Code = request.Code,
+                    ExerciseId = request.ExerciseId,
+                    CompetitionId = currentCompetition.Id,
+                    GroupId = (int)loggedUser.GroupId!,
+                    JudgeResponse = response,
+                    Language = request.LanguageType,
+                    SubmissionTime = DateTime.Now,
+                    Time = duration,
+                };
+
+                this._groupExerciseAttemptRepository.Add(attempt);
+
+                await this._competitionRankingService.UpdateRanking(currentCompetition, loggedUser.Group, attempt);
+
+                return exerciseResponse;
             }
             catch (Exception ex)
             {

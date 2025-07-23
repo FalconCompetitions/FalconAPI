@@ -86,5 +86,13 @@ namespace ProjetoTccBackend.Services
             Exercise? exercise = this._exerciseRepository.GetById(id);
             return exercise;
         }
+
+        /// <inheritdoc/>
+        public async Task<List<Exercise>> GetExercisesAsync()
+        {
+            List<Exercise> exercises = this._exerciseRepository.GetAll().ToList();
+
+            return exercises;
+        }
     }
 }

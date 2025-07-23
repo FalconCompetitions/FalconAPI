@@ -34,5 +34,20 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// Thrown when the email does not exist in the system or the password is incorrect.
         /// </exception>
         Task<User> LoginUserAsync(LoginUserRequest request);
+
+
+        /// <summary>
+        /// Retrieves a user by their unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the user to retrieve.</param>
+        /// <returns>The user with the specified identifier, or null if no user is found.</returns>
+        Task<User?> GetUser(string id);
+
+
+        /// <summary>
+        /// Retrieves a list of all users in the system.
+        /// </summary>
+        /// <returns>A list of all users.</returns>
+        Task<List<User>> GetAllUsers();
     }
 }

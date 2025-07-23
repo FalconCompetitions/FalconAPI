@@ -4,10 +4,15 @@ using System.Linq.Expressions;
 
 namespace ProjetoTccBackend.Repositories
 {
+    /// <inheritdoc/>
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         protected readonly TccDbContext _dbContext;
 
+        /// <summary>
+        /// Initializes a new instance of the GenericRepository class.
+        /// </summary>
+        /// <param name="dbContext">The TccDbContext instance to be used by the repository.</param>
         public GenericRepository(TccDbContext dbContext)
         {
             this._dbContext = dbContext;
@@ -16,58 +21,61 @@ namespace ProjetoTccBackend.Repositories
         public virtual void Add(T entity)
         {
             this._dbContext.Set<T>().Add(entity);
-            this._dbContext.SaveChanges();
         }
 
+        /// <inheritdoc/>
         public virtual void AddRange(IEnumerable<T> entities)
         {
             this._dbContext.Set<T>().AddRange(entities);
-            this._dbContext.SaveChanges();
         }
 
+        /// <inheritdoc/>
         public virtual IEnumerable<T> Find(Expression<Func<T, bool>> expression)
         {
             return this._dbContext.Set<T>().Where(expression);
         }
 
+        /// <inheritdoc/>
         public virtual IEnumerable<T> GetAll()
         {
             return this._dbContext.Set<T>().ToList();
         }
 
+        /// <inheritdoc/>
         public virtual T? GetById(int id)
         {
             return this._dbContext.Set<T>().Find(id);
         }
 
+        /// <inheritdoc/>
         public virtual T? GetById(string id)
         {
             return this._dbContext.Set<T>().Find(id);
         }
 
+        /// <inheritdoc/>
         public virtual void Remove(T entity)
         {
             this._dbContext.Set<T>().Remove(entity);
-            this._dbContext.SaveChanges();
         }
 
+        /// <inheritdoc/>
         public virtual void RemoveRange(IEnumerable<T> entities)
         {
             
             this._dbContext.Set<T>().RemoveRange(entities);
-            this._dbContext.SaveChanges();
         }
 
+        /// <inheritdoc/>
         public virtual void Update(T entity)
         {
             this._dbContext.Set<T>().Update(entity);
-            this._dbContext.SaveChanges();
         }
 
+        /// <inheritdoc/>
         public virtual void UpdateRange(IEnumerable<T> entities)
         {
             this._dbContext.Set<T>().UpdateRange(entities);
-            this._dbContext.SaveChanges();
         }
     }
 }

@@ -27,6 +27,17 @@ namespace ProjetoTccBackend.Services.Interfaces
         Task<Exercise> CreateExerciseAsync(CreateExerciseRequest request);
 
 
+        /// <summary>
+        /// Retrieves the specific exercise by its ID asynchronously.
+        /// </summary>
+        /// <returns>A object of <see cref="Exercise"/></returns>
         Task<Exercise?> GetExerciseByIdAsync(int id);
+
+
+        /// <summary>
+        /// Retrieves a list of all exercises asynchronously.
+        /// </summary>
+        /// <returns>A list of users.</returns>
+        Task<List<Exercise>> GetExercisesAsync();
     }
 }

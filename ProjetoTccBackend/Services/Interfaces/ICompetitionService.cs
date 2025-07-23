@@ -20,5 +20,19 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <returns>The existing <see cref="Competition"/> object.</returns>
         Task<Competition> GetExistentCompetition();
+
+        /// <summary>
+        /// Retrieves the current competition based on the system's current date and time.
+        /// 
+        /// This method queries the competition repository to find a competition where the current date and time falls within its start and end time.
+        /// 
+        /// Returns the current competition if found, otherwise returns null.
+        /// </summary>
+        Task<Competition?> GetCurrentCompetition();
+
+        Task<Question> CreateGroupQuestion(string userId, int groupId, CreateGroupQuestionRequest request);
+    
+        
+
     }
 }

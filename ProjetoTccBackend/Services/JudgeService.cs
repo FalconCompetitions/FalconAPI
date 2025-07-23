@@ -124,8 +124,12 @@ namespace ProjetoTccBackend.Services
 
             JudgeSubmissionResponse? judgeSubmissionResponse = await response.Content.ReadFromJsonAsync<JudgeSubmissionResponse>();
 
+            if(judgeSubmissionResponse is null)
+            {
+                return JudgeSubmissionResponseEnum.RuntimeError;
+            }
 
-            switch(judgeSubmissionResponse!.Status)
+            switch(judgeSubmissionResponse.Status)
             {
                 case "ACCEPTED":
                     return JudgeSubmissionResponseEnum.Accepted;

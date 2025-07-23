@@ -22,10 +22,20 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </remarks>
         Task<string?> CreateJudgeExerciseAsync(CreateExerciseRequest exerciseRequest);
 
+        /// <summary>
+        /// Retrieves an exercise by its unique judge UUID.
+        /// </summary>
+        /// <param name="judgeUuid">The unique UUID of the exercise to retrieve.</param>
+        /// <returns>The exercise associated with the provided UUID, or null if not found.</returns>
         Task<Exercise?> GetExerciseByUuidAsync(string judgeUuid);
 
         Task<ICollection<Exercise>> GetExercisesAsync();
 
+        /// <summary>
+        /// Sends a group exercise attempt to the judge API.
+        /// </summary>
+        /// <param name="request">The group exercise attempt request.</param>
+        /// <returns>The result of the submission as a JudgeSubmissionResponseEnum.</returns>
         Task<JudgeSubmissionResponseEnum> SendGroupExerciseAttempt(GroupExerciseAttemptRequest request);
     }
 }

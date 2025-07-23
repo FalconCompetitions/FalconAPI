@@ -143,4 +143,20 @@ public class UserService : IUserService
 
         return existentUser;
     }
+    
+    /// <inheritdoc/>
+    public async Task<User?> GetUser(string id)
+    {
+        User? user = this._userRepository.GetById(id);
+
+        return user;
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<User>> GetAllUsers()
+    {
+        List<User> users = this._userRepository.GetAll().ToList();
+
+        return users;
+    }
 }

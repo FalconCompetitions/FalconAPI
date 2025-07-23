@@ -34,6 +34,15 @@ namespace ProjetoTccBackend.Controllers
             return Ok(exercise);
         }
 
+        //[Authorize(Roles = "Admin,Teacher")]
+        [HttpGet()]
+        public async Task<IActionResult> GetExercises()
+        {
+            var exercises = await this._exerciseService.GetExercisesAsync();
+
+            return Ok(exercises);
+        }
+
 
         //[Authorize(Roles = "Admin,Teacher")]
         [HttpPost()]

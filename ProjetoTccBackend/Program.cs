@@ -65,7 +65,7 @@ namespace ProjetoTccBackend
             builder.Logging.AddConsole();
 
             // Add services to the container.
-            builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+            //builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
             builder.Services.AddDbContext<TccDbContext>();
             builder.Services.AddIdentity<User, IdentityRole>(options =>
             {
@@ -96,7 +96,7 @@ namespace ProjetoTccBackend
                 //client.DefaultRequestHeaders.Add("Accept", "application/json");
                 client.Timeout = TimeSpan.FromSeconds(20);
             });
-            
+
             // Services
             builder.Services.AddScoped<IJudgeService, JudgeService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -139,6 +139,7 @@ namespace ProjetoTccBackend
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 
             }).AddJwtBearer(options =>
             {
@@ -147,11 +148,31 @@ namespace ProjetoTccBackend
                     ValidateIssuer = true,
                     ValidateIssuerSigningKey = true,
                     ValidateAudience = true,
-                    ValidIssuer = builder.Configuration["Jwt.Issuer"]!,
-                    ValidAudience = builder.Configuration["Jwt.Audience"]!,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt.Key"]!)),
+                    ValidateLifetime = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"]!,
+                    ValidAudience = builder.Configuration["Jwt:Audience"]!,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
 
                     ClockSkew = TimeSpan.Zero
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+
+                        var path = context.HttpContext.Request.Path;
+
+                        if (string.IsNullOrEmpty(accessToken) is false
+                            && (path.StartsWithSegments("/hub/competition"))
+                        )
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    }
                 };
             });
 
@@ -161,6 +182,17 @@ namespace ProjetoTccBackend
                 options.AddPolicy("StudentUser", policy => policy.AddRequirements(new StudentUserRole());
             });
             */
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("FrontendAppPolicy", policy =>
+                {
+                    policy.WithOrigins("https://localhost:3000")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
 
 
 
@@ -185,7 +217,9 @@ namespace ProjetoTccBackend
                 app.UseDeveloperExceptionPage();
             }
 
-            //app.UseRouting();
+            app.UseRouting();
+
+            //app.UseCors("FrontendAppPolicy");
 
             ConfigureWebSocketOptions(app);
 
@@ -193,6 +227,7 @@ namespace ProjetoTccBackend
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
