@@ -1,4 +1,5 @@
-﻿using ProjetoTccBackend.Database.Requests.Exercise;
+﻿using ProjetoTccBackend.Database;
+using ProjetoTccBackend.Database.Requests.Exercise;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
@@ -12,14 +13,16 @@ namespace ProjetoTccBackend.Services
         private readonly IExerciseInputRepository _exerciseInputRepository;
         private readonly IExerciseOutputRepository _exerciseOutputRepository;
         private readonly IJudgeService _judgeService;
+        private readonly TccDbContext _dbContext;
         private readonly ILogger<ExerciseService> _logger;
 
-        public ExerciseService(IExerciseRepository exerciseRepository, IExerciseInputRepository exerciseInputRepository, IExerciseOutputRepository exerciseOutputRepository, IJudgeService judgeService, ILogger<ExerciseService> logger)
+        public ExerciseService(IExerciseRepository exerciseRepository, IExerciseInputRepository exerciseInputRepository, IExerciseOutputRepository exerciseOutputRepository, IJudgeService judgeService, TccDbContext dbContext, ILogger<ExerciseService> logger)
         {
             this._exerciseRepository = exerciseRepository;
             this._exerciseInputRepository = exerciseInputRepository;
             this._exerciseOutputRepository = exerciseOutputRepository;
             this._judgeService = judgeService;
+            this._dbContext = dbContext;
             this._logger = logger;
         }
 
@@ -76,6 +79,8 @@ namespace ProjetoTccBackend.Services
             }
 
             this._exerciseOutputRepository.AddRange(outputs);
+
+            this._dbContext.SaveChanges();
 
             return exercise;
         }

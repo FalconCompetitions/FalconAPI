@@ -1,4 +1,5 @@
-﻿using ProjetoTccBackend.Database.Requests.Competition;
+﻿using ProjetoTccBackend.Database;
+using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
@@ -10,11 +11,14 @@ namespace ProjetoTccBackend.Services
     {
         private ICompetitionRepository _competitionRepository;
         private IQuestionRepository _questionRepository;
+        private readonly TccDbContext _dbContext;
 
 
-        public CompetitionService(ICompetitionRepository competitionRepository)
+        public CompetitionService(ICompetitionRepository competitionRepository, IQuestionRepository questionRepository, TccDbContext dbContext)
         {
             this._competitionRepository = competitionRepository;
+            this._questionRepository = questionRepository;
+            this._dbContext = dbContext;
         }
 
         /// <inheritdoc/>
@@ -34,6 +38,7 @@ namespace ProjetoTccBackend.Services
             };
 
             this._competitionRepository.Add(newCompetition);
+            await this._dbContext.SaveChangesAsync();
 
             return newCompetition;
         }
@@ -63,6 +68,7 @@ namespace ProjetoTccBackend.Services
         }
 
 
+        /// <inheritdoc />
         public async Task<Question> CreateGroupQuestion(string userId, int groupId, CreateGroupQuestionRequest request)
         {
             Competition? competition = await this.GetExistentCompetition();
@@ -82,6 +88,8 @@ namespace ProjetoTccBackend.Services
             };
 
             this._questionRepository.Add(question);
+
+            await this._dbContext.SaveChangesAsync();
 
             return question;
         }

@@ -85,7 +85,9 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<IExerciseOutputRepository, ExerciseOutputRepository>();
             builder.Services.AddScoped<IExerciseRepository, ExerciseRepository>();
             builder.Services.AddScoped<ICompetitionRepository, CompetitionRepository>();
+            builder.Services.AddScoped<ICompetitionRankingRepository, CompetitionRankingRepository>();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+            builder.Services.AddScoped<IGroupExerciseAttemptRepository, GroupExerciseAttemptRepository>();
 
             builder.Services.AddHttpContextAccessor();
 
@@ -102,6 +104,7 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IGroupService, GroupService>();
+            builder.Services.AddScoped<ICompetitionRankingService, CompetitionRankingService>();
             builder.Services.AddScoped<IExerciseService, ExerciseService>();
             builder.Services.AddScoped<ICompetitionService, CompetitionService>();
             builder.Services.AddScoped<IGroupAttemptService, GroupAttemptService>();

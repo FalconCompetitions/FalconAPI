@@ -1,4 +1,5 @@
-﻿using ProjetoTccBackend.Database.Requests.Group;
+﻿using ProjetoTccBackend.Database;
+using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
@@ -14,12 +15,14 @@ namespace ProjetoTccBackend.Services
         private readonly IUserRepository _userRepository;
         private readonly IGroupRepository _groupRepository;
         private readonly ILogger<GroupService> _logger;
+        private readonly TccDbContext _dbContext;
 
-        public GroupService(IUserService userService, IUserRepository userRepository, IGroupRepository groupRepository, ILogger<GroupService> logger)
+        public GroupService(IUserService userService, IUserRepository userRepository, IGroupRepository groupRepository, TccDbContext dbContext, ILogger<GroupService> logger)
         {
             this._userService = userService;
             this._userRepository = userRepository;
             this._groupRepository = groupRepository;
+            this._dbContext = dbContext;
             this._logger = logger;
         }
 
@@ -43,6 +46,8 @@ namespace ProjetoTccBackend.Services
             loggedUser.GroupId = newGroup.Id;
             this._userRepository.Update(loggedUser);
 
+            this._dbContext.SaveChanges();
+
             return await Task.FromResult(newGroup);
         }
 
@@ -64,6 +69,8 @@ namespace ProjetoTccBackend.Services
 
             group.Name = groupRequest.Name;
             this._groupRepository.Update(group);
+
+            this._dbContext.SaveChanges();
 
             return group;
         }

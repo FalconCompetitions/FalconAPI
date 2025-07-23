@@ -62,7 +62,7 @@ public class UserService : IUserService
 
         if (existentUser is not null)
         {
-            this._logger.LogError(existentUser.Id);
+            this._logger.LogError("Email already in use");
             throw new FormException(new Dictionary<string, string>()
                 {
                     { "email", """E-mail já utilizado""" }
