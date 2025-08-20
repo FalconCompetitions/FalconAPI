@@ -23,13 +23,13 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc/>
-        public string GenerateUserToken(User user)
+        public string GenerateUserToken(User user, string role)
         {
             Claim[] claims =
             [
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.Email!),
                         new Claim(ClaimTypes.PrimarySid, user.Id),
-                        new Claim(ClaimTypes.Role, "Teacher"),
+                        new Claim(ClaimTypes.Role, role),
                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             ];
 
@@ -74,5 +74,35 @@ namespace ProjetoTccBackend.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        /// <inheritdoc />
+        public bool ValidateToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(this._secretKey);
+
+            try
+            {
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = this._issuer,
+                    ValidateAudience = true,
+                    ValidAudience = this._audience,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Token JWT inválido.");
+                return false;
+            }
+        }
+
     }
 }

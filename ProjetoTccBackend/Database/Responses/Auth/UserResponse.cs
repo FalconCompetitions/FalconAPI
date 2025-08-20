@@ -24,5 +24,8 @@ namespace ProjetoTccBackend.Database.Responses.Auth
 
         [JsonPropertyName("phoneNumberConfirmed")]
         public bool PhoneNumberConfirmed { get; set; }
+
+        [JsonPropertyName("role")]
+        public string Role { get; set; }
     }
 }

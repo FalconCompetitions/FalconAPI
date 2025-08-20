@@ -16,13 +16,15 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private SignInManager<User> _signInManager;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ITokenService _tokenService;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(UserManager<User> userManager, IUserRepository userRepository, SignInManager<User> signInManager, IHttpContextAccessor httpContextAccessor, ILogger<UserService> logger)
+    public UserService(UserManager<User> userManager, IUserRepository userRepository, SignInManager<User> signInManager, IHttpContextAccessor httpContextAccessor, ITokenService tokenService, ILogger<UserService> logger)
     {
         this._userManager = userManager;
         this._userRepository = userRepository;
         this._signInManager = signInManager;
+        this._tokenService = tokenService;
 
         this._httpContextAccessor = httpContextAccessor;
         _logger = logger;
@@ -56,9 +58,11 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc/>
-    public async Task<User> RegisterUserAsync(RegisterUserRequest user)
+    public async Task<Tuple<User, string>> RegisterUserAsync(RegisterUserRequest user)
     {
         User? existentUser = this._userRepository.GetByEmail(user.Email);
+
+        this._logger.LogDebug("Test");
 
         if (existentUser is not null)
         {
@@ -75,6 +79,21 @@ public class UserService : IUserService
             {
                 { "general", "Não foi possível criar o usuário" }
             });
+        }
+
+        if(user.Role.Equals("Teacher"))
+        {
+            string accessCode = user.AccessCode!;
+
+            bool isValid = this._tokenService.ValidateToken(accessCode);
+
+            if(!isValid)
+            {
+                throw new FormException(new Dictionary<string, string>()
+                {
+                    { "accessCode", "Código de acesso inválido" }
+                });
+            }
         }
 
         User newUser = new User
@@ -100,10 +119,10 @@ public class UserService : IUserService
         }
 
         await this._userManager.UpdateAsync(newUser);
-        await _signInManager.UserManager.AddClaimAsync(newUser, new Claim(ClaimTypes.Role, "User"));
+        //await _signInManager.UserManager.AddClaimAsync(newUser, new Claim(ClaimTypes.Role, user.Role));
 
         // Adiciono o usuário registrado ao role "User"
-        IdentityResult res = await this._userManager.AddToRoleAsync(newUser, "Student");
+        IdentityResult res = await this._userManager.AddToRoleAsync(newUser, user.Role);
 
         if (res.Succeeded == false)
         {
@@ -113,11 +132,11 @@ public class UserService : IUserService
                 });
         }
 
-        return newUser;
+        return Tuple.Create(newUser, user.Role);
     }
 
     /// <inheritdoc/>
-    public async Task<User> LoginUserAsync(LoginUserRequest usr)
+    public async Task<Tuple<User, string>> LoginUserAsync(LoginUserRequest usr)
     {
         //Console.WriteLine($"{dto.Email}, {dto.Password}");
 
@@ -141,7 +160,9 @@ public class UserService : IUserService
             });
         }
 
-        return existentUser;
+        string userRole = (await this._userManager.GetRolesAsync(existentUser)).First();
+
+        return Tuple.Create(existentUser, userRole);
     }
     
     /// <inheritdoc/>
