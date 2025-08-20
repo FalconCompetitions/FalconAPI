@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoTccBackend.Database.Requests.Group;
+using ProjetoTccBackend.Database.Responses.Global;
+using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
 
@@ -81,5 +83,28 @@ namespace ProjetoTccBackend.Controllers
 
             return Ok(group);
         }
+
+        /// <summary>
+        /// Retrieves a paginated list of groups.
+        /// </summary>
+        /// <param name="page">The page number to retrieve.</param>
+        /// <param name="pageSize">The number of groups per page.</param>
+        /// <param name="search">Optional. A search term to filter groups by name.</param>
+        /// <returns>
+        /// An <see cref="IActionResult"/> containing a paginated list of groups.
+        /// </returns>
+        /// <remarks>
+        /// Accessible to users with the roles "Admin" or "Teacher".
+        /// </remarks>
+        /// <response code="200">Returns the paginated list of groups.</response>
+        [Authorize(Roles = "Admin,Teacher")]
+        [HttpGet()]
+        [ProducesResponseType(typeof(PagedResult<GroupResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetGroups([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        {
+            var result = await this._groupService.GetGroupsAsync(page, pageSize, search);
+            return Ok(result);
+        }
+
     }
 }

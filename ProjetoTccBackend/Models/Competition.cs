@@ -82,5 +82,7 @@ namespace ProjetoTccBackend.Models
         /// The ranking information for the competition.
         /// </summary>
         public ICollection<CompetitionRanking> CompetitionRankings { get; set; } = [];
+
+        public ICollection<Log> Logs { get; } = [];
     }
 }

@@ -1,16 +1,20 @@
-﻿using ProjetoTccBackend.Database;
+﻿using Microsoft.EntityFrameworkCore;
+using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Group;
+using ProjetoTccBackend.Database.Responses.Global;
+using ProjetoTccBackend.Database.Responses.Group;
+using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
+using System.Linq;
 using System.Security.Claims;
 
 namespace ProjetoTccBackend.Services
 {
     public class GroupService : IGroupService
     {
-
         private readonly IUserService _userService;
         private readonly IUserRepository _userRepository;
         private readonly IGroupRepository _groupRepository;
@@ -88,6 +92,54 @@ namespace ProjetoTccBackend.Services
             Group? group = this._groupRepository.GetById(id);
 
             return group;
+        }
+
+        /// <inheritdoc/>
+        public async Task<PagedResult<GroupResponse>> GetGroupsAsync(int page, int pageSize, string? search)
+        {
+            var query = this._groupRepository.GetAll().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(g => g.Name.Contains(search));
+            }
+
+            query = query.Include(g => g.Users);
+
+            int totalCount = query.Count();
+            var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            List<GroupResponse> groupResponses = new List<GroupResponse>();
+
+            foreach (var item in items)
+            {
+                List<GenericUserInfoResponse> userInfoResponses = new List<GenericUserInfoResponse>();
+
+                foreach(var user in item.Users)
+                {
+                    userInfoResponses.Add(new GenericUserInfoResponse()
+                    {
+                        Id = user.Id,
+                        UserName = user.UserName!,
+                        Email = user.Email!,
+                        JoinYear = (int)user.JoinYear!,
+                    });
+                }
+
+                groupResponses.Add(new GroupResponse()
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    Users = userInfoResponses
+                });
+            }
+
+            return await Task.FromResult(new PagedResult<GroupResponse>
+            {
+                Items = groupResponses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            });
         }
     }
 }

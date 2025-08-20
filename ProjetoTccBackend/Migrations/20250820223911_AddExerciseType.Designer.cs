@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjetoTccBackend.Database;
 
@@ -11,9 +12,11 @@ using ProjetoTccBackend.Database;
 namespace ProjetoTccBackend.Migrations
 {
     [DbContext(typeof(TccDbContext))]
-    partial class TccDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250820223911_AddExerciseType")]
+    partial class AddExerciseType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -430,45 +433,6 @@ namespace ProjetoTccBackend.Migrations
                     b.ToTable("GroupsInCompetitions");
                 });
 
-            modelBuilder.Entity("ProjetoTccBackend.Models.Log", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("ActionTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("ActionType")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CompetitionId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("GroupId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("IpAddress")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("varchar(255)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompetitionId");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Logs");
-                });
-
             modelBuilder.Entity("ProjetoTccBackend.Models.Question", b =>
                 {
                     b.Property<int>("Id")
@@ -762,30 +726,6 @@ namespace ProjetoTccBackend.Migrations
                     b.Navigation("Group");
                 });
 
-            modelBuilder.Entity("ProjetoTccBackend.Models.Log", b =>
-                {
-                    b.HasOne("ProjetoTccBackend.Models.Competition", "Competition")
-                        .WithMany("Logs")
-                        .HasForeignKey("CompetitionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ProjetoTccBackend.Models.Group", "Group")
-                        .WithMany("Logs")
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ProjetoTccBackend.Models.User", "User")
-                        .WithMany("Logs")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Competition");
-
-                    b.Navigation("Group");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("ProjetoTccBackend.Models.Question", b =>
                 {
                     b.HasOne("ProjetoTccBackend.Models.Competition", "Competition")
@@ -838,8 +778,6 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Navigation("GroupInCompetitions");
 
-                    b.Navigation("Logs");
-
                     b.Navigation("Questions");
                 });
 
@@ -875,15 +813,11 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Navigation("GroupInCompetitions");
 
-                    b.Navigation("Logs");
-
                     b.Navigation("Users");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.User", b =>
                 {
-                    b.Navigation("Logs");
-
                     b.Navigation("Questions");
                 });
 #pragma warning restore 612, 618

@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace ProjetoTccBackend.Models
 {
@@ -13,5 +11,7 @@ namespace ProjetoTccBackend.Models
         public Group? Group { get; set; }
 
         public ICollection<Question> Questions { get; } = [];
+
+        public ICollection<Log> Logs = [];
     }
 }
