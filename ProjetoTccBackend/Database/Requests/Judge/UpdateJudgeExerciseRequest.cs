@@ -3,10 +3,16 @@
 namespace ProjetoTccBackend.Database.Requests.Judge
 {
     /// <summary>
-    /// Represents a request to create a new judge exercise, including its name, description, input and output data, and their descriptions.
+    /// Represents a request to update a judge exercise.
     /// </summary>
-    public class CreateJudgeExerciseRequest
+    public class UpdateJudgeExerciseRequest
     {
+        /// <summary>
+        /// Gets or sets the problem ID.
+        /// </summary>
+        [JsonPropertyName("problem_id")]
+        public required string ProblemId { get; set; }
+
         /// <summary>
         /// Gets or sets the name of the exercise.
         /// </summary>
@@ -20,27 +26,15 @@ namespace ProjetoTccBackend.Database.Requests.Judge
         public required string Description { get; set; }
 
         /// <summary>
-        /// Gets or sets the collection of input data samples for the exercise.
+        /// Gets or sets the data entries for the exercise.
         /// </summary>
         [JsonPropertyName("data_entry")]
         public required ICollection<string> DataEntry { get; set; }
 
         /// <summary>
-        /// Gets or sets the description of the input data.
-        /// </summary>
-        [JsonPropertyName("entry_description")]
-        public string EntryDescription { get; set; }
-
-        /// <summary>
-        /// Gets or sets the collection of expected output data samples for the exercise.
+        /// Gets or sets the data outputs for the exercise.
         /// </summary>
         [JsonPropertyName("data_output")]
         public required ICollection<string> DataOutput { get; set; }
-
-        /// <summary>
-        /// Gets or sets the description of the output data.
-        /// </summary>
-        [JsonPropertyName("output_description")]
-        public string OutputDescription { get; set; }
     }
 }

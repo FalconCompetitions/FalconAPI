@@ -39,5 +39,22 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <returns>A list of users.</returns>
         Task<List<Exercise>> GetExercisesAsync();
+
+
+        /// <summary>
+        /// Updates an existing exercise and its inputs and outputs with the provided data.
+        /// </summary>
+        /// <param name="id">The ID of the exercise to update.</param>
+        /// <param name="request">The data to update the exercise with.</param>
+        /// <exception cref="ErrorException">Thrown when the exercise with the specified ID is not found.</exception>
+        Task UpdateExerciseAsync(int id, UpdateExerciseRequest request);
+
+
+        /// <summary>
+        /// Deletes an exercise by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the exercise to delete.</param>
+        /// <exception cref="ErrorException">Thrown when the exercise with the specified ID is not found.</exception>
+        Task DeleteExerciseAsync(int id);
     }
 }

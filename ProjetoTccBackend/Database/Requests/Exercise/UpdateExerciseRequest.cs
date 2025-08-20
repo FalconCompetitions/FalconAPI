@@ -3,8 +3,12 @@ using System.Text.Json.Serialization;
 
 namespace ProjetoTccBackend.Database.Requests.Exercise
 {
-    public class CreateExerciseRequest
+    public class UpdateExerciseRequest
     {
+        [Required]
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
         [Required]
         [JsonPropertyName("exerciseTypeId")]
         public int ExerciseTypeId { get; set; }
@@ -22,10 +26,9 @@ namespace ProjetoTccBackend.Database.Requests.Exercise
         public TimeSpan EstimatedTime { get; set; }
 
         [JsonPropertyName("inputs")]
-        public ICollection<CreateExerciseInputRequest> Inputs { get; set; }
+        public ICollection<UpdateExerciseInputRequest> Inputs { get; set; }
 
         [JsonPropertyName("outputs")]
-        public ICollection<CreateExerciseOutputRequest> Outputs { get; set; }
-
+        public ICollection<UpdateExerciseOutputRequest> Outputs { get; set; }
     }
 }
