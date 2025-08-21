@@ -82,6 +82,7 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             builder.Services.AddScoped<IGroupRepository, GroupRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<ILogRepository, LogRepository>(); // Adicionado para Log
             builder.Services.AddScoped<IExerciseInputRepository, ExerciseInputRepository>();
             builder.Services.AddScoped<IExerciseOutputRepository, ExerciseOutputRepository>();
             builder.Services.AddScoped<IExerciseRepository, ExerciseRepository>();
@@ -105,6 +106,7 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IGroupService, GroupService>();
+            builder.Services.AddScoped<ILogService, LogService>(); // Adicionado para Log
             builder.Services.AddScoped<ICompetitionRankingService, CompetitionRankingService>();
             builder.Services.AddScoped<IExerciseService, ExerciseService>();
             builder.Services.AddScoped<ICompetitionService, CompetitionService>();
