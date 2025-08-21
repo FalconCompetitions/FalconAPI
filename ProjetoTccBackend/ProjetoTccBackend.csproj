@@ -34,7 +34,6 @@
 
   <ItemGroup>
     <Folder Include="Database\DTO\" />
-    <Folder Include="Database\Responses\Group\" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,5 @@
 ﻿using ProjetoTccBackend.Database.Requests.Competition;
-using ProjetoTccBackend.Database.Responses.Competition;
+using ProjetoTccBackend.Database.Responses.Exercise;
 using ProjetoTccBackend.Enums.Judge;
 using ProjetoTccBackend.Exceptions.Judge;
 using ProjetoTccBackend.Models;
@@ -76,6 +76,8 @@ namespace ProjetoTccBackend.Services
                 this._groupExerciseAttemptRepository.Add(attempt);
 
                 await this._competitionRankingService.UpdateRanking(currentCompetition, loggedUser.Group, attempt);
+
+                exerciseResponse.Id = attempt.Id;
 
                 return exerciseResponse;
             }

@@ -1,7 +1,7 @@
 ﻿using ProjetoTccBackend.Exceptions.Judge;
 using ProjetoTccBackend.Database.Requests.Competition;
-using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Models;
+using ProjetoTccBackend.Database.Responses.Exercise;
 
 namespace ProjetoTccBackend.Services.Interfaces
 {

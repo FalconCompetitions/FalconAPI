@@ -35,10 +35,18 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <summary>
         /// Creates a new group question for a specific user and group.
         /// </summary>
-        /// <param name="userId">The ID of the user creating the question.</param>
-        /// <param name="groupId">The ID of the group for which the question is being created.</param>
+        /// <param name="loggedUser">The user who is creating the question.</param>
         /// <param name="request">The request containing details of the question to be created.</param>
         /// <returns>The created <see cref="Question"/> object.</returns>
-        Task<Question> CreateGroupQuestion(string userId, int groupId, CreateGroupQuestionRequest request);
+        Task<Question> CreateGroupQuestion(User loggedUser, CreateGroupQuestionRequest request);
+
+        /// <summary>
+        /// Answers a group question for a specific user.
+        /// </summary>
+        /// <param name="loggedUser">The user who is answering the question.</param>
+        /// <param name="request">The request containing details of the answer to be submitted.</param>
+        /// <returns>The <see cref="Question"/> object representing the answer to the question.</returns>
+        /// <remarks>Only Admin and Teacher users have access to this method.</remarks>
+        Task<Question> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request);
     }
 }

@@ -69,7 +69,7 @@ namespace ProjetoTccBackend.Services
 
 
         /// <inheritdoc />
-        public async Task<Question> CreateGroupQuestion(string userId, int groupId, CreateGroupQuestionRequest request)
+        public async Task<Question> CreateGroupQuestion(User loggedUser, CreateGroupQuestionRequest request)
         {
             Competition? competition = await this.GetExistentCompetition();
 
@@ -84,7 +84,7 @@ namespace ProjetoTccBackend.Services
                 ExerciseId = request.ExerciseId,
                 QuestionType = request.QuestionType,
                 Content = request.Content,
-                UserId = userId,
+                UserId = loggedUser.Id,
             };
 
             this._questionRepository.Add(question);
@@ -92,6 +92,32 @@ namespace ProjetoTccBackend.Services
             await this._dbContext.SaveChangesAsync();
 
             return question;
+        }
+
+
+        /// <inheritdoc />
+        public async Task<Question> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request)
+        {
+            Question? questionToAnswer = this._questionRepository.GetById(request.QuestionId);
+
+            if(questionToAnswer is null)
+            {
+                throw new Exception("Questão nao encontrada");
+            }
+
+            Question answer = new Question()
+            {
+                CompetitionId = questionToAnswer.CompetitionId,
+                UserId = loggedUser.Id,
+                TargetQuestionId = request.QuestionId,
+                Content = request.Answer,
+            };
+
+            this._questionRepository.Add(answer);
+
+            await this._dbContext.SaveChangesAsync();
+
+            return answer;
         }
     }
 }

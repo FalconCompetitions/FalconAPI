@@ -69,6 +69,7 @@ namespace ProjetoTccBackend
             builder.Services.AddDbContext<TccDbContext>();
             builder.Services.AddIdentity<User, IdentityRole>(options =>
             {
+                options.User.AllowedUserNameCharacters = options.User.AllowedUserNameCharacters + " ";
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireLowercase = false;
@@ -122,7 +123,7 @@ namespace ProjetoTccBackend
             })
             .AddJsonOptions(options =>
             {
-                options.JsonSerializerOptions.MaxDepth = 6;
+                options.JsonSerializerOptions.MaxDepth = 2;
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
             });
 
@@ -163,15 +164,23 @@ namespace ProjetoTccBackend
                 {
                     OnMessageReceived = context =>
                     {
-                        var accessToken = context.Request.Query["access_token"];
+                        // Nome do cookie que armazena o JWT
+                        var cookieName = "CompetitionAuthToken";
+                        var token = context.Request.Cookies[cookieName];
 
-                        var path = context.HttpContext.Request.Path;
-
-                        if (string.IsNullOrEmpty(accessToken) is false
-                            && (path.StartsWithSegments("/hub/competition"))
-                        )
+                        if (!string.IsNullOrEmpty(token))
                         {
-                            context.Token = accessToken;
+                            context.Token = token;
+                        }
+                        else
+                        {
+                            // Mantém a lógica para SignalR
+                            var accessToken = context.Request.Query["token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub/competition"))
+                            {
+                                context.Token = accessToken;
+                            }
                         }
 
                         return Task.CompletedTask;
@@ -218,6 +227,10 @@ namespace ProjetoTccBackend
                     });
                 });
                 app.UseDeveloperExceptionPage();
+
+                // Adicione no pipeline logo após app.UseRouting();
+                
+                
             }
 
             app.UseRouting();
@@ -227,6 +240,7 @@ namespace ProjetoTccBackend
             ConfigureWebSocketOptions(app);
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
+            app.UseMiddleware<ResetCookiesMiddleware>();
 
             app.UseHttpsRedirection();
 
@@ -237,6 +251,35 @@ namespace ProjetoTccBackend
             app.MapHub<CompetitionHub>("/hub/competition");
 
             app.Run();
+        }
+    }
+    // Plano em pseudocódigo:
+    // 1. Antes de iniciar o pipeline, adicionar um middleware que apague todos os cookies da requisição.
+    // 2. O middleware será executado no início de cada execução do app (a cada requisição).
+    // 3. Para cada cookie presente, definir o mesmo nome com valor vazio e expiração no passado.
+    // 4. Adicionar esse middleware antes de qualquer autenticação ou autorização.
+
+    // Middleware para resetar cookies
+    public class ResetCookiesMiddleware
+    {
+        private readonly RequestDelegate _next;
+
+        public ResetCookiesMiddleware(RequestDelegate next)
+        {
+            _next = next;
+        }
+
+        public async Task InvokeAsync(HttpContext context)
+        {
+            foreach (var cookie in context.Request.Cookies.Keys)
+            {
+                context.Response.Cookies.Append(cookie, "", new CookieOptions
+                {
+                    Expires = DateTimeOffset.UtcNow.AddDays(-1),
+                    Path = "/"
+                });
+            }
+            await _next(context);
         }
     }
 }
