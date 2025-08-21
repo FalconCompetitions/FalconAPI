@@ -255,6 +255,8 @@ namespace ProjetoTccBackend
             app.Run();
         }
     }
+
+    //
     // Plano em pseudocódigo:
     // 1. Antes de iniciar o pipeline, adicionar um middleware que apague todos os cookies da requisição.
     // 2. O middleware será executado no início de cada execução do app (a cada requisição).
@@ -262,6 +264,16 @@ namespace ProjetoTccBackend
     // 4. Adicionar esse middleware antes de qualquer autenticação ou autorização.
 
     // Middleware para resetar cookies
+
+    /// <summary>
+    /// Middleware that removes all cookies from the incoming HTTP request and sets their expiration to the past.
+    /// This is only used in development
+    /// </summary>
+    /// <remarks>This middleware is designed to clear cookies at the beginning of the request pipeline. It
+    /// iterates through all  cookies in the incoming request and appends them to the response with an empty value and
+    /// an expiration date in  the past, effectively invalidating them. This ensures that no cookies are carried forward
+    /// in the request lifecycle.  To use this middleware, add it to the application's middleware pipeline before any
+    /// authentication or authorization  middleware to ensure cookies are cleared prior to those operations.</remarks>
     public class ResetCookiesMiddleware
     {
         private readonly RequestDelegate _next;
