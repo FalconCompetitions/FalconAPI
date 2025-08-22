@@ -5,6 +5,7 @@ using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
+using ProjetoTccBackend.Database.Responses.Global;
 
 namespace ProjetoTccBackend.Services
 {
@@ -108,6 +109,24 @@ namespace ProjetoTccBackend.Services
             List<Exercise> exercises = this._exerciseRepository.GetAll().ToList();
 
             return exercises;
+        }
+
+        public async Task<PagedResult<Exercise>> GetExercisesAsync(int page, int pageSize, string? search = null)
+        {
+            var query = this._exerciseRepository.GetAll().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(e => e.Title.Contains(search) || e.Description.Contains(search));
+            }
+            int totalCount = query.Count();
+            var items = query.OrderBy(e => e.Id).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return await Task.FromResult(new PagedResult<Exercise>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            });
         }
 
         /// <inheritdoc/>

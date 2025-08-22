@@ -34,13 +34,21 @@ namespace ProjetoTccBackend.Controllers
             return Ok(exercise);
         }
 
-        //[Authorize(Roles = "Admin,Teacher")]
+        /// <summary>
+        /// Retrieves a paginated list of exercises.
+        /// </summary>
+        /// <param name="page">The page number to retrieve.</param>
+        /// <param name="pageSize">The number of exercises per page.</param>
+        /// <param name="search">Optional. A search term to filter exercises by title or description.</param>
+        /// <returns>
+        /// An <see cref="IActionResult"/> containing a paginated list of exercises.
+        /// </returns>
         [HttpGet()]
-        public async Task<IActionResult> GetExercises()
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetExercises([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
         {
-            var exercises = await this._exerciseService.GetExercisesAsync();
-
-            return Ok(exercises);
+            var result = await this._exerciseService.GetExercisesAsync(page, pageSize, search);
+            return Ok(result);
         }
 
 
@@ -103,6 +111,7 @@ namespace ProjetoTccBackend.Controllers
         /// if the deletion is successful.</returns>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteExercise(int id)
         {
             await this._exerciseService.DeleteExerciseAsync(id);
