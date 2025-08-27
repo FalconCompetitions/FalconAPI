@@ -7,8 +7,11 @@ namespace ProjetoTccBackend.Database.Responses.Auth
         [JsonPropertyName("id")]
         public string Id { get; set; }
 
-        [JsonPropertyName("userName")]
-        public string UserName { get; set; }
+        [JsonPropertyName("ra")]
+        public string RA { get; set; }
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
 
         [JsonPropertyName("email")]
         public string Email { get; set; }

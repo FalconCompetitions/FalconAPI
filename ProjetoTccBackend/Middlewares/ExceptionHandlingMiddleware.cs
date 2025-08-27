@@ -19,6 +19,7 @@ namespace ProjetoTccBackend.Middlewares
         public async Task InvokeAsync(HttpContext context)
         {
             bool isFormException = false;
+            bool isUnexpectedError = false;
 
             var response = new object();
 
@@ -42,6 +43,7 @@ namespace ProjetoTccBackend.Middlewares
             }
             catch (ErrorException ex) // Erro genérico lançado manualmente no código
             {
+                isUnexpectedError = true;
                 this._logger.LogError("Error");
                 response = new { message = ex.Message };
             }
@@ -69,6 +71,7 @@ namespace ProjetoTccBackend.Middlewares
                 }
                 else // Caso seja um erro não esperado
                 {
+                    isUnexpectedError = true;
                     response = new
                     {
                         errors = new[]
@@ -83,7 +86,7 @@ namespace ProjetoTccBackend.Middlewares
             if(isFormException is true)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            } else
+            } else if(isUnexpectedError is true)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }

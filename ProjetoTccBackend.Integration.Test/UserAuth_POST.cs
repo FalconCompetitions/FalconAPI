@@ -28,7 +28,7 @@ namespace ProjetoTccBackend.Integration.Test
             RegisterUserRequest request = new RegisterUserRequest()
             {
                 RA = "000000",
-                UserName = "teste",
+                Name = "teste",
                 Email = "teste@gmail.com",
                 Password = password,
                 JoinYear = 2020,
@@ -55,7 +55,7 @@ namespace ProjetoTccBackend.Integration.Test
             RegisterUserRequest user = new RegisterUserRequest()
             {
                 RA = ra,
-                UserName = userName,
+                Name = userName,
                 Email = email,
                 JoinYear = joinYear,
                 Password = password,
@@ -80,7 +80,7 @@ namespace ProjetoTccBackend.Integration.Test
             // Arrange
             LoginUserRequest user = new LoginUserRequest()
             {
-                Email = email,
+                Ra = email,
                 Password = password
             };
             

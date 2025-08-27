@@ -7,8 +7,8 @@ namespace ProjetoTccBackend.Database.Responses.User
         [JsonPropertyName("id")]
         public string Id { get; set; }
 
-        [JsonPropertyName("userName")]
-        public string UserName { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
 
         [JsonPropertyName("email")]
         public string Email { get; set; }

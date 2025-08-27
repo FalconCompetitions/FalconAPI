@@ -1,20 +1,20 @@
+using System.Reflection;
 using System.Text;
+using ApiEstoqueASP.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using ApiEstoqueASP.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using ProjetoTccBackend.Database;
+using ProjetoTccBackend.Filters;
+using ProjetoTccBackend.Hubs;
+using ProjetoTccBackend.Middlewares;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services;
 using ProjetoTccBackend.Services.Interfaces;
-using Microsoft.IdentityModel.Tokens;
-using ProjetoTccBackend.Middlewares;
-using Microsoft.AspNetCore.Mvc;
-using ProjetoTccBackend.Hubs;
-using ProjetoTccBackend.Filters;
-using System.Reflection;
 using ProjetoTccBackend.Swagger.Extensions;
 using ProjetoTccBackend.Swagger.Filters;
 
@@ -51,7 +51,7 @@ namespace ProjetoTccBackend
             var options = new WebSocketOptions()
             {
                 KeepAliveInterval = TimeSpan.FromMinutes(2),
-                AllowedOrigins = { "http://localhost:3000" }
+                AllowedOrigins = { "http://localhost:3000" },
             };
 
             app.UseWebSockets(options);
@@ -67,14 +67,16 @@ namespace ProjetoTccBackend
             // Add services to the container.
             //builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
             builder.Services.AddDbContext<TccDbContext>();
-            builder.Services.AddIdentity<User, IdentityRole>(options =>
-            {
-                options.User.AllowedUserNameCharacters = options.User.AllowedUserNameCharacters + " ";
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequireLowercase = false;
-                options.Password.RequiredLength = 8;
-            })
+            builder
+                .Services.AddIdentity<User, IdentityRole>(options =>
+                {
+                    options.User.AllowedUserNameCharacters =
+                        options.User.AllowedUserNameCharacters + " ";
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireUppercase = false;
+                    options.Password.RequireLowercase = false;
+                    options.Password.RequiredLength = 8;
+                })
                 .AddEntityFrameworkStores<TccDbContext>()
                 .AddDefaultTokenProviders();
 
@@ -87,19 +89,28 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<IExerciseOutputRepository, ExerciseOutputRepository>();
             builder.Services.AddScoped<IExerciseRepository, ExerciseRepository>();
             builder.Services.AddScoped<ICompetitionRepository, CompetitionRepository>();
-            builder.Services.AddScoped<ICompetitionRankingRepository, CompetitionRankingRepository>();
+            builder.Services.AddScoped<
+                ICompetitionRankingRepository,
+                CompetitionRankingRepository
+            >();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
-            builder.Services.AddScoped<IGroupExerciseAttemptRepository, GroupExerciseAttemptRepository>();
+            builder.Services.AddScoped<
+                IGroupExerciseAttemptRepository,
+                GroupExerciseAttemptRepository
+            >();
 
             builder.Services.AddHttpContextAccessor();
 
-            builder.Services.AddHttpClient("JudgeAPI", client =>
-            {
-                client.BaseAddress = new Uri(builder.Configuration["JudgeApiUrl"]!);
-                //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-                //client.DefaultRequestHeaders.Add("Accept", "application/json");
-                client.Timeout = TimeSpan.FromSeconds(20);
-            });
+            builder.Services.AddHttpClient(
+                "JudgeAPI",
+                client =>
+                {
+                    client.BaseAddress = new Uri(builder.Configuration["JudgeApiUrl"]!);
+                    //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
+                    //client.DefaultRequestHeaders.Add("Accept", "application/json");
+                    client.Timeout = TimeSpan.FromSeconds(20);
+                }
+            );
 
             // Services
             builder.Services.AddScoped<IJudgeService, JudgeService>();
@@ -115,19 +126,25 @@ namespace ProjetoTccBackend
 
             builder.Services.AddSignalR();
 
-            builder.Services.AddControllers(options =>
-            {
-                options.Filters.Add<ValidateModelStateFilter>();
-            })
-            .ConfigureApiBehaviorOptions(options =>
-            {
-                options.SuppressModelStateInvalidFilter = true;
-            })
-            .AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.MaxDepth = 2;
-                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
-            });
+            builder
+                .Services.AddControllers(options =>
+                {
+                    options.Filters.Add<ValidateModelStateFilter>();
+                })
+                .ConfigureApiBehaviorOptions(options =>
+                {
+                    options.SuppressModelStateInvalidFilter = true;
+                })
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.MaxDepth = 4;
+                    options.JsonSerializerOptions.ReferenceHandler = System
+                        .Text
+                        .Json
+                        .Serialization
+                        .ReferenceHandler
+                        .IgnoreCycles;
+                });
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -142,53 +159,61 @@ namespace ProjetoTccBackend
             });
             builder.Services.AddSwaggerExamples(Assembly.GetExecutingAssembly());
 
-            builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-
-            }).AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
+            builder
+                .Services.AddAuthentication(options =>
                 {
-                    ValidateIssuer = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"]!,
-                    ValidAudience = builder.Configuration["Jwt:Audience"]!,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                options.Events = new JwtBearerEvents
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
                 {
-                    OnMessageReceived = context =>
+                    options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        // Nome do cookie que armazena o JWT
-                        var cookieName = "CompetitionAuthToken";
-                        var token = context.Request.Cookies[cookieName];
+                        ValidateIssuer = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"]!,
+                        ValidAudience = builder.Configuration["Jwt:Audience"]!,
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+                        ),
 
-                        if (!string.IsNullOrEmpty(token))
+                        ClockSkew = TimeSpan.Zero,
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
                         {
-                            context.Token = token;
-                        }
-                        else
-                        {
-                            // Mantém a lógica para SignalR
-                            var accessToken = context.Request.Query["token"];
-                            var path = context.HttpContext.Request.Path;
-                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub/competition"))
+                            // Nome do cookie que armazena o JWT
+                            var cookieName = "CompetitionAuthToken";
+
+                            var token = context.Request.Cookies[cookieName];
+                            Console.WriteLine(token);
+
+                            if (!string.IsNullOrEmpty(token))
                             {
-                                context.Token = accessToken;
+                                context.Token = token;
                             }
-                        }
+                            else
+                            {
+                                // Mantém a lógica para SignalR
+                                var accessToken = context.Request.Query["token"];
+                                var path = context.HttpContext.Request.Path;
+                                if (
+                                    !string.IsNullOrEmpty(accessToken)
+                                    && path.StartsWithSegments("/hub/competition")
+                                )
+                                {
+                                    context.Token = accessToken;
+                                }
+                            }
 
-                        return Task.CompletedTask;
-                    }
-                };
-            });
+                            return Task.CompletedTask;
+                        },
+                    };
+                });
 
             /*
             builder.Services.AddAuthorization(options =>
@@ -197,6 +222,7 @@ namespace ProjetoTccBackend
             });
             */
 
+            /*
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("FrontendAppPolicy", policy =>
@@ -207,8 +233,7 @@ namespace ProjetoTccBackend
                         .AllowCredentials();
                 });
             });
-
-
+            */
 
             var app = builder.Build();
 
@@ -220,29 +245,36 @@ namespace ProjetoTccBackend
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {
-                    options.SupportedSubmitMethods(new[]
-                    {
-                        Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Get,
-                        Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Post,
-                        Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Put,
-                        Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Delete
-                    });
+                    options.SupportedSubmitMethods(
+                        new[]
+                        {
+                            Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Get,
+                            Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Post,
+                            Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Put,
+                            Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Delete,
+                        }
+                    );
                 });
                 app.UseDeveloperExceptionPage();
 
                 // Adicione no pipeline logo após app.UseRouting();
-                
-                
             }
 
             app.UseRouting();
 
             //app.UseCors("FrontendAppPolicy");
+            app.UseCors(builder =>
+                builder
+                    .WithOrigins("http://localhost:3000") // ou seu frontend
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials()
+            );
 
             ConfigureWebSocketOptions(app);
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
-            app.UseMiddleware<ResetCookiesMiddleware>();
+            //app.UseMiddleware<ResetCookiesMiddleware>();
 
             app.UseHttpsRedirection();
 
@@ -287,11 +319,11 @@ namespace ProjetoTccBackend
         {
             foreach (var cookie in context.Request.Cookies.Keys)
             {
-                context.Response.Cookies.Append(cookie, "", new CookieOptions
-                {
-                    Expires = DateTimeOffset.UtcNow.AddDays(-1),
-                    Path = "/"
-                });
+                context.Response.Cookies.Append(
+                    cookie,
+                    "",
+                    new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(-1), Path = "/" }
+                );
             }
             await _next(context);
         }

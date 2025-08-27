@@ -119,7 +119,7 @@ namespace ProjetoTccBackend.Controllers
                 Id = user.Id,
                 Email = user.Email!,
                 EmailConfirmed = user.EmailConfirmed,
-                UserName = user.UserName!,
+                Name = user.UserName!,
                 JoinYear = user.JoinYear,
                 PhoneNumber = user.PhoneNumber,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed
@@ -185,9 +185,10 @@ namespace ProjetoTccBackend.Controllers
             UserResponse userResponse = new UserResponse()
             {
                 Id = user.Id,
+                RA = user.RA,
                 Email = user.Email!,
                 EmailConfirmed = user.EmailConfirmed,
-                UserName = user.UserName!,
+                Name = user.Name!,
                 JoinYear = user.JoinYear,
                 PhoneNumber = user.PhoneNumber,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed,
@@ -270,8 +271,10 @@ namespace ProjetoTccBackend.Controllers
         [Authorize]
         public async Task<IActionResult> LogoutUser()
         {
+            await this._userService.LogoutAsync();
+
             this.Response.Cookies.Delete("CompetitionAuthToken");
-            return Ok();
+            return NoContent();
         }
 
     }

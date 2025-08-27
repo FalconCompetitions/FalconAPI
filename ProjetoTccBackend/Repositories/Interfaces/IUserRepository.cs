@@ -6,5 +6,6 @@ namespace ProjetoTccBackend.Repositories.Interfaces
     {
         public User? GetById(string id);
         public User? GetByEmail(string email);
+        public User? GetByRa(string ra);
     }
 }

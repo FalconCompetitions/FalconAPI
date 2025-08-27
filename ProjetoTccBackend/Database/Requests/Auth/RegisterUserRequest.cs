@@ -14,7 +14,7 @@ namespace ProjetoTccBackend.Database.Requests.Auth
         /// </summary>
         [Required]
         [MaxLength(6, ErrorMessage = "RA inválido!")]
-        [MinLength(5, ErrorMessage = "RA inválido!")]
+        [MinLength(7, ErrorMessage = "RA inválido!")]
         [JsonPropertyName("ra")]
         public string RA { get; set; }
 
@@ -23,8 +23,8 @@ namespace ProjetoTccBackend.Database.Requests.Auth
         /// </summary>
         [Required]
         [MaxLength(90, ErrorMessage = "Nome maior que 90 caracteres")]
-        [JsonPropertyName("userName")]
-        public string UserName { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the user's email address.

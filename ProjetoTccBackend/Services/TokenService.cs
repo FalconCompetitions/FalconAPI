@@ -28,8 +28,8 @@ namespace ProjetoTccBackend.Services
             Claim[] claims =
             [
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.Email!),
-                        new Claim(ClaimTypes.PrimarySid, user.Id),
-                        new Claim(ClaimTypes.Role, role),
+                        new Claim("id", user.Id),
+                        new Claim("role", role),
                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             ];
 

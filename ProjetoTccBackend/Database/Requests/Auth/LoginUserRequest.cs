@@ -6,9 +6,10 @@ namespace ProjetoTccBackend.Database.Requests.Auth
     public class LoginUserRequest
     {
         [Required(ErrorMessage = "Campo obrigatório")]
-        [EmailAddress(ErrorMessage = "Email inválido")]
-        [JsonPropertyName("email")]
-        public required string Email { get; set; }
+        [MinLength(6, ErrorMessage = "RA deve ter no mínimo 6 digitos")]
+        [MaxLength(7, ErrorMessage = "RA deve ter no máximo 7 digitos")]
+        [JsonPropertyName("ra")]
+        public required string Ra { get; set; }
 
         [Required(ErrorMessage = "Campo obrigatório")]
         [JsonPropertyName("password")]

@@ -43,7 +43,7 @@ namespace ProjetoTccBackend.Controllers
                 JoinYear = user.JoinYear,
                 PhoneNumber = user.PhoneNumber,
                 RA = user.RA,
-                UserName = user.UserName!,
+                Name = user.UserName!,
                 EmailConfirmed = user.EmailConfirmed,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed,
             };

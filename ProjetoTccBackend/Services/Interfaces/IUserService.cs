@@ -49,5 +49,15 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <returns>A list of all users.</returns>
         Task<List<User>> GetAllUsers();
+
+
+        /// <summary>
+        /// Logs the user out of the application asynchronously.
+        /// </summary>
+        /// <remarks>This method clears the user's session and any associated authentication tokens. It
+        /// should be called when the user explicitly requests to log out or when the application needs to terminate the
+        /// user's session for security or other reasons.</remarks>
+        /// <returns>A task that represents the asynchronous logout operation.</returns>
+        Task LogoutAsync();
     }
 }

@@ -98,7 +98,8 @@ public class UserService : IUserService
 
         User newUser = new User
         {
-            UserName = user.UserName,
+            Name = user.Name,
+            UserName = user.Email,
             Email = user.Email,
             RA = user.RA,
             JoinYear = user.JoinYear,
@@ -138,15 +139,15 @@ public class UserService : IUserService
     /// <inheritdoc/>
     public async Task<Tuple<User, string>> LoginUserAsync(LoginUserRequest usr)
     {
-        //Console.WriteLine($"{dto.Email}, {dto.Password}");
+        //Console.WriteLine($"{dto.Ra}, {dto.Password}");
 
-        User? existentUser = this._userRepository.GetByEmail(usr.Email);
+        User? existentUser = this._userRepository.GetByRa(usr.Ra);
 
         if (existentUser == null)
         {
             throw new FormException(new Dictionary<string, string>
             {
-                { "form", "Email e/ou senha incorreto(s)" }
+                { "form", "RA e/ou senha incorreto(s)" }
             });
         }
 
@@ -156,7 +157,7 @@ public class UserService : IUserService
         {
             throw new FormException(new Dictionary<string, string>
             {
-                { "form", "Email e/ou senha incorreto(s)" }
+                { "form", "RA e/ou senha incorreto(s)" }
             });
         }
 
@@ -179,5 +180,11 @@ public class UserService : IUserService
         List<User> users = this._userRepository.GetAll().ToList();
 
         return users;
+    }
+
+    /// <inheritdoc />
+    public async Task LogoutAsync()
+    {
+        await _signInManager.SignOutAsync();
     }
 }

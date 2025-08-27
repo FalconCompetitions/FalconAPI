@@ -119,7 +119,7 @@ namespace ProjetoTccBackend.Services
                     userInfoResponses.Add(new GenericUserInfoResponse()
                     {
                         Id = user.Id,
-                        UserName = user.UserName!,
+                        Name = user.UserName!,
                         Email = user.Email!,
                         JoinYear = (int)user.JoinYear!,
                     });
