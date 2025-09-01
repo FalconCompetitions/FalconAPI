@@ -27,7 +27,7 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc />
         public async Task<ExerciseSubmissionResponse> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptRequest request)
         {
-            var loggedUser = this._userService.GetHttpContextLoggerUser();
+            var loggedUser = this._userService.GetHttpContextLoggedUser();
 
             if (loggedUser is null || loggedUser.GroupId is null)
             {

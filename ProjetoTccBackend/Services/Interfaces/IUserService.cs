@@ -1,6 +1,9 @@
 ﻿using ProjetoTccBackend.Database.Requests.Auth;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Exceptions;
+using ProjetoTccBackend.Database.Responses.Global;
+using System.Threading.Tasks;
+using ProjetoTccBackend.Database.Requests.User;
 
 namespace ProjetoTccBackend.Services.Interfaces
 {
@@ -13,7 +16,7 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <exception cref="UnauthorizedAccessException">
         /// Thrown when the user is not authenticated or the user ID cannot be found in the claims.
         /// </exception>
-        User GetHttpContextLoggerUser();
+        User GetHttpContextLoggedUser();
 
         /// <summary>
         /// Registers a new user in the system.
@@ -59,5 +62,23 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// user's session for security or other reasons.</remarks>
         /// <returns>A task that represents the asynchronous logout operation.</returns>
         Task LogoutAsync();
+
+        /// <summary>
+        /// Retrieves a paginated list of users in the system, with optional search and role filter.
+        /// </summary>
+        /// <param name="page">The page number to retrieve.</param>
+        /// <param name="pageSize">The number of users per page.</param>
+        /// <param name="search">Optional search term for filtering users.</param>
+        /// <param name="role">Optional role filter.</param>
+        /// <returns>A paginated result of users.</returns>
+        Task<PagedResult<User>> GetUsersAsync(int page, int pageSize, string? search = null, string? role = null);
+
+        /// <summary>
+        /// Updates the profile data of a user.
+        /// </summary>
+        /// <param name="userId">The ID of the user to update.</param>
+        /// <param name="request">The update request data.</param>
+        /// <returns>The updated user object, or null if not found.</returns>
+        Task<User?> UpdateUserAsync(string userId, UpdateUserRequest request);
     }
 }

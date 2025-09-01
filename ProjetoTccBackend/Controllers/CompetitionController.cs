@@ -21,6 +21,18 @@ namespace ProjetoTccBackend.Controllers
             this._logger = logger;
         }
 
+        /// <summary>
+        /// Retrieves the existing competition.
+        /// </summary>
+        /// <returns>The existing <see cref="Competition"/> object if found, or <see cref="NoContentResult"/> if not found.</returns>
+        /// <remarks>
+        /// Exemplo de uso:
+        /// <code>
+        ///     GET /api/competition
+        /// </code>
+        /// </remarks>
+        /// <response code="200">Returns the existing competition.</response>
+        /// <response code="204">If no competition exists.</response>
         [HttpGet]
         public async Task<IActionResult> GetExistentCompetition()
         {
@@ -34,7 +46,24 @@ namespace ProjetoTccBackend.Controllers
             return Ok(existentCompetition);
         }
 
-
+        /// <summary>
+        /// Creates a new competition.
+        /// </summary>
+        /// <param name="request">The competition creation request containing start and end times.</param>
+        /// <returns>The created <see cref="Competition"/> object.</returns>
+        /// <remarks>
+        /// Accessible only to users with the "Admin" role.<br/>
+        /// Exemplo de request:
+        /// <code>
+        ///     POST /api/competition
+        ///     {
+        ///         "startTime": "2024-08-21T10:00:00",
+        ///         "endTime": "2024-08-21T12:00:00"
+        ///     }
+        /// </code>
+        /// </remarks>
+        /// <response code="201">Returns the created competition.</response>
+        /// <response code="400">If the request is invalid or a competition already exists for the same date.</response>
         [Authorize("Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateNewCompetition([FromBody]CompetitionRequest request)

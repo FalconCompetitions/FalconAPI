@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using GroupModel = ProjetoTccBackend.Models.Group;
 
 namespace ProjetoTccBackend.Database.Responses.Auth
 {
@@ -30,5 +31,8 @@ namespace ProjetoTccBackend.Database.Responses.Auth
 
         [JsonPropertyName("role")]
         public string Role { get; set; }
+
+        [JsonPropertyName("group")]
+        public GroupModel? Group { get; set; } = null;
     }
 }

@@ -33,7 +33,7 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public async Task<Group> CreateGroupAsync(CreateGroupRequest groupRequest)
         {
-            User loggedUser = this._userService.GetHttpContextLoggerUser();
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
 
             Group newGroup = new Group
             {
@@ -58,7 +58,7 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public Group? ChangeGroupName(ChangeGroupNameRequest groupRequest)
         {
-            User loggedUser = this._userService.GetHttpContextLoggerUser();
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
             Group? group = this._groupRepository.GetById(groupRequest.Id);
 
             if (group == null)
@@ -82,7 +82,7 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public Group? GetGroupById(int id)
         {
-            User loggedUser = this._userService.GetHttpContextLoggerUser();
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
 
             if (loggedUser.GroupId != id)
             {
@@ -140,6 +140,45 @@ namespace ProjetoTccBackend.Services
                 Page = page,
                 PageSize = pageSize
             });
+        }
+
+        /// <inheritdoc/>
+        public async Task<Group?> UpdateGroupAsync(int groupId, UpdateGroupRequest request, string userId, IList<string> userRoles)
+        {
+            var group = this._groupRepository.GetById(groupId);
+            if (group == null)
+                return null;
+            // Permissão: Admin, Teacher ou membro do grupo
+            bool isAdmin = userRoles.Contains("Admin");
+            bool isTeacher = userRoles.Contains("Teacher");
+            bool isMember = group.Users.Any(u => u.Id == userId);
+            if (!(isAdmin || isTeacher || isMember))
+                return null;
+            group.Name = request.Name;
+            // Atualiza os usuários do grupo
+            var currentUsers = group.Users.ToList();
+            var newUsers = this._userRepository.GetAll().Where(u => request.UserIds.Contains(u.Id)).ToList();
+            // Remove usuários que não estão mais
+            foreach (var user in currentUsers)
+            {
+                if (!request.UserIds.Contains(user.Id))
+                {
+                    user.GroupId = null;
+                    this._userRepository.Update(user);
+                }
+            }
+            // Adiciona novos usuários
+            foreach (var user in newUsers)
+            {
+                if (user.GroupId != group.Id)
+                {
+                    user.GroupId = group.Id;
+                    this._userRepository.Update(user);
+                }
+            }
+            this._groupRepository.Update(group);
+            this._dbContext.SaveChanges();
+            return group;
         }
     }
 }

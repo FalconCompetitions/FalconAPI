@@ -1,11 +1,14 @@
 ﻿using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Exceptions;
-//using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Database.Requests.Auth;
+using ProjetoTccBackend.Database.Responses.Global;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using ProjetoTccBackend.Database.Requests.User;
 
 namespace ApiEstoqueASP.Services;
 
@@ -31,7 +34,7 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc/>
-    public User GetHttpContextLoggerUser()
+    public User GetHttpContextLoggedUser()
     {
         var user = this._httpContextAccessor.HttpContext?.User;
 
@@ -40,7 +43,7 @@ public class UserService : IUserService
             throw new UnauthorizedAccessException("Usuário não autenticado");
         }
 
-        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = user.FindFirstValue("id");
 
         if (userId == null)
         {
@@ -186,5 +189,47 @@ public class UserService : IUserService
     public async Task LogoutAsync()
     {
         await _signInManager.SignOutAsync();
+    }
+
+    /// <inheritdoc/>
+    public async Task<PagedResult<User>> GetUsersAsync(int page, int pageSize, string? search = null, string? role = null)
+    {
+        var query = this._userRepository.GetAll().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(u => u.UserName.Contains(search) || u.Email.Contains(search));
+        }
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            var userIdsWithRole = await _userManager.GetUsersInRoleAsync(role);
+            var userIds = userIdsWithRole.Select(u => u.Id).ToList();
+            query = query.Where(u => userIds.Contains(u.Id));
+        }
+        int totalCount = query.Count();
+        var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+        return new PagedResult<User>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = totalPages
+        };
+    }
+
+    /// <inheritdoc/>
+    public async Task<User?> UpdateUserAsync(string userId, UpdateUserRequest request)
+    {
+        var user = this._userRepository.GetById(userId);
+        if (user == null)
+            return null;
+        user.Name = request.Name;
+        user.Email = request.Email;
+        user.UserName = request.Email;
+        user.PhoneNumber = request.PhoneNumber;
+        user.JoinYear = request.JoinYear;
+        await this._userManager.UpdateAsync(user);
+        return user;
     }
 }

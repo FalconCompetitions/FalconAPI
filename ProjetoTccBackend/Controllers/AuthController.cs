@@ -211,11 +211,18 @@ namespace ProjetoTccBackend.Controllers
         /// Validates the authentication token of the current user.
         /// </summary>
         /// <returns>
-        /// Returns an IActionResult containing a boolean indicating whether the token is valid.
+        /// Returns an <see cref="IActionResult"/> containing a boolean indicating whether the token is valid.
         /// </returns>
-        /// <response code="200">Returns a valid token response</response>
+        /// <remarks>
+        /// Exemplo de uso:
+        /// <code>
+        ///     GET /api/auth/validate
+        /// </code>
+        /// </remarks>
+        /// <response code="200">Returns a valid token response.</response>
         [HttpGet("validate")]
         [Authorize]
+        [ProducesResponseType(200)]
         public IActionResult ValidateToken()
         {
             string? token = this.Request.Cookies.FirstOrDefault(x => x.Key == "CompetitionAuthToken").Value;
@@ -244,9 +251,11 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="401">If the user is not found.</response>
         [HttpPost("renew")]
         [Authorize]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
         public async Task<IActionResult> RenewToken()
         {
-            var loggedUser = this._userService.GetHttpContextLoggerUser();
+            var loggedUser = this._userService.GetHttpContextLoggedUser();
 
             if (loggedUser is null)
             {
@@ -267,6 +276,18 @@ namespace ProjetoTccBackend.Controllers
         }
 
 
+        /// <summary>
+        /// Logs out the currently authenticated user.
+        /// </summary>
+        /// <remarks>
+        /// This method terminates the user's session by performing the necessary logout operations and deleting the authentication token cookie. The user must be authenticated to call this method.<br/>
+        /// Exemplo de uso:
+        /// <code>
+        ///     GET /api/auth/logout
+        /// </code>
+        /// </remarks>
+        /// <returns>A <see cref="NoContentResult"/> indicating that the logout operation was successful.</returns>
+        /// <response code="204">If the user is logged out successfully.</response>
         [HttpGet("logout")]
         [Authorize]
         public async Task<IActionResult> LogoutUser()

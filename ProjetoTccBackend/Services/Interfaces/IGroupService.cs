@@ -2,6 +2,8 @@
 using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Database.Responses.Group;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace ProjetoTccBackend.Services.Interfaces
 {
@@ -59,5 +61,15 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// Thrown if the logged-in user is not authenticated.
         /// </exception>
         Task<PagedResult<GroupResponse>> GetGroupsAsync(int page, int pageSize, string? search);
+
+        /// <summary>
+        /// Updates a group's information and its users, validating permissions.
+        /// </summary>
+        /// <param name="groupId">The ID of the group to update.</param>
+        /// <param name="request">The update request data.</param>
+        /// <param name="userId">The id of the user making the request.</param>
+        /// <param name="userRoles">The roles of the user making the request.</param>
+        /// <returns>The updated group, or null if not found or not allowed.</returns>
+        Task<Group?> UpdateGroupAsync(int groupId, UpdateGroupRequest request, string userId, IList<string> userRoles);
     }
 }
