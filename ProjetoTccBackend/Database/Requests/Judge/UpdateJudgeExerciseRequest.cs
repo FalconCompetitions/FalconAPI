@@ -28,13 +28,13 @@ namespace ProjetoTccBackend.Database.Requests.Judge
         /// <summary>
         /// Gets or sets the data entries for the exercise.
         /// </summary>
-        [JsonPropertyName("data_entry")]
+        [JsonPropertyName("data_entries")]
         public required ICollection<string> DataEntry { get; set; }
 
         /// <summary>
         /// Gets or sets the data outputs for the exercise.
         /// </summary>
-        [JsonPropertyName("data_output")]
+        [JsonPropertyName("data_outputs")]
         public required ICollection<string> DataOutput { get; set; }
     }
 }

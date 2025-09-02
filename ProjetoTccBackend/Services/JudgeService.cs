@@ -1,12 +1,12 @@
-﻿using ProjetoTccBackend.Models;
-using ProjetoTccBackend.Services.Interfaces;
-using ProjetoTccBackend.Database.Responses.Judge;
-using ProjetoTccBackend.Repositories.Interfaces;
-using ProjetoTccBackend.Exceptions.Judge;
+﻿using System.Net;
+using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Database.Requests.Exercise;
 using ProjetoTccBackend.Database.Requests.Judge;
-using System.Net;
-using ProjetoTccBackend.Database.Requests.Competition;
+using ProjetoTccBackend.Database.Responses.Judge;
+using ProjetoTccBackend.Exceptions.Judge;
+using ProjetoTccBackend.Models;
+using ProjetoTccBackend.Repositories.Interfaces;
+using ProjetoTccBackend.Services.Interfaces;
 using JudgeSubmissionResponseEnum = ProjetoTccBackend.Enums.Judge.JudgeSubmissionResponse;
 
 namespace ProjetoTccBackend.Services
@@ -16,7 +16,10 @@ namespace ProjetoTccBackend.Services
         private HttpClient _httpClient;
         private IExerciseRepository _exerciseRepository;
 
-        public JudgeService(IHttpClientFactory httpClientFactory, IExerciseRepository exerciseRepository)
+        public JudgeService(
+            IHttpClientFactory httpClientFactory,
+            IExerciseRepository exerciseRepository
+        )
         {
             this._httpClient = httpClientFactory.CreateClient("JudgeAPI");
             this._exerciseRepository = exerciseRepository;
@@ -31,12 +34,11 @@ namespace ProjetoTccBackend.Services
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
 
-            for(int i = 0; i < exerciseRequest.Inputs.Count; i++)
+            for (int i = 0; i < exerciseRequest.Inputs.Count; i++)
             {
                 inputs.Add(exerciseInputs[i].Input);
                 outputs.Add(exerciseOutputs[i].Output);
             }
-
 
             CreateJudgeExerciseRequest payload = new CreateJudgeExerciseRequest()
             {
@@ -45,14 +47,18 @@ namespace ProjetoTccBackend.Services
                 DataEntry = inputs,
                 DataOutput = outputs,
                 EntryDescription = "",
-                OutputDescription = ""
+                OutputDescription = "",
             };
 
-            var result = await this._httpClient.PostAsJsonAsync<CreateJudgeExerciseRequest>("/problems", payload);
+            var result = await this._httpClient.PostAsJsonAsync<CreateJudgeExerciseRequest>(
+                "/problems",
+                payload
+            );
 
             if (result.StatusCode == HttpStatusCode.Created)
             {
-                JudgeExerciseResponse? exerciseResponse = await result.Content.ReadFromJsonAsync<JudgeExerciseResponse>();
+                JudgeExerciseResponse? exerciseResponse =
+                    await result.Content.ReadFromJsonAsync<JudgeExerciseResponse>();
 
                 if (exerciseResponse != null)
                 {
@@ -66,14 +72,18 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public async Task<Exercise?> GetExerciseByUuidAsync(string judgeUuid)
         {
-            var judgeExercise = await this._httpClient.GetFromJsonAsync<JudgeExerciseResponse>($"/problems/{judgeUuid}");
+            var judgeExercise = await this._httpClient.GetFromJsonAsync<JudgeExerciseResponse>(
+                $"/problems/{judgeUuid}"
+            );
 
-            if(judgeExercise is null)
+            if (judgeExercise is null)
             {
                 return null;
             }
 
-            var exercise = this._exerciseRepository.Find((x) => x.JudgeUuid!.Equals(judgeUuid)).FirstOrDefault();
+            var exercise = this
+                ._exerciseRepository.Find((x) => x.JudgeUuid!.Equals(judgeUuid))
+                .FirstOrDefault();
 
             return exercise;
         }
@@ -85,7 +95,9 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc/>
-        public async Task<JudgeSubmissionResponseEnum> SendGroupExerciseAttempt(GroupExerciseAttemptRequest request)
+        public async Task<JudgeSubmissionResponseEnum> SendGroupExerciseAttempt(
+            GroupExerciseAttemptRequest request
+        )
         {
             Exercise? exercise = this._exerciseRepository.GetById(request.ExerciseId);
 
@@ -98,17 +110,23 @@ namespace ProjetoTccBackend.Services
             {
                 ProblemId = exercise.JudgeUuid!,
                 Content = request.Code,
-                LanguageType = request.LanguageType.ToString()
+                LanguageType = request.LanguageType.ToString(),
             };
 
-            HttpResponseMessage response = await this._httpClient.PostAsJsonAsync<JudgeSubmissionRequest>("/submissions", judgeRequest);
+            HttpResponseMessage response =
+                await this._httpClient.PostAsJsonAsync<JudgeSubmissionRequest>(
+                    "/submissions",
+                    judgeRequest
+                );
 
             if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
             {
-                throw new JudgeSubmissionException("Ocorreu um erro ao executar ou processar o código enviado");
+                throw new JudgeSubmissionException(
+                    "Ocorreu um erro ao executar ou processar o código enviado"
+                );
             }
 
-            if(response.StatusCode == HttpStatusCode.InternalServerError)
+            if (response.StatusCode == HttpStatusCode.InternalServerError)
             {
                 throw new JudgeSubmissionException("Erro em recurso externo");
             }
@@ -122,14 +140,15 @@ namespace ProjetoTccBackend.Services
             //STATUS_RUNTIME_ERROR = "RUNTIME ERROR" - Erro em tempo de execução
             //STATUS_SECURITY_ERROR = "SECURITY ERROR" - Erro de segurança(código  'perigoso')
 
-            JudgeSubmissionResponse? judgeSubmissionResponse = await response.Content.ReadFromJsonAsync<JudgeSubmissionResponse>();
+            JudgeSubmissionResponse? judgeSubmissionResponse =
+                await response.Content.ReadFromJsonAsync<JudgeSubmissionResponse>();
 
-            if(judgeSubmissionResponse is null)
+            if (judgeSubmissionResponse is null)
             {
                 return JudgeSubmissionResponseEnum.RuntimeError;
             }
 
-            switch(judgeSubmissionResponse.Status)
+            switch (judgeSubmissionResponse.Status)
             {
                 case "ACCEPTED":
                     return JudgeSubmissionResponseEnum.Accepted;
@@ -150,6 +169,27 @@ namespace ProjetoTccBackend.Services
                 default:
                     return JudgeSubmissionResponseEnum.WrongAnswer;
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> UpdateExerciseAsync(Exercise exercise)
+        {
+            UpdateJudgeExerciseRequest request = new UpdateJudgeExerciseRequest()
+            {
+                ProblemId = exercise.JudgeUuid!,
+                Description = exercise.Description,
+                Name = exercise.Title,
+                DataEntry = exercise.ExerciseInputs.Select(x => x.Input).ToArray(),
+                DataOutput = exercise.ExerciseOutputs.Select(x => x.Output).ToArray(),
+            };
+
+            HttpResponseMessage response =
+                await this._httpClient.PutAsJsonAsync<UpdateJudgeExerciseRequest>(
+                    $"/problems/${exercise.JudgeUuid!}",
+                    request
+                );
+
+            return response.StatusCode.Equals(HttpStatusCode.OK);
         }
     }
 }
