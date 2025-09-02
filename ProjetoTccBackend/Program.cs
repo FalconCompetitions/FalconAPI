@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Filters;
@@ -43,6 +44,15 @@ namespace ProjetoTccBackend
                 {
                     roleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
                 }
+            }
+        }
+
+        public static void ExecuteMigrations(WebApplication app)
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<TccDbContext>();
+                db.Database.Migrate();
             }
         }
 
@@ -236,6 +246,8 @@ namespace ProjetoTccBackend
             */
 
             var app = builder.Build();
+
+            ExecuteMigrations(app);
 
             CreateRoles(app.Services.CreateScope().ServiceProvider!).GetAwaiter().GetResult();
 
