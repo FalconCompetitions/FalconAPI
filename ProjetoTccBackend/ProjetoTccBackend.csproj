@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <Folder Include="Database\DTO\" />
+    <Folder Include="Workers\Interfaces\" />
   </ItemGroup>
 
   <ItemGroup>

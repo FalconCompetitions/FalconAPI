@@ -48,5 +48,59 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <returns>The <see cref="Question"/> object representing the answer to the question.</returns>
         /// <remarks>Only Admin and Teacher users have access to this method.</remarks>
         Task<Question> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request);
+
+
+        /// <summary>
+        /// Opens inscriptions for the specified competition, allowing participants to register.
+        /// </summary>
+        /// <remarks>This method enables the registration process for the given competition. Ensure that
+        /// the competition is in a valid state to accept inscriptions before calling this method.</remarks>
+        /// <param name="competition">The competition for which inscriptions will be opened. Cannot be null.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        Task OpenCompetitionInscriptionsAsync(Competition competition);
+
+
+        /// <summary>
+        /// Closes the inscriptions period for the specified competition.
+        /// </summary>
+        /// <remarks>This method finalizes the inscription process for the given competition, preventing
+        /// further modifications or additions to the inscriptions. Ensure that all necessary inscriptions are completed
+        /// before calling this method.</remarks>
+        /// <param name="competition">The competition for which inscriptions should be closed. Cannot be null.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        Task CloseCompetitionInscriptionsAsync(Competition competition);
+
+
+        /// <summary>
+        /// Starts the specified competition asynchronously.
+        /// </summary>
+        /// <remarks>This method initiates the competition and performs any necessary setup.  Ensure that
+        /// the <paramref name="competition"/> object is fully initialized before calling this method.</remarks>
+        /// <param name="competition">The <see cref="Competition"/> instance representing the competition to start. Cannot be null.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        Task StartCompetitionAsync(Competition competition);
+
+
+        /// <summary>
+        /// Ends the specified competition and performs any necessary finalization tasks.
+        /// </summary>
+        /// <remarks>This method finalizes the competition, ensuring that all related processes are
+        /// completed. Callers should ensure that the <paramref name="competition"/> is in a valid state before invoking
+        /// this method.</remarks>
+        /// <param name="competition">The competition to be ended. Cannot be null.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        Task EndCompetitionAsync(Competition competition);
+
+
+        /// <summary>
+        /// Asynchronously retrieves a collection of competitions that are currently open for participation.
+        /// </summary>
+        /// <remarks>This method is intended to provide a list of competitions that are currently
+        /// accepting participants.  The caller can use the returned collection to display or process the available
+        /// competitions.</remarks>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a collection of  <see
+        /// cref="Competition"/> objects representing the open competitions. If no competitions are open,  the
+        /// collection will be empty.</returns>
+        Task<ICollection<Competition>> GetOpenCompetitionsAsync();
     }
 }

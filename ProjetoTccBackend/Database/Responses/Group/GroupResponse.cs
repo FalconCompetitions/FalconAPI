@@ -12,6 +12,9 @@ namespace ProjetoTccBackend.Database.Responses.Group
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
+        [JsonPropertyName("leaderId")]
+        public string LeaderId { get; set; }
+
         [JsonPropertyName("users")]
         public ICollection<GenericUserInfoResponse> Users { get; set; } = [];
     }

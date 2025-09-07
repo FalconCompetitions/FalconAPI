@@ -20,6 +20,12 @@ namespace ProjetoTccBackend.Models
         [Required]
         public string Name { get; set; }
 
+        /// <summary>
+        /// Gets or sets the unique identifier of the leader.
+        /// </summary>
+        [Required]
+        public string LeaderId { get; set; }
+
         /// <summary>  
         /// Lista de usuários associados ao grupo.  
         /// </summary>  

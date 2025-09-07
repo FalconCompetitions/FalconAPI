@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq;
+using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Database.Responses.Global;
@@ -8,8 +10,6 @@ using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
-using System.Linq;
-using System.Security.Claims;
 
 namespace ProjetoTccBackend.Services
 {
@@ -21,7 +21,13 @@ namespace ProjetoTccBackend.Services
         private readonly ILogger<GroupService> _logger;
         private readonly TccDbContext _dbContext;
 
-        public GroupService(IUserService userService, IUserRepository userRepository, IGroupRepository groupRepository, TccDbContext dbContext, ILogger<GroupService> logger)
+        public GroupService(
+            IUserService userService,
+            IUserRepository userRepository,
+            IGroupRepository groupRepository,
+            TccDbContext dbContext,
+            ILogger<GroupService> logger
+        )
         {
             this._userService = userService;
             this._userRepository = userRepository;
@@ -35,10 +41,7 @@ namespace ProjetoTccBackend.Services
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
-            Group newGroup = new Group
-            {
-                Name = groupRequest.Name,
-            };
+            Group newGroup = new Group { Name = groupRequest.Name, LeaderId = loggedUser.Id };
 
             this._groupRepository.Add(newGroup);
 
@@ -50,9 +53,9 @@ namespace ProjetoTccBackend.Services
             loggedUser.GroupId = newGroup.Id;
             this._userRepository.Update(loggedUser);
 
-            this._dbContext.SaveChanges();
+            await this._dbContext.SaveChangesAsync();
 
-            return await Task.FromResult(newGroup);
+            return newGroup;
         }
 
         /// <inheritdoc/>
@@ -68,7 +71,9 @@ namespace ProjetoTccBackend.Services
 
             if (loggedUser.GroupId != group.Id)
             {
-                throw new UnauthorizedAccessException("Usuário não pode mudar o nome do grupo requisitado");
+                throw new UnauthorizedAccessException(
+                    "Usuário não pode mudar o nome do grupo requisitado"
+                );
             }
 
             group.Name = groupRequest.Name;
@@ -95,7 +100,11 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc/>
-        public async Task<PagedResult<GroupResponse>> GetGroupsAsync(int page, int pageSize, string? search)
+        public async Task<PagedResult<GroupResponse>> GetGroupsAsync(
+            int page,
+            int pageSize,
+            string? search
+        )
         {
             var query = this._groupRepository.GetAll().AsQueryable();
             if (!string.IsNullOrWhiteSpace(search))
@@ -112,38 +121,51 @@ namespace ProjetoTccBackend.Services
 
             foreach (var item in items)
             {
-                List<GenericUserInfoResponse> userInfoResponses = new List<GenericUserInfoResponse>();
+                List<GenericUserInfoResponse> userInfoResponses =
+                    new List<GenericUserInfoResponse>();
 
-                foreach(var user in item.Users)
+                foreach (var user in item.Users)
                 {
-                    userInfoResponses.Add(new GenericUserInfoResponse()
-                    {
-                        Id = user.Id,
-                        Name = user.UserName!,
-                        Email = user.Email!,
-                        JoinYear = (int)user.JoinYear!,
-                    });
+                    userInfoResponses.Add(
+                        new GenericUserInfoResponse()
+                        {
+                            Id = user.Id,
+                            Name = user.UserName!,
+                            Email = user.Email!,
+                            JoinYear = (int)user.JoinYear!,
+                        }
+                    );
                 }
 
-                groupResponses.Add(new GroupResponse()
-                {
-                    Id = item.Id,
-                    Name = item.Name,
-                    Users = userInfoResponses
-                });
+                groupResponses.Add(
+                    new GroupResponse()
+                    {
+                        Id = item.Id,
+                        Name = item.Name,
+                        LeaderId = item.LeaderId,
+                        Users = userInfoResponses,
+                    }
+                );
             }
 
-            return await Task.FromResult(new PagedResult<GroupResponse>
-            {
-                Items = groupResponses,
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize
-            });
+            return await Task.FromResult(
+                new PagedResult<GroupResponse>
+                {
+                    Items = groupResponses,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize,
+                }
+            );
         }
 
         /// <inheritdoc/>
-        public async Task<Group?> UpdateGroupAsync(int groupId, UpdateGroupRequest request, string userId, IList<string> userRoles)
+        public async Task<Group?> UpdateGroupAsync(
+            int groupId,
+            UpdateGroupRequest request,
+            string userId,
+            IList<string> userRoles
+        )
         {
             var group = this._groupRepository.GetById(groupId);
             if (group == null)
@@ -157,7 +179,10 @@ namespace ProjetoTccBackend.Services
             group.Name = request.Name;
             // Atualiza os usuários do grupo
             var currentUsers = group.Users.ToList();
-            var newUsers = this._userRepository.GetAll().Where(u => request.UserIds.Contains(u.Id)).ToList();
+            var newUsers = this
+                ._userRepository.GetAll()
+                .Where(u => request.UserIds.Contains(u.Id))
+                .ToList();
             // Remove usuários que não estão mais
             foreach (var user in currentUsers)
             {

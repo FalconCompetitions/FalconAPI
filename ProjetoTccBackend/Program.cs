@@ -18,6 +18,7 @@ using ProjetoTccBackend.Services;
 using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Swagger.Extensions;
 using ProjetoTccBackend.Swagger.Filters;
+using ProjetoTccBackend.Workers;
 
 namespace ProjetoTccBackend
 {
@@ -90,6 +91,8 @@ namespace ProjetoTccBackend
                 .AddEntityFrameworkStores<TccDbContext>()
                 .AddDefaultTokenProviders();
 
+            builder.Services.AddMemoryCache();
+
             // Repositories
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             builder.Services.AddScoped<IGroupRepository, GroupRepository>();
@@ -123,6 +126,7 @@ namespace ProjetoTccBackend
             );
 
             // Services
+            builder.Services.AddSingleton<ICompetitionStateService, CompetitionStateService>();
             builder.Services.AddScoped<IJudgeService, JudgeService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
@@ -135,6 +139,8 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<IQuestionService, QuestionService>();
 
             builder.Services.AddSignalR();
+
+            builder.Services.AddHostedService<CompetitionStateWorker>();
 
             builder
                 .Services.AddControllers(options =>

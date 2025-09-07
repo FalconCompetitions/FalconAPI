@@ -16,6 +16,7 @@ namespace ProjetoTccBackend.Swagger.Examples
                 {
                     Id = 1,
                     Name = "Grupo Exemplo",
+                    LeaderId = "GUID",
                     Users = new List<GenericUserInfoResponse>
                     {
                         new GenericUserInfoResponse

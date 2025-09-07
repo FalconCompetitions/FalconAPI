@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ProjetoTccBackend.Enums.Competition;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProjetoTccBackend.Models
 {
@@ -12,6 +13,28 @@ namespace ProjetoTccBackend.Models
         /// </summary>
         [Key]
         public int Id { get; set; }
+
+
+        /// <summary>
+        /// Gets or sets the date and time when inscriptions start.
+        /// </summary>
+        [Required]
+        public DateTime StartInscriptions { get; set; }
+
+        /// <summary>
+        /// Gets or sets the date and time when inscriptions end.
+        /// </summary>
+        [Required]
+        public DateTime EndInscriptions { get; set; }
+
+
+        /// <summary>
+        /// Gets or sets the current status of the competition.
+        /// </summary>
+        /// <remarks>This property is required and must be set to a valid <see cref="CompetitionStatus"/>
+        /// value.</remarks>
+        [Required]
+        public CompetitionStatus Status { get; set; } = CompetitionStatus.Pending;
 
         /// <summary>
         /// The start date and time of the competition.
@@ -83,6 +106,21 @@ namespace ProjetoTccBackend.Models
         /// </summary>
         public ICollection<CompetitionRanking> CompetitionRankings { get; set; } = [];
 
+        /// <summary>
+        /// Gets the collection of logs associated with the current instance.
+        /// </summary>
         public ICollection<Log> Logs { get; } = [];
+
+
+        /// <summary>
+        /// Updates the status of the competition to the specified value.
+        /// </summary>
+        /// <remarks>Use this method to change the current state of the competition. Ensure that the
+        /// provided <paramref name="status"/> is a valid <see cref="CompetitionStatus"/> value.</remarks>
+        /// <param name="status">The new status to assign to the competition.</param>
+        public void ChangeCompetitionStatus(CompetitionStatus status)
+        {
+            this.Status = status;
+        }
     }
 }

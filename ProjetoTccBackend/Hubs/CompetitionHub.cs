@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Caching.Memory;
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Database.Requests.Log;
@@ -19,7 +20,9 @@ namespace ProjetoTccBackend.Hubs
         private readonly ILogService _logService;
         private readonly IUserService _userService;
         private readonly IHttpContextAccessor _httpContextAcessor;
+        private readonly IMemoryCache _memoryCache;
         private readonly Logger<CompetitionHub> _logger;
+        private const string CompetitionCacheKey = "currentCompetition";
 
         public CompetitionHub(
             IGroupAttemptService groupAttemptService,
@@ -27,6 +30,7 @@ namespace ProjetoTccBackend.Hubs
             IUserService userService,
             ILogService logService,
             IHttpContextAccessor httpContextAcessor,
+            IMemoryCache memoryCache,
             Logger<CompetitionHub> logger
         )
         {
@@ -35,7 +39,35 @@ namespace ProjetoTccBackend.Hubs
             this._userService = userService;
             this._logService = logService;
             this._httpContextAcessor = httpContextAcessor;
+            this._memoryCache = memoryCache;
             this._logger = logger;
+        }
+
+        /// <summary>
+        /// Asynchronously retrieves the current competition, either from the cache or by querying the competition
+        /// service.
+        /// </summary>
+        /// <remarks>If the competition is retrieved from the service, it is cached with an expiration
+        /// time based on the competition's end time.</remarks>
+        /// <returns>The current <see cref="Competition"/> if one is available; otherwise, <see langword="null"/>.</returns>
+        private async Task<Competition?> FetchCurrentCompetitionAsync()
+        {
+            if (_memoryCache.TryGetValue(CompetitionCacheKey, out Competition? competition))
+            {
+                return competition;
+            }
+
+            competition = await this._competitionService.GetCurrentCompetition();
+
+            if(competition is not null)
+            {
+                var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(competition.EndTime);
+                
+                this._memoryCache.Set(CompetitionCacheKey, competition, cacheEntryOptions);
+            }
+
+            return competition;
         }
 
         private HttpContext GetHubHttpContext()
@@ -64,6 +96,14 @@ namespace ProjetoTccBackend.Hubs
 
         public override async Task OnConnectedAsync()
         {
+            var currentCompetition = await this.FetchCurrentCompetitionAsync();
+
+            if(currentCompetition is null)
+            {
+                await this.Clients.Caller.SendAsync("OnConnectionResponse", null);
+                return;
+            }
+
             ClaimsPrincipal user = this.GetHubContextUser();
 
             if (user.IsInRole("Admin"))
@@ -76,7 +116,6 @@ namespace ProjetoTccBackend.Hubs
             }
             else if (user.IsInRole("Student"))
             {
-                var currentCompetition = await this._competitionService.GetCurrentCompetition();
                 var loggedUser = this._userService.GetHttpContextLoggedUser();
 
                 await this.Groups.AddToGroupAsync(Context.ConnectionId, "Students");
@@ -103,15 +142,15 @@ namespace ProjetoTccBackend.Hubs
             await base.OnConnectedAsync();
         }
 
-        public override Task OnDisconnectedAsync(Exception? exception)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
+            var currentCompetition = await this.FetchCurrentCompetitionAsync();
+
             ClaimsPrincipal user = this.GetHubContextUser();
             User loggedUser = this._userService.GetHttpContextLoggedUser();
             HttpContext httpContext = this.GetHubHttpContext();
 
-            var currentCompetition = this._competitionService.GetCurrentCompetition();
-
-            this._logService.CreateLogAsync(
+            await this._logService.CreateLogAsync(
                 new CreateLogRequest()
                 {
                     UserId = loggedUser.Id,
@@ -122,7 +161,7 @@ namespace ProjetoTccBackend.Hubs
                 }
             );
 
-            return base.OnDisconnectedAsync(exception);
+            await base.OnDisconnectedAsync(exception);
         }
 
         public async Task Ping()
@@ -134,11 +173,12 @@ namespace ProjetoTccBackend.Hubs
         public async Task SendExerciseAttempt(GroupExerciseAttemptRequest request)
         {
             Competition? currentCompetition =
-                await this._competitionService.GetCurrentCompetition();
+                await this.FetchCurrentCompetitionAsync();
 
             if (currentCompetition is null)
             {
-                throw new Exception("Nenhuma competição em andamento");
+                await Clients.Caller.SendAsync("ReceiveExerciseAttemptResponse", null);
+                return;
             }
 
             ExerciseSubmissionResponse exerciseAttempt =
@@ -152,6 +192,14 @@ namespace ProjetoTccBackend.Hubs
         [Authorize(Roles = "Student")]
         public async Task SendCompetitionQuestion(CreateGroupQuestionRequest request)
         {
+            var competition = await this.FetchCurrentCompetitionAsync();
+
+            if (competition is null)
+            {
+                await this.Clients.Caller.SendAsync("ReceiveQuestionCreationResponse", null);
+                return;
+            }
+
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
             if (loggedUser.GroupId is null)
@@ -172,6 +220,14 @@ namespace ProjetoTccBackend.Hubs
         [Authorize(Roles = "Admin,Teacher")]
         public async Task AnswerQuestion(AnswerGroupQuestionRequest request)
         {
+            var competition = await this.FetchCurrentCompetitionAsync();
+
+            if(competition is null)
+            {
+                await this.Clients.Caller.SendAsync("ReceiveQuestionAnswerResponse", null);
+                return;
+            }
+
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
             Question answer = await this._competitionService.AnswerGroupQuestion(
@@ -184,6 +240,7 @@ namespace ProjetoTccBackend.Hubs
             await Clients.Group("Admins").SendAsync("ReceiveQuestionAnswer", answer);
         }
 
+        [Authorize(Roles = "Admin,Teacher")]
         public async Task RevokeJudgeSubmissionResponse(RevokeGroupSubmissionRequest request)
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
