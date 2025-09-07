@@ -59,11 +59,12 @@ namespace ProjetoTccBackend.Hubs
 
             competition = await this._competitionService.GetCurrentCompetition();
 
-            if(competition is not null)
+            if (competition is not null)
             {
-                var cacheEntryOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(competition.EndTime);
-                
+                var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(
+                    competition.EndTime
+                );
+
                 this._memoryCache.Set(CompetitionCacheKey, competition, cacheEntryOptions);
             }
 
@@ -98,13 +99,17 @@ namespace ProjetoTccBackend.Hubs
         {
             var currentCompetition = await this.FetchCurrentCompetitionAsync();
 
-            if(currentCompetition is null)
+            if (currentCompetition is null)
             {
                 await this.Clients.Caller.SendAsync("OnConnectionResponse", null);
                 return;
             }
 
+            HttpContext currentHttpContext = this.GetHubHttpContext();
+
             ClaimsPrincipal user = this.GetHubContextUser();
+            var loggedUser = this._userService.GetHttpContextLoggedUser();
+            bool isInvalid = false;
 
             if (user.IsInRole("Admin"))
             {
@@ -116,13 +121,17 @@ namespace ProjetoTccBackend.Hubs
             }
             else if (user.IsInRole("Student"))
             {
-                var loggedUser = this._userService.GetHttpContextLoggedUser();
-
                 await this.Groups.AddToGroupAsync(Context.ConnectionId, "Students");
                 await this.Groups.AddToGroupAsync(Context.ConnectionId, loggedUser.Id);
+            }
+            else
+            {
+                isInvalid = true;
+                this._logger.LogCritical("Usuário não possui nenhuma role válida");
+            }
 
-                HttpContext currentHttpContext = this.GetHubHttpContext();
-
+            if (isInvalid == false)
+            {
                 await this._logService.CreateLogAsync(
                     new CreateLogRequest()
                     {
@@ -134,9 +143,11 @@ namespace ProjetoTccBackend.Hubs
                     }
                 );
             }
-            else
+
+            if(isInvalid == true)
             {
-                this._logger.LogCritical("Usuário não possui nenhuma role válida");
+                this.Context.Abort();
+                return;
             }
 
             await base.OnConnectedAsync();
@@ -172,8 +183,7 @@ namespace ProjetoTccBackend.Hubs
         [Authorize(Roles = "Student")]
         public async Task SendExerciseAttempt(GroupExerciseAttemptRequest request)
         {
-            Competition? currentCompetition =
-                await this.FetchCurrentCompetitionAsync();
+            Competition? currentCompetition = await this.FetchCurrentCompetitionAsync();
 
             if (currentCompetition is null)
             {
@@ -222,7 +232,7 @@ namespace ProjetoTccBackend.Hubs
         {
             var competition = await this.FetchCurrentCompetitionAsync();
 
-            if(competition is null)
+            if (competition is null)
             {
                 await this.Clients.Caller.SendAsync("ReceiveQuestionAnswerResponse", null);
                 return;
@@ -230,7 +240,7 @@ namespace ProjetoTccBackend.Hubs
 
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
-            Question answer = await this._competitionService.AnswerGroupQuestion(
+            Answer answer = await this._competitionService.AnswerGroupQuestion(
                 loggedUser,
                 request
             );

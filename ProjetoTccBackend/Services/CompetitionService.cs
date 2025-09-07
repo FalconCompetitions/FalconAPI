@@ -12,18 +12,21 @@ namespace ProjetoTccBackend.Services
     {
         private readonly ICompetitionRepository _competitionRepository;
         private readonly IQuestionRepository _questionRepository;
+        private readonly IAnswerRepository _answerRepository;
         private readonly ICompetitionStateService _competitionStateService;
         private readonly TccDbContext _dbContext;
 
         public CompetitionService(
             ICompetitionRepository competitionRepository,
             IQuestionRepository questionRepository,
+            IAnswerRepository answerRepository,
             ICompetitionStateService competitionStateService,
             TccDbContext dbContext
         )
         {
             this._competitionRepository = competitionRepository;
             this._questionRepository = questionRepository;
+            this._answerRepository = answerRepository;
             this._competitionStateService = competitionStateService;
             this._dbContext = dbContext;
         }
@@ -108,7 +111,7 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public async Task<Question> AnswerGroupQuestion(
+        public async Task<Answer> AnswerGroupQuestion(
             User loggedUser,
             AnswerGroupQuestionRequest request
         )
@@ -117,18 +120,19 @@ namespace ProjetoTccBackend.Services
 
             if (questionToAnswer is null)
             {
-                throw new Exception("Questão nao encontrada");
+                throw new Exception("Questão não encontrada");
             }
 
-            Question answer = new Question()
+            Answer answer = new Answer()
             {
-                CompetitionId = questionToAnswer.CompetitionId,
                 UserId = loggedUser.Id,
-                TargetQuestionId = request.QuestionId,
                 Content = request.Answer,
             };
 
-            this._questionRepository.Add(answer);
+            this._answerRepository.Add(answer);
+            questionToAnswer.AnswerId = answer.Id;
+
+            this._questionRepository.Update(questionToAnswer);
 
             await this._dbContext.SaveChangesAsync();
 

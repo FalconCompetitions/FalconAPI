@@ -24,15 +24,8 @@ namespace ProjetoTccBackend.Models
         /// </summary>
         public Competition Competition { get; }
 
-        /// <summary>  
-        /// Target question identifier, if any.  
-        /// </summary>  
-        public int? TargetQuestionId { get; set; } = null;
-
-        /// <summary>  
-        /// Reference to the target question, if any.  
-        /// </summary>  
-        public Question? TargetQuestion { get; set; } = null;
+        public int? AnswerId { get; set; }
+        public Answer? Answer { get; set; }
 
         /// <summary>  
         /// Identifier of the exercise associated with the question, if any.  

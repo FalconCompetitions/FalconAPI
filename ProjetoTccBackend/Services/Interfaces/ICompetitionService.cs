@@ -45,9 +45,9 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <param name="loggedUser">The user who is answering the question.</param>
         /// <param name="request">The request containing details of the answer to be submitted.</param>
-        /// <returns>The <see cref="Question"/> object representing the answer to the question.</returns>
+        /// <returns>The <see cref="Answer"/> object representing the answer to the question.</returns>
         /// <remarks>Only Admin and Teacher users have access to this method.</remarks>
-        Task<Question> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request);
+        Task<Answer> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request);
 
 
         /// <summary>

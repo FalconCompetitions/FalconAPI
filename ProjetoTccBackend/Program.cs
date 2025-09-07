@@ -107,6 +107,7 @@ namespace ProjetoTccBackend
                 CompetitionRankingRepository
             >();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+            builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
             builder.Services.AddScoped<
                 IGroupExerciseAttemptRepository,
                 GroupExerciseAttemptRepository

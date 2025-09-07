@@ -16,6 +16,7 @@ namespace ProjetoTccBackend.Models
         public Group? Group { get; set; }
 
         public ICollection<Question> Questions { get; } = [];
+        public ICollection<Answer> Answers { get; } = [];
 
         public ICollection<Log> Logs = [];
     }
