@@ -9,6 +9,7 @@ using ProjetoTccBackend.Database.Responses.Exercise;
 using ProjetoTccBackend.Enums.Log;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
+using ProjetoTccBackend.Workers.Queues;
 
 namespace ProjetoTccBackend.Hubs
 {
@@ -21,6 +22,7 @@ namespace ProjetoTccBackend.Hubs
         private readonly IUserService _userService;
         private readonly IHttpContextAccessor _httpContextAcessor;
         private readonly IMemoryCache _memoryCache;
+        private readonly ExerciseSubmissionQueue _exerciseSubmissionQueue;
         private readonly Logger<CompetitionHub> _logger;
         private const string CompetitionCacheKey = "currentCompetition";
 
@@ -31,6 +33,7 @@ namespace ProjetoTccBackend.Hubs
             ILogService logService,
             IHttpContextAccessor httpContextAcessor,
             IMemoryCache memoryCache,
+            ExerciseSubmissionQueue exerciseSubmissionQueue,
             Logger<CompetitionHub> logger
         )
         {
@@ -40,6 +43,7 @@ namespace ProjetoTccBackend.Hubs
             this._logService = logService;
             this._httpContextAcessor = httpContextAcessor;
             this._memoryCache = memoryCache;
+            this._exerciseSubmissionQueue = exerciseSubmissionQueue;
             this._logger = logger;
         }
 
@@ -144,7 +148,7 @@ namespace ProjetoTccBackend.Hubs
                 );
             }
 
-            if(isInvalid == true)
+            if (isInvalid == true)
             {
                 this.Context.Abort();
                 return;
@@ -180,6 +184,13 @@ namespace ProjetoTccBackend.Hubs
             await Clients.Caller.SendAsync("Pong", new { message = "Pong" });
         }
 
+        /// <summary>
+        /// Submits an exercise attempt for processing in the current competition.
+        /// </summary>
+        /// <remarks>This method enqueues the exercise attempt for asynchronous processing. If there is no
+        /// active competition,  a null response is sent back to the caller.</remarks>
+        /// <param name="request">The exercise attempt details, including the group and exercise data.</param>
+        /// <returns></returns>
         [Authorize(Roles = "Student")]
         public async Task SendExerciseAttempt(GroupExerciseAttemptRequest request)
         {
@@ -191,12 +202,9 @@ namespace ProjetoTccBackend.Hubs
                 return;
             }
 
-            ExerciseSubmissionResponse exerciseAttempt =
-                await this._groupAttemptService.SubmitExerciseAttempt(currentCompetition, request);
+            var queueItem = new ExerciseSubmissionQueueItem(request, this.Context.ConnectionId);
 
-            await Clients.Caller.SendAsync("ReceiveExerciseAttemptResponse", exerciseAttempt);
-            await Clients.Group("Teachers").SendAsync("ReceiveExerciseAttempt", exerciseAttempt);
-            await Clients.Group("Admins").SendAsync("ReceiveExerciseAttempt", exerciseAttempt);
+            await _exerciseSubmissionQueue.EnqueueAsync(queueItem);
         }
 
         [Authorize(Roles = "Student")]
@@ -240,10 +248,7 @@ namespace ProjetoTccBackend.Hubs
 
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
-            Answer answer = await this._competitionService.AnswerGroupQuestion(
-                loggedUser,
-                request
-            );
+            Answer answer = await this._competitionService.AnswerGroupQuestion(loggedUser, request);
 
             await Clients.Caller.SendAsync("ReceiveQuestionAnswerResponse", answer);
             await Clients.Group("Teachers").SendAsync("ReceiveQuestionAnswer", answer);
@@ -251,9 +256,17 @@ namespace ProjetoTccBackend.Hubs
         }
 
         [Authorize(Roles = "Admin,Teacher")]
-        public async Task RevokeJudgeSubmissionResponse(RevokeGroupSubmissionRequest request)
+        public async Task ChangeJudgeSubmissionResponse(RevokeGroupSubmissionRequest request)
         {
-            User loggedUser = this._userService.GetHttpContextLoggedUser();
+            bool succeeded = await this._groupAttemptService.ChangeGroupExerciseAttempt(request.SubmissionId, request.NewJudgeResponse);
+
+            await this.Clients.Caller.SendAsync("ReceiveChangeJudgeSubmissionResponse", succeeded);
+        }
+
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task BlockGroupSubmission()
+        {
+
         }
     }
 }

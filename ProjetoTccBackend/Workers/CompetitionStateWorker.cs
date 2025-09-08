@@ -56,30 +56,6 @@ namespace ProjetoTccBackend.Workers
             }
         }
 
-        private async Task<Competition?> FetchCurrentCompetitionAsync(IServiceScope serviceScope)
-        {
-            if (_memoryCache.TryGetValue(CompetitionCacheKey, out Competition? competition))
-            {
-                return competition;
-            }
-
-            ICompetitionService competitionService =
-                serviceScope.ServiceProvider.GetRequiredService<ICompetitionService>();
-
-            competition = await competitionService.GetCurrentCompetition();
-
-            if (competition is not null)
-            {
-                var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(
-                    competition.EndTime
-                );
-
-                this._memoryCache.Set(CompetitionCacheKey, competition, cacheEntryOptions);
-            }
-
-            return competition;
-        }
-
         /// <summary>
         /// Executes the background worker process that monitors and manages competition states.
         /// </summary>

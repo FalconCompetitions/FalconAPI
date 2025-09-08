@@ -19,6 +19,7 @@ using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Swagger.Extensions;
 using ProjetoTccBackend.Swagger.Filters;
 using ProjetoTccBackend.Workers;
+using ProjetoTccBackend.Workers.Queues;
 
 namespace ProjetoTccBackend
 {
@@ -139,9 +140,13 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<IGroupAttemptService, GroupAttemptService>();
             builder.Services.AddScoped<IQuestionService, QuestionService>();
 
+            // Queues
+            builder.Services.AddSingleton<ExerciseSubmissionQueue>();
+
             builder.Services.AddSignalR();
 
             builder.Services.AddHostedService<CompetitionStateWorker>();
+            builder.Services.AddHostedService<ExerciseSubmissionWorker>();
 
             builder
                 .Services.AddControllers(options =>
@@ -284,7 +289,7 @@ namespace ProjetoTccBackend
             //app.UseCors("FrontendAppPolicy");
             app.UseCors(builder =>
                 builder
-                    .WithOrigins("http://localhost:3000") // ou seu frontend
+                    .WithOrigins("http://localhost:3000")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials()
