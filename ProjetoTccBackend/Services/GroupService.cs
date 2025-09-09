@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
@@ -160,7 +161,7 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc/>
-        public async Task<Group?> UpdateGroupAsync(
+        public async Task<GroupResponse?> UpdateGroupAsync(
             int groupId,
             UpdateGroupRequest request,
             string userId,
@@ -178,11 +179,14 @@ namespace ProjetoTccBackend.Services
                 return null;
             group.Name = request.Name;
             // Atualiza os usuários do grupo
-            var currentUsers = group.Users.ToList();
+            List<User> currentUsers = group.Users.ToList();
             var newUsers = this
                 ._userRepository.GetAll()
                 .Where(u => request.UserIds.Contains(u.Id))
                 .ToList();
+
+            var users = currentUsers.ToList();
+
             // Remove usuários que não estão mais
             foreach (var user in currentUsers)
             {
@@ -190,6 +194,9 @@ namespace ProjetoTccBackend.Services
                 {
                     user.GroupId = null;
                     this._userRepository.Update(user);
+
+                    int indexToRemove = users.IndexOf(user);
+                    users.RemoveAt(indexToRemove);
                 }
             }
             // Adiciona novos usuários
@@ -199,11 +206,27 @@ namespace ProjetoTccBackend.Services
                 {
                     user.GroupId = group.Id;
                     this._userRepository.Update(user);
+                    users.Add(user);
                 }
             }
             this._groupRepository.Update(group);
             this._dbContext.SaveChanges();
-            return group;
+
+            GroupResponse response = new GroupResponse()
+            {
+                Id = group.Id,
+                LeaderId = group.LeaderId,
+                Name = group.Name,
+                Users = users.Select(user => new GenericUserInfoResponse()
+                {
+                    Id = user.Id,
+                    Email = user.Email!,
+                    JoinYear = (int)user.JoinYear!,
+                    Name = user.Name
+                }).ToList(),
+            };
+
+            return response;
         }
     }
 }

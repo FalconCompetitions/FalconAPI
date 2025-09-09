@@ -20,10 +20,10 @@ namespace ProjetoTccBackend.Workers
     public class ExerciseSubmissionWorker : BackgroundService
     {
         private readonly ExerciseSubmissionQueue _queue;
-        private readonly IGroupAttemptService _groupAttemptService;
         private readonly IHubContext<CompetitionHub> _hubContext;
         private readonly IServiceProvider _serviceProvider;
         private readonly IMemoryCache _memoryCache;
+        private readonly ILogger<ExerciseSubmissionWorker> _logger;
 
         private const string CompetitionCacheKey = "currentCompetition";
 
@@ -31,23 +31,23 @@ namespace ProjetoTccBackend.Workers
         /// Initializes a new instance of the <see cref="ExerciseSubmissionWorker"/> class.
         /// </summary>
         /// <param name="queue">The queue used to manage exercise submissions for processing.</param>
-        /// <param name="groupAttemptService">The service used to handle group attempt operations.</param>
         /// <param name="hubContext">The SignalR hub context for broadcasting updates to connected clients.</param>
         /// <param name="serviceProvider">The service provider used to resolve dependencies during processing.</param>
         /// <param name="memoryCache">The memory cache used for storing temporary data during processing.</param>
+        /// <param name="logger">The logger used to record information, warnings, and errors during the processing of exercise submissions.</param>
         public ExerciseSubmissionWorker(
             ExerciseSubmissionQueue queue,
-            IGroupAttemptService groupAttemptService,
             IHubContext<CompetitionHub> hubContext,
             IServiceProvider serviceProvider,
-            IMemoryCache memoryCache
+            IMemoryCache memoryCache,
+            ILogger<ExerciseSubmissionWorker> logger
         )
         {
             this._queue = queue;
-            this._groupAttemptService = groupAttemptService;
             this._hubContext = hubContext;
             this._serviceProvider = serviceProvider;
             this._memoryCache = memoryCache;
+            this._logger = logger;
         }
 
         /// <summary>
@@ -83,25 +83,53 @@ namespace ProjetoTccBackend.Workers
         }
 
         /// <summary>
-        /// Executes the background task, processing items from the queue until cancellation is requested.
+        /// Starts parallel processing of items from the exercise submission queue.
         /// </summary>
-        /// <remarks>This method continuously dequeues items from the queue and processes them within a
-        /// scoped service provider context. It runs until the provided <paramref name="cancellationToken"/> is
-        /// triggered, at which point the method exits gracefully.</remarks>
-        /// <param name="cancellationToken">A token that signals the request to cancel the operation. The method will stop processing when the token is
-        /// triggered.</param>
-        /// <returns></returns>
+        /// <remarks>
+        /// This method dynamically determines the number of worker tasks to create, based on the greater value between the number of processor cores and the current queue size.
+        /// Each worker continuously reads items from the <see cref="ExerciseSubmissionQueue"/> and processes exercise submission attempts within isolated service scopes.
+        /// Processing continues until the <paramref name="cancellationToken"/> is signaled.
+        /// If a null item is returned from the queue, a critical log entry is recorded and that cycle is skipped.
+        /// At the end, the method awaits the completion of all processing tasks.
+        /// </remarks>
+        /// <param name="cancellationToken">Cancellation token that interrupts the processing of workers.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous execution of the background service.</returns>
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var queueItem = await this._queue.DequeueAsync(cancellationToken);
+            int queueSize = this._queue.GetQueueSize();
+            int workerCount = Environment.ProcessorCount;
+            workerCount = (workerCount < queueSize) ? queueSize : workerCount;
 
-                using (var scope = this._serviceProvider.CreateScope())
-                {
-                    await this.ProcessExerciseAttempt(scope, queueItem);
-                }
+            List<Task> tasks = new List<Task>();
+
+            for (int i = 0; i < workerCount; i++)
+            {
+                tasks.Add(
+                    Task.Run(
+                        async () =>
+                        {
+                            while (!cancellationToken.IsCancellationRequested)
+                            {
+                                var queueItem = await this._queue.DequeueAsync(cancellationToken);
+
+                                if(queueItem is null)
+                                {
+                                    this._logger.LogCritical($"null item received from queue submission.");
+                                    continue;
+                                }
+
+                                using (var scope = this._serviceProvider.CreateScope())
+                                {
+                                    await this.ProcessExerciseAttempt(scope, queueItem);
+                                }
+                            }
+                        },
+                        cancellationToken
+                    )
+                );
             }
+
+            await Task.WhenAll(tasks);
         }
 
         /// <summary>
@@ -120,12 +148,13 @@ namespace ProjetoTccBackend.Workers
         )
         {
             var currentCompetition = await this.FetchCurrentCompetitionAsync(serviceScope);
+            var groupAttemptService =
+                serviceScope.ServiceProvider.GetRequiredService<IGroupAttemptService>();
 
-            ExerciseSubmissionResponse response =
-                await this._groupAttemptService.SubmitExerciseAttempt(
-                    currentCompetition,
-                    queueItem.Request
-                );
+            ExerciseSubmissionResponse response = await groupAttemptService.SubmitExerciseAttempt(
+                currentCompetition,
+                queueItem.Request
+            );
 
             await this
                 ._hubContext.Clients.Group("Admins")

@@ -39,5 +39,15 @@ namespace ProjetoTccBackend.Workers.Queues
         {
             return await this._queue.Reader.ReadAsync(cancellationToken);
         }
+
+
+        /// <summary>
+        /// Gets the current number of items in the queue.
+        /// </summary>
+        /// <returns>The total number of items currently available in the queue.</returns>
+        public int GetQueueSize()
+        {
+            return this._queue.Reader.Count;
+        }
     }
 }

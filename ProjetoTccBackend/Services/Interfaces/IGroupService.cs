@@ -70,6 +70,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="userId">The id of the user making the request.</param>
         /// <param name="userRoles">The roles of the user making the request.</param>
         /// <returns>The updated group, or null if not found or not allowed.</returns>
-        Task<Group?> UpdateGroupAsync(int groupId, UpdateGroupRequest request, string userId, IList<string> userRoles);
+        Task<GroupResponse?> UpdateGroupAsync(int groupId, UpdateGroupRequest request, string userId, IList<string> userRoles);
     }
 }
