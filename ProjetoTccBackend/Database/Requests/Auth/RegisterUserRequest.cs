@@ -14,7 +14,6 @@ namespace ProjetoTccBackend.Database.Requests.Auth
         /// </summary>
         [Required]
         [MaxLength(6, ErrorMessage = "RA inválido!")]
-        [MinLength(7, ErrorMessage = "RA inválido!")]
         [JsonPropertyName("ra")]
         public string RA { get; set; }
 
