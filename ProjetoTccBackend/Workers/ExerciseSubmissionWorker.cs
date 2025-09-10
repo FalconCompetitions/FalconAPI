@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
 using ProjetoTccBackend.Database.Responses.Exercise;
-using ProjetoTccBackend.Database.Responses.Judge;
 using ProjetoTccBackend.Hubs;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Workers.Queues;
+
 
 namespace ProjetoTccBackend.Workers
 {

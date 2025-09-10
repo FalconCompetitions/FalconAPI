@@ -1,6 +1,8 @@
 ﻿using ProjetoTccBackend.Database.Requests.Competition;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ProjetoTccBackend.Workers.Queues
+namespace ProjetoTccBackend.Models
 {
     /// <summary>
     /// Represents an item in the exercise submission queue, containing the request details for a group exercise attempt
@@ -11,6 +13,13 @@ namespace ProjetoTccBackend.Workers.Queues
     /// queued for processing.</remarks>
     public class ExerciseSubmissionQueueItem
     {
+        /// <summary>
+        /// Gets or sets the unique identifier for the entity.
+        /// </summary>
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid Id { get; set; }
+
         /// <summary>
         /// Gets or sets the request details for a group exercise attempt.
         /// </summary>
@@ -32,6 +41,19 @@ namespace ProjetoTccBackend.Workers.Queues
         {
             this.Request = groupExerciseAttemptRequest;
             this.ConnectionId = connectionId;
+        }
+
+
+        public ExerciseSubmissionQueueItem(Guid id, GroupExerciseAttemptRequest groupExerciseAttemptRequest, string connectionId)
+        {
+            this.Id = id;
+            this.Request = groupExerciseAttemptRequest;
+            this.ConnectionId = connectionId;
+        }
+
+        public ExerciseSubmissionQueueItem()
+        {
+            
         }
     }
 }

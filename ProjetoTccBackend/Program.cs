@@ -113,6 +113,10 @@ namespace ProjetoTccBackend
                 IGroupExerciseAttemptRepository,
                 GroupExerciseAttemptRepository
             >();
+            builder.Services.AddScoped<
+                IExerciseSubmissionQueueItemRepository,
+                ExerciseSubmissionQueueItemRepository
+            >();
 
             builder.Services.AddHttpContextAccessor();
 
@@ -140,12 +144,10 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<IGroupAttemptService, GroupAttemptService>();
             builder.Services.AddScoped<IQuestionService, QuestionService>();
 
-
             // Queues
             builder.Services.AddSingleton<ExerciseSubmissionQueue>();
 
             builder.Services.AddSignalR();
-
 
             builder.Services.AddHostedService<CompetitionStateWorker>();
             builder.Services.AddHostedService<ExerciseSubmissionWorker>();
