@@ -154,6 +154,29 @@ namespace ProjetoTccBackend.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.Answer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Answers");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Competition", b =>
                 {
                     b.Property<int>("Id")
@@ -168,11 +191,20 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<TimeSpan>("Duration")
                         .HasColumnType("time(6)");
 
+                    b.Property<DateTime>("EndInscriptions")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("EndTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("StartInscriptions")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("StopRanking")
                         .HasColumnType("datetime(6)");
@@ -235,6 +267,9 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<TimeSpan>("EstimatedTime")
                         .HasColumnType("time(6)");
 
+                    b.Property<int>("ExerciseTypeId")
+                        .HasColumnType("int");
+
                     b.Property<string>("JudgeUuid")
                         .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
@@ -245,6 +280,8 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("varchar(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExerciseTypeId");
 
                     b.ToTable("Exercises");
                 });
@@ -323,6 +360,43 @@ namespace ProjetoTccBackend.Migrations
                     b.ToTable("ExerciseOutputs");
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseSubmissionQueueItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ConnectionId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Request")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExerciseSubmissionQueueItems");
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExerciseTypes");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Group", b =>
                 {
                     b.Property<int>("Id")
@@ -330,6 +404,10 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("LeaderId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -407,6 +485,45 @@ namespace ProjetoTccBackend.Migrations
                     b.ToTable("GroupsInCompetitions");
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.Log", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActionTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("ActionType")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CompetitionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompetitionId");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Logs");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Question", b =>
                 {
                     b.Property<int>("Id")
@@ -414,6 +531,10 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AnswerId")
+                        .IsRequired()
+                        .HasColumnType("int");
 
                     b.Property<int>("CompetitionId")
                         .HasColumnType("int");
@@ -428,20 +549,18 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<int>("QuestionType")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TargetQuestionId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AnswerId")
+                        .IsUnique();
+
                     b.HasIndex("CompetitionId");
 
                     b.HasIndex("ExerciseId");
-
-                    b.HasIndex("TargetQuestionId");
 
                     b.HasIndex("UserId");
 
@@ -479,6 +598,11 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
@@ -498,7 +622,8 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<string>("RA")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("longtext");
@@ -575,6 +700,17 @@ namespace ProjetoTccBackend.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.Answer", b =>
+                {
+                    b.HasOne("ProjetoTccBackend.Models.User", "User")
+                        .WithMany("Answers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.CompetitionRanking", b =>
                 {
                     b.HasOne("ProjetoTccBackend.Models.Competition", "Competition")
@@ -592,6 +728,17 @@ namespace ProjetoTccBackend.Migrations
                     b.Navigation("Competition");
 
                     b.Navigation("Group");
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.Exercise", b =>
+                {
+                    b.HasOne("ProjetoTccBackend.Models.ExerciseType", "ExerciseType")
+                        .WithMany("Exercises")
+                        .HasForeignKey("ExerciseTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ExerciseType");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseInCompetition", b =>
@@ -689,8 +836,38 @@ namespace ProjetoTccBackend.Migrations
                     b.Navigation("Group");
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.Log", b =>
+                {
+                    b.HasOne("ProjetoTccBackend.Models.Competition", "Competition")
+                        .WithMany("Logs")
+                        .HasForeignKey("CompetitionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ProjetoTccBackend.Models.Group", "Group")
+                        .WithMany("Logs")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ProjetoTccBackend.Models.User", "User")
+                        .WithMany("Logs")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Competition");
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Question", b =>
                 {
+                    b.HasOne("ProjetoTccBackend.Models.Answer", "Answer")
+                        .WithOne("Question")
+                        .HasForeignKey("ProjetoTccBackend.Models.Question", "AnswerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ProjetoTccBackend.Models.Competition", "Competition")
                         .WithMany("Questions")
                         .HasForeignKey("CompetitionId")
@@ -702,21 +879,17 @@ namespace ProjetoTccBackend.Migrations
                         .HasForeignKey("ExerciseId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("ProjetoTccBackend.Models.Question", "TargetQuestion")
-                        .WithMany()
-                        .HasForeignKey("TargetQuestionId");
-
                     b.HasOne("ProjetoTccBackend.Models.User", "User")
                         .WithMany("Questions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Answer");
+
                     b.Navigation("Competition");
 
                     b.Navigation("Exercise");
-
-                    b.Navigation("TargetQuestion");
 
                     b.Navigation("User");
                 });
@@ -731,6 +904,12 @@ namespace ProjetoTccBackend.Migrations
                     b.Navigation("Group");
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.Answer", b =>
+                {
+                    b.Navigation("Question")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Competition", b =>
                 {
                     b.Navigation("CompetitionRankings");
@@ -740,6 +919,8 @@ namespace ProjetoTccBackend.Migrations
                     b.Navigation("GroupExerciseAttempts");
 
                     b.Navigation("GroupInCompetitions");
+
+                    b.Navigation("Logs");
 
                     b.Navigation("Questions");
                 });
@@ -763,6 +944,11 @@ namespace ProjetoTccBackend.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseType", b =>
+                {
+                    b.Navigation("Exercises");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Group", b =>
                 {
                     b.Navigation("CompetitionRankings");
@@ -771,11 +957,17 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Navigation("GroupInCompetitions");
 
+                    b.Navigation("Logs");
+
                     b.Navigation("Users");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.User", b =>
                 {
+                    b.Navigation("Answers");
+
+                    b.Navigation("Logs");
+
                     b.Navigation("Questions");
                 });
 #pragma warning restore 612, 618

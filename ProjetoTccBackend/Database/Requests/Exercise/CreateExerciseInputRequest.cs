@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace ProjetoTccBackend.Database.Requests.Exercise
 {
-    public class ExerciseInputRequest
+    public class CreateExerciseInputRequest
     {
         [JsonPropertyName("exerciseId")]
         public int? ExerciseId { get; set; }

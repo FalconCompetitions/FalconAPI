@@ -56,17 +56,17 @@ namespace ProjetoTccBackend.Integration.Test
                 Title = "Teste",
                 Description = "Descrição",
                 EstimatedTime = TimeSpan.FromMinutes(20),
-                Inputs = new List<ExerciseInputRequest>()
+                Inputs = new List<CreateExerciseInputRequest>()
                 {
-                    new ExerciseInputRequest()
+                    new CreateExerciseInputRequest()
                     {
                         Input = "example",
                         OrderId = 1
                     }
                 },
-                Outputs = new List<ExerciseOutputRequest>()
+                Outputs = new List<CreateExerciseOutputRequest>()
                 {
-                    new ExerciseOutputRequest()
+                    new CreateExerciseOutputRequest()
                     {
                         Output = "example",
                         OrderId = 1
@@ -115,17 +115,17 @@ namespace ProjetoTccBackend.Integration.Test
                 Title = "Teste",
                 Description = "Descrição",
                 EstimatedTime = TimeSpan.FromMinutes(20),
-                Inputs = new List<ExerciseInputRequest>()
+                Inputs = new List<CreateExerciseInputRequest>()
                 {
-                    new ExerciseInputRequest()
+                    new CreateExerciseInputRequest()
                     {
                         Input = "",
                         OrderId = 1
                     }
                 },
-                Outputs = new List<ExerciseOutputRequest>()
+                Outputs = new List<CreateExerciseOutputRequest>()
                 {
-                    new ExerciseOutputRequest()
+                    new CreateExerciseOutputRequest()
                     {
                         Output = "",
                         OrderId = 1

@@ -14,5 +14,14 @@ namespace ProjetoTccBackend.Repositories.Interfaces
         /// <param name="competitionId">The unique identifier of the competition.</param>
         /// <returns>A collection of <see cref="Question"/> objects related to the competition.</returns>
         Task<ICollection<Question>> GetCompetitionQuestions(int competitionId);
+
+
+        /// <summary>
+        /// Asynchronously retrieves a collection of competitions that are currently open.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a collection of  <see
+        /// cref="Competition"/> objects representing the open competitions. If no competitions are open,  the
+        /// collection will be empty.</returns>
+        Task<ICollection<Competition>> GetOpenCompetitionsAsync();
     }
 }

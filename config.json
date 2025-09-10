@@ -1,0 +1,10 @@
+{
+  "instructions": [
+    "Ao ser exigido a criação de metodos no controller, siga os padrões do projeto atual e boas práticas",
+    "Ao ser exigido a criação de um service, siga os padrões do projeto e boas práticas",
+    "Sempre documente o código gerado de acordo com o padrão do projeto, em inglês e seguindo boas práticas",
+    "Quando for documentar uma classe, documente a mesma sem prolixidade",
+    "Gere sempre a documentação de qualquer coisa em inglês"
+  ],
+  "language":  "pt-BR"
+}

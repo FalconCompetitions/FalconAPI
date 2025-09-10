@@ -1,6 +1,7 @@
 ﻿using ProjetoTccBackend.Database.Requests.Exercise;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Exceptions;
+using ProjetoTccBackend.Database.Responses.Global;
 
 namespace ProjetoTccBackend.Services.Interfaces
 {
@@ -39,5 +40,34 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <returns>A list of users.</returns>
         Task<List<Exercise>> GetExercisesAsync();
+
+        /// <summary>
+        /// Retrieves a paginated list of exercises asynchronously, with an optional search term.
+        /// </summary>
+        /// <param name="page">The page number to retrieve (1-based index).</param>
+        /// <param name="pageSize">The number of exercises per page.</param>
+        /// <param name="search">An optional search term to filter exercises by name or description.</param>
+        /// <returns>
+        /// A Task that represents the asynchronous operation. The task result contains a <see cref="PagedResult{Exercise}"/> object
+        /// with the paginated list of exercises and additional pagination information.
+        /// </returns>
+        Task<PagedResult<Exercise>> GetExercisesAsync(int page, int pageSize, string? search = null);
+
+
+        /// <summary>
+        /// Updates an existing exercise and its inputs and outputs with the provided data.
+        /// </summary>
+        /// <param name="id">The ID of the exercise to update.</param>
+        /// <param name="request">The data to update the exercise with.</param>
+        /// <exception cref="ErrorException">Thrown when the exercise with the specified ID is not found.</exception>
+        Task UpdateExerciseAsync(int id, UpdateExerciseRequest request);
+
+
+        /// <summary>
+        /// Deletes an exercise by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the exercise to delete.</param>
+        /// <exception cref="ErrorException">Thrown when the exercise with the specified ID is not found.</exception>
+        Task DeleteExerciseAsync(int id);
     }
 }

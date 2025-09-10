@@ -6,6 +6,9 @@ using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Database.Requests.Auth;
 using ProjetoTccBackend.Database.Responses.Auth;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace ProjetoTccBackend.Controllers
 {
@@ -31,6 +34,28 @@ namespace ProjetoTccBackend.Controllers
             this._tokenService = tokenService;
             this._userService = userService;
             this._logger = logger;
+        }
+
+        /// <summary>
+        /// Sets the authentication cookie for the user.
+        /// </summary>
+        /// <param name="token">The authentication token to be set in the cookie.</param>
+        /// <remarks>
+        /// This function sets a secure cookie named "CompetitionAuthToken" with the provided token.
+        /// The cookie is set with HttpOnly, Secure, and SameSite flags to ensure its security.
+        /// </remarks>
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public void SetAuthCookie(string token)
+        {
+            CookieOptions cookieOptions = new CookieOptions()
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Path = "/",
+            };
+
+            this.Response.Cookies.Append("CompetitionAuthToken", token, cookieOptions);
         }
 
         /// <summary>
@@ -80,20 +105,27 @@ namespace ProjetoTccBackend.Controllers
         [ProducesResponseType(500)]
         public async Task<IActionResult> RegisterUser([FromBody] RegisterUserRequest request)
         {
-            var user = await this._userService.RegisterUserAsync(request);
+            var result = await this._userService.RegisterUserAsync(request);
 
-            string jwtToken = this._tokenService.GenerateUserToken(user);
+            this._logger.LogDebug("dasd");
+
+            User user = result.Item1;
+            string role = result.Item2;
+
+            string jwtToken = this._tokenService.GenerateUserToken(user, request.Role);
 
             UserResponse userResponse = new UserResponse()
             {
                 Id = user.Id,
                 Email = user.Email!,
                 EmailConfirmed = user.EmailConfirmed,
-                UserName = user.UserName!,
+                Name = user.UserName!,
                 JoinYear = user.JoinYear,
                 PhoneNumber = user.PhoneNumber,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed
             };
+
+            SetAuthCookie(jwtToken);
 
             return Ok(new
             {
@@ -145,20 +177,27 @@ namespace ProjetoTccBackend.Controllers
         [ProducesResponseType(500)]
         public async Task<IActionResult> LoginUser([FromBody] LoginUserRequest request)
         {
-            User user = await this._userService.LoginUserAsync(request);
+            Tuple<User, string> result = await this._userService.LoginUserAsync(request);
+
+            User user = result.Item1;
+            string role = result.Item2;
 
             UserResponse userResponse = new UserResponse()
             {
                 Id = user.Id,
+                RA = user.RA,
                 Email = user.Email!,
                 EmailConfirmed = user.EmailConfirmed,
-                UserName = user.UserName!,
+                Name = user.Name!,
                 JoinYear = user.JoinYear,
                 PhoneNumber = user.PhoneNumber,
-                PhoneNumberConfirmed = user.PhoneNumberConfirmed
+                PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+                Role = role,
             };
 
-            string jwtToken = this._tokenService.GenerateUserToken(user);
+            string jwtToken = this._tokenService.GenerateUserToken(user, role);
+
+            SetAuthCookie(jwtToken);
 
             return Ok(new
             {
@@ -166,5 +205,98 @@ namespace ProjetoTccBackend.Controllers
                 token = jwtToken
             });
         }
+
+
+        /// <summary>
+        /// Validates the authentication token of the current user.
+        /// </summary>
+        /// <returns>
+        /// Returns an <see cref="IActionResult"/> containing a boolean indicating whether the token is valid.
+        /// </returns>
+        /// <remarks>
+        /// Exemplo de uso:
+        /// <code>
+        ///     GET /api/auth/validate
+        /// </code>
+        /// </remarks>
+        /// <response code="200">Returns a valid token response.</response>
+        [HttpGet("validate")]
+        [Authorize]
+        [ProducesResponseType(200)]
+        public IActionResult ValidateToken()
+        {
+            string? token = this.Request.Cookies.FirstOrDefault(x => x.Key == "CompetitionAuthToken").Value;
+
+            if (token is null)
+            {
+                return Ok(new { valid = false });
+            }
+
+            return Ok(new { valid = true });
+        }
+
+
+        /// <summary>
+        /// Renews the authentication token for the currently logged in user.
+        /// </summary>
+        /// <returns>
+        /// Returns an IActionResult containing the renewed authentication token.
+        /// On success, returns a 200 OK response with the renewed token.
+        /// On failure, returns an Unauthorized response if the user is not found.
+        /// </returns>
+        /// <remarks>
+        /// This function is accessible only to authorized users.
+        /// </remarks>
+        /// <response code="200">Returns the renewed authentication token.</response>
+        /// <response code="401">If the user is not found.</response>
+        [HttpPost("renew")]
+        [Authorize]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        public async Task<IActionResult> RenewToken()
+        {
+            var loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            if (loggedUser is null)
+            {
+                return Unauthorized(new { valid = false, message = "User not found" });
+            }
+
+            var role = this.User.Claims.First(x => x.Subject.NameClaimType == ClaimTypes.Role)!.Value;
+
+            string jwtToken = this._tokenService.GenerateUserToken(loggedUser, role);
+
+            SetAuthCookie(jwtToken);
+
+            return Ok(new
+            {
+                valid = true,
+                token = jwtToken,
+            });
+        }
+
+
+        /// <summary>
+        /// Logs out the currently authenticated user.
+        /// </summary>
+        /// <remarks>
+        /// This method terminates the user's session by performing the necessary logout operations and deleting the authentication token cookie. The user must be authenticated to call this method.<br/>
+        /// Exemplo de uso:
+        /// <code>
+        ///     GET /api/auth/logout
+        /// </code>
+        /// </remarks>
+        /// <returns>A <see cref="NoContentResult"/> indicating that the logout operation was successful.</returns>
+        /// <response code="204">If the user is logged out successfully.</response>
+        [HttpGet("logout")]
+        [Authorize]
+        public async Task<IActionResult> LogoutUser()
+        {
+            await this._userService.LogoutAsync();
+
+            this.Response.Cookies.Delete("CompetitionAuthToken");
+            return NoContent();
+        }
+
     }
 }

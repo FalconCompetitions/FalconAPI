@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ProjetoTccBackend.Database.Requests.User;
 using ProjetoTccBackend.Database.Responses.Auth;
 using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Models;
@@ -12,14 +14,12 @@ namespace ProjetoTccBackend.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-
         private IUserService _userService;
 
         public UserController(IUserService userService)
         {
             this._userService = userService;
         }
-
 
         /// <summary>
         /// Retrieves user information based on the provided user ID.
@@ -43,7 +43,7 @@ namespace ProjetoTccBackend.Controllers
                 JoinYear = user.JoinYear,
                 PhoneNumber = user.PhoneNumber,
                 RA = user.RA,
-                UserName = user.UserName!,
+                Name = user.UserName!,
                 EmailConfirmed = user.EmailConfirmed,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed,
             };
@@ -51,27 +51,59 @@ namespace ProjetoTccBackend.Controllers
             return Ok(userResponse);
         }
 
-
-
         /// <summary>
-        /// Retrieves a list of all users in the system.
+        /// Retrieves a paginated list of users in the system.
         /// </summary>
+        /// <param name="page">The page number to retrieve.</param>
+        /// <param name="pageSize">The number of users per page.</param>
+        /// <param name="search">Optional. A search term to filter users by name or email.</param>
+        /// <param name="role">Optional. A role to filter users by.</param>
         /// <returns>
-        /// An <see cref="IActionResult"/> containing a list of <see cref="User"/> objects.
+        /// An <see cref="IActionResult"/> containing a paginated list of users.
         /// </returns>
         /// <remarks>
         /// Accessible to users with the roles "Admin" or "Teacher".
         /// </remarks>
-        /// <response code="200">Returns the list of users.</response>
+        /// <response code="200">Returns the paginated list of users.</response>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpGet()]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null,
+            [FromQuery] string? role = null
+        )
         {
-            List<User> users = await this._userService.GetAllUsers();
-
-            return Ok(users);
+            var result = await this._userService.GetUsersAsync(page, pageSize, search, role);
+            return Ok(result);
         }
 
-
+        /// <summary>
+        /// Updates the profile data of a user. Only accessible by Admin or the user themselves.
+        /// </summary>
+        /// <param name="userId">The ID of the user to update.</param>
+        /// <param name="request">The update request data.</param>
+        /// <returns>The updated user object, or NotFound if not found, or Forbid if not allowed.</returns>
+        [Authorize]
+        [HttpPut("{userId}")]
+        public async Task<IActionResult> UpdateUser(
+            string userId,
+            [FromBody] UpdateUserRequest request
+        )
+        {
+            var loggedUser = User;
+            var isAdmin = loggedUser.IsInRole("Admin");
+            var loggedUserId = loggedUser.Claims.FirstOrDefault(c => c.Type.Equals("id"))?.Value;
+            if (!isAdmin && loggedUserId != userId)
+            {
+                return Forbid();
+            }
+            var updatedUser = await this._userService.UpdateUserAsync(userId, request);
+            if (updatedUser == null)
+            {
+                return NotFound(userId);
+            }
+            return Ok(updatedUser);
+        }
     }
 }

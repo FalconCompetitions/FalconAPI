@@ -1,10 +1,13 @@
 ﻿using ProjetoTccBackend.Enums.Judge;
 using System.Text.Json.Serialization;
 
-namespace ProjetoTccBackend.Database.Responses.Competition
+namespace ProjetoTccBackend.Database.Responses.Exercise
 {
     public class ExerciseSubmissionResponse
     {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
         [JsonPropertyName("exerciseId")]
         public int ExerciseId { get; set; }
 

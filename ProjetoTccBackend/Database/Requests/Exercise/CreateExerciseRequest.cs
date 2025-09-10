@@ -6,6 +6,10 @@ namespace ProjetoTccBackend.Database.Requests.Exercise
     public class CreateExerciseRequest
     {
         [Required]
+        [JsonPropertyName("exerciseTypeId")]
+        public int ExerciseTypeId { get; set; }
+
+        [Required]
         [JsonPropertyName("title")]
         public string Title { get; set; }
 
@@ -18,10 +22,10 @@ namespace ProjetoTccBackend.Database.Requests.Exercise
         public TimeSpan EstimatedTime { get; set; }
 
         [JsonPropertyName("inputs")]
-        public ICollection<ExerciseInputRequest> Inputs { get; set; }
+        public ICollection<CreateExerciseInputRequest> Inputs { get; set; }
 
         [JsonPropertyName("outputs")]
-        public ICollection<ExerciseOutputRequest> Outputs { get; set; }
+        public ICollection<CreateExerciseOutputRequest> Outputs { get; set; }
 
     }
 }

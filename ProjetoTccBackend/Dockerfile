@@ -6,6 +6,8 @@ USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
+EXPOSE 443
+EXPOSE 7163
 # Porta do Banco de Dados
 EXPOSE 3306
 
@@ -14,10 +16,11 @@ EXPOSE 3306
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["ProjetoTccBackend/ProjetoTccBackend.csproj", "ProjetoTccBackend/"]
-RUN dotnet restore "./ProjetoTccBackend/ProjetoTccBackend.csproj"
+COPY ["ProjetoTccBackend.csproj", "./"]
+RUN dotnet restore "./ProjetoTccBackend.csproj"
 COPY . .
-WORKDIR "/src/ProjetoTccBackend"
+
+WORKDIR "/src"
 RUN dotnet build "./ProjetoTccBackend.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Esta fase é usada para publicar o projeto de serviço a ser copiado para a fase final

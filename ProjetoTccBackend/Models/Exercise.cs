@@ -13,6 +13,11 @@ namespace ProjetoTccBackend.Models
         [Key]
         public int Id { get; set; }
 
+        [Required]
+        public int ExerciseTypeId { get; set; }
+
+        public ExerciseType ExerciseType { get; set; }
+
         /// <summary>
         /// Title of the exercise.
         /// </summary>
@@ -71,5 +76,30 @@ namespace ProjetoTccBackend.Models
         /// Questions related to this exercise.
         /// </summary>
         public ICollection<Question> Questions { get; set; } = [];
+
+
+
+
+        /// <summary>
+        /// Updates the exercise data with a new title, description, and estimated time.
+        /// </summary>
+        /// <param name="title">The new title of the exercise.</param>
+        /// <param name="description">The new description of the exercise.</param>
+        /// <param name="estimatedTime">The new estimated time to solve the exercise.</param>
+        public void UpdateExerciseData(string title, string description, TimeSpan estimatedTime)
+        {
+            this.Title = title;
+            this.Description = description;
+            this.EstimatedTime = estimatedTime;
+        }
+
+        /// <summary>
+        /// Sets the UUID used by the judge system to identify the exercise.
+        /// </summary>
+        /// <param name="uuid">The UUID to be set for the exercise.</param>
+        public void SetJudgeUuid(string uuid)
+        {
+            this.JudgeUuid = uuid;
+        }
     }
 }

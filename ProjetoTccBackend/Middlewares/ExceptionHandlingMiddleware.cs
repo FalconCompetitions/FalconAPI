@@ -5,20 +5,36 @@ using System.Text.Json;
 
 namespace ProjetoTccBackend.Middlewares
 {
+    /// <summary>
+    /// Middleware responsible for handling exceptions globally in the application.
+    /// Catches and processes known and unknown exceptions, returning appropriate HTTP responses and error messages in JSON format.
+    /// </summary>
     public class ExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExceptionHandlingMiddleware"/> class.
+        /// </summary>
+        /// <param name="next">The next middleware in the pipeline.</param>
+        /// <param name="logger">The logger instance for logging errors.</param>
         public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
         {
             this._next = next;
             this._logger = logger;
         }
 
+        /// <summary>
+        /// Invokes the middleware to handle exceptions during the HTTP request pipeline.
+        /// Catches specific and general exceptions, sets the appropriate status code, and returns a JSON error response.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public async Task InvokeAsync(HttpContext context)
         {
             bool isFormException = false;
+            bool isUnexpectedError = false;
 
             var response = new object();
 
@@ -40,12 +56,13 @@ namespace ProjetoTccBackend.Middlewares
                     
                 }
             }
-            catch (ErrorException ex) // Erro genérico lançado manualmente no código
+            catch (ErrorException ex) // Generic error thrown manually in the code
             {
+                isUnexpectedError = true;
                 this._logger.LogError("Error");
                 response = new { message = ex.Message };
             }
-            catch (FormException ex) // Erro de validação lançado manualmente
+            catch (FormException ex) // Validation error thrown manually
             {
                 this._logger.LogError("Error");
                 isFormException = true;
@@ -59,21 +76,22 @@ namespace ProjetoTccBackend.Middlewares
             }
             catch (Exception ex)
             {
-                this._logger.LogError(ex, "Erro insperado");
+                this._logger.LogError(ex, "Unexpected error");
 
-                // Caso seja erro de ModelState inválido
+                // If it is a ModelState invalid error
                 if(context.Request.HasFormContentType || IsJsonRequest(context))
                 {
                     isFormException = true;
                     response = HandleValidationException(ex);
                 }
-                else // Caso seja um erro não esperado
+                else // If it is an unexpected error
                 {
+                    isUnexpectedError = true;
                     response = new
                     {
                         errors = new[]
                         {
-                            new { target = "general", error = "Ocorreu um erro inesperado. Tente novamente mais tarde." }
+                            new { target = "general", error = "An unexpected error occurred. Please try again later." }
                         }
                     };
                 }
@@ -83,7 +101,7 @@ namespace ProjetoTccBackend.Middlewares
             if(isFormException is true)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            } else
+            } else if(isUnexpectedError is true)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
@@ -91,6 +109,11 @@ namespace ProjetoTccBackend.Middlewares
             await context.Response.WriteAsync(JsonSerializer.Serialize(response));
         }
 
+        /// <summary>
+        /// Checks if the current HTTP request is a JSON request.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
+        /// <returns>True if the request is JSON, otherwise false.</returns>
         private bool IsJsonRequest(HttpContext context)
         {
             if (context.Request.ContentType is null) return false;
@@ -98,11 +121,16 @@ namespace ProjetoTccBackend.Middlewares
             return context.Response.ContentType!.Contains("application/json", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Handles validation exceptions and formats them into a standard error response.
+        /// </summary>
+        /// <param name="ex">The exception to handle.</param>
+        /// <returns>An object containing the formatted validation errors.</returns>
         private object HandleValidationException(Exception ex)
         {
             var errors = new List<object>();
 
-            if(ex is ValidationException validationEx) // Validação manual foi lançadas
+            if(ex is ValidationException validationEx) // Manual validation was thrown
             {
                 
                 errors.AddRange(validationEx.ValidationResult.MemberNames.Select(target => new
@@ -111,14 +139,14 @@ namespace ProjetoTccBackend.Middlewares
                     error = validationEx.ValidationResult.ErrorMessage
                 }));
             }
-            else if(ex is ArgumentException argEx) // Erro específico
+            else if(ex is ArgumentException argEx) // Specific error
             {
                 errors.Add(new { target = "general", error = argEx.Message });
             }
-            else // Erro inesperado
+            else // Unexpected error
             {
                 this._logger.LogInformation(JsonSerializer.Serialize(errors));
-                errors.Add(new { target = "general", error = "Ocorreu um erro inesperado. Tente novamente mais tarde." });
+                errors.Add(new { target = "general", error = "An unexpected error occurred. Please try again later." });
             }
 
             return new { errors };
