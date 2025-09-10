@@ -238,7 +238,7 @@ namespace ProjetoTccBackend.Services
 
             foreach (var output in currentOutputs)
             {
-                if (request.Inputs.Any(x => x.Id.Equals(output.Id)))
+                if (request.Outputs.Any(x => x.Id.Equals(output.Id)))
                 {
                     continue;
                 }
