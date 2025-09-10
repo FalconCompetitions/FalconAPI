@@ -6,8 +6,8 @@ namespace ProjetoTccBackend.Database.Requests.Auth
     public class LoginUserRequest
     {
         [Required(ErrorMessage = "Campo obrigatório")]
-        [MinLength(6, ErrorMessage = "RA deve ter no mínimo 6 digitos")]
-        [MaxLength(7, ErrorMessage = "RA deve ter no máximo 7 digitos")]
+        [MinLength(6, ErrorMessage = "RA deve ter no mínimo 6 dígitos")]
+        [MaxLength(7, ErrorMessage = "RA deve ter no máximo 7 dígitos")]
         [JsonPropertyName("ra")]
         public required string Ra { get; set; }
 
