@@ -185,7 +185,7 @@ namespace ProjetoTccBackend.Services
 
             HttpResponseMessage response =
                 await this._httpClient.PutAsJsonAsync<UpdateJudgeExerciseRequest>(
-                    $"/problems/${exercise.JudgeUuid!}",
+                    $"/problems/{exercise.JudgeUuid!}",
                     request
                 );
 
