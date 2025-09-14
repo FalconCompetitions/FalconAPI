@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".copilot", ".copilot", "{02
 		config.json = config.json
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjetoTCCBackend.Unit.Test", "ProjetoTCCBackend.Unit.Test\ProjetoTCCBackend.Unit.Test.csproj", "{251C6B86-12B3-4579-991E-689F04AD0E59}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{4A471E96-0CDB-4863-81E4-2CF43AA475D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A471E96-0CDB-4863-81E4-2CF43AA475D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A471E96-0CDB-4863-81E4-2CF43AA475D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{251C6B86-12B3-4579-991E-689F04AD0E59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{251C6B86-12B3-4579-991E-689F04AD0E59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{251C6B86-12B3-4579-991E-689F04AD0E59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{251C6B86-12B3-4579-991E-689F04AD0E59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

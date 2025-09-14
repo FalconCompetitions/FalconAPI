@@ -111,7 +111,7 @@ namespace ProjetoTccBackend.Services
             return exercises;
         }
 
-        public async Task<PagedResult<Exercise>> GetExercisesAsync(int page, int pageSize, string? search = null)
+        public async Task<PagedResult<Exercise>> GetExercisesAsync(int page, int pageSize, string? search = null, ExerciseType? exerciseType = null)
         {
             var query = this._exerciseRepository.GetAll().AsQueryable();
             if (!string.IsNullOrWhiteSpace(search))

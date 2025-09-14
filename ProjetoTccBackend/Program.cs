@@ -49,6 +49,40 @@ namespace ProjetoTccBackend
             }
         }
 
+        public static async Task CreateAdminUser(IServiceProvider serviceProvider)
+        {
+            var dbContext = serviceProvider.GetRequiredService<TccDbContext>();
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
+            var signInManager = serviceProvider.GetRequiredService<SignInManager<User>>();
+
+            List<User> users = new List<User>()
+            {
+                new User()
+                {
+                    RA = "999999",
+                    Email = "admin@gmail.com",
+                    Name = "admin",
+                    UserName = "admin",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                }
+            };
+
+            foreach(User user in users)
+            {
+                User? existentUser = await userManager.FindByEmailAsync(user.Email!);
+                if (existentUser is null)
+                {
+                    await userManager.CreateAsync(user, "00000000#Ra");
+                    await userManager.UpdateAsync(user);
+                    await userManager.AddToRoleAsync(user, "Admin");
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
         public static void ExecuteMigrations(WebApplication app)
         {
             using (var scope = app.Services.CreateScope())
@@ -78,7 +112,13 @@ namespace ProjetoTccBackend
 
             // Add services to the container.
             //builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-            builder.Services.AddDbContext<TccDbContext>();
+            builder.Services.AddDbContext<TccDbContext>(options =>
+            {
+                options.UseMySql(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+                );
+            });
             builder
                 .Services.AddIdentity<User, IdentityRole>(options =>
                 {
@@ -266,6 +306,7 @@ namespace ProjetoTccBackend
             ExecuteMigrations(app);
 
             CreateRoles(app.Services.CreateScope().ServiceProvider!).GetAwaiter().GetResult();
+            CreateAdminUser(app.Services.CreateScope().ServiceProvider!).GetAwaiter().GetResult();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

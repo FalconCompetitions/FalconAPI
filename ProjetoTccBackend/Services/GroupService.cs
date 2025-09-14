@@ -134,6 +134,7 @@ namespace ProjetoTccBackend.Services
                             Name = user.UserName!,
                             Email = user.Email!,
                             JoinYear = (int)user.JoinYear!,
+                            CreatedAt = user.CreatedAt
                         }
                     );
                 }
@@ -222,7 +223,8 @@ namespace ProjetoTccBackend.Services
                     Id = user.Id,
                     Email = user.Email!,
                     JoinYear = (int)user.JoinYear!,
-                    Name = user.Name
+                    Name = user.Name,
+                    CreatedAt = user.CreatedAt
                 }).ToList(),
             };
 

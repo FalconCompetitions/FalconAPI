@@ -16,5 +16,11 @@ namespace ProjetoTccBackend.Database.Responses.User
 
         [JsonPropertyName("joinYear")]
         public int JoinYear { get; set; }
+
+        [JsonPropertyName("createdAt")]
+        public DateTime CreatedAt { get; set; }
+
+        [JsonPropertyName("lastLoggedAt")]
+        public DateTime? LastLoggedAt { get; set; }
     }
 }

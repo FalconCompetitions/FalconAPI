@@ -13,12 +13,14 @@ namespace ProjetoTccBackend.Controllers
         private readonly ILogger<ExerciseController> _logger;
         private readonly IExerciseService _exerciseService;
 
-        public ExerciseController(ILogger<ExerciseController> logger, IExerciseService exerciseService)
+        public ExerciseController(
+            ILogger<ExerciseController> logger,
+            IExerciseService exerciseService
+        )
         {
             this._logger = logger;
             this._exerciseService = exerciseService;
         }
-
 
         /// <summary>
         /// Retrieves a specific exercise by its ID.
@@ -62,7 +64,12 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="200">Returns the paginated list of exercises.</response>
         [HttpGet()]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetExercises([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        public async Task<IActionResult> GetExercises(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null,
+            [FromQuery] ExerciseType? exerciseType = null
+        )
         {
             var result = await this._exerciseService.GetExercisesAsync(page, pageSize, search);
             return Ok(result);
@@ -100,10 +107,7 @@ namespace ProjetoTccBackend.Controllers
 
             if (exercise == null)
             {
-                this._logger.LogDebug("Exercise not created", new
-                {
-                    bodyContent = exercise
-                });
+                this._logger.LogDebug("Exercise not created", new { bodyContent = exercise });
                 return this.BadRequest();
             }
 
@@ -140,7 +144,10 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="404">If the exercise is not found.</response>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateExercise(int id, [FromBody] UpdateExerciseRequest request)
+        public async Task<IActionResult> UpdateExercise(
+            int id,
+            [FromBody] UpdateExerciseRequest request
+        )
         {
             await this._exerciseService.UpdateExerciseAsync(id, request);
             return Ok();

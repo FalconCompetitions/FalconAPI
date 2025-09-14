@@ -1,8 +1,8 @@
 ﻿using System.Threading.Channels;
-using ProjetoTccBackend.Models;
-using ProjetoTccBackend.Database.Requests.Competition;
-using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Database;
+using ProjetoTccBackend.Database.Requests.Competition;
+using ProjetoTccBackend.Models;
+using ProjetoTccBackend.Repositories.Interfaces;
 
 namespace ProjetoTccBackend.Workers.Queues
 {
@@ -36,7 +36,8 @@ namespace ProjetoTccBackend.Workers.Queues
             using (var scope = this._serviceProvider.CreateScope())
             {
                 TccDbContext dbContext = scope.ServiceProvider.GetRequiredService<TccDbContext>();
-                IExerciseSubmissionQueueItemRepository submissionRepository = scope.ServiceProvider.GetRequiredService<IExerciseSubmissionQueueItemRepository>();
+                IExerciseSubmissionQueueItemRepository submissionRepository =
+                    scope.ServiceProvider.GetRequiredService<IExerciseSubmissionQueueItemRepository>();
 
                 submissionRepository.Add(request);
                 await dbContext.SaveChangesAsync();
@@ -57,12 +58,15 @@ namespace ProjetoTccBackend.Workers.Queues
             CancellationToken cancellationToken
         )
         {
-            ExerciseSubmissionQueueItem queueItem = await this._queue.Reader.ReadAsync(cancellationToken);
+            ExerciseSubmissionQueueItem queueItem = await this._queue.Reader.ReadAsync(
+                cancellationToken
+            );
 
             using (var scope = this._serviceProvider.CreateScope())
             {
                 TccDbContext dbContext = scope.ServiceProvider.GetRequiredService<TccDbContext>();
-                IExerciseSubmissionQueueItemRepository submissionRepository = scope.ServiceProvider.GetRequiredService<IExerciseSubmissionQueueItemRepository>();
+                IExerciseSubmissionQueueItemRepository submissionRepository =
+                    scope.ServiceProvider.GetRequiredService<IExerciseSubmissionQueueItemRepository>();
 
                 submissionRepository.Remove(queueItem);
                 await dbContext.SaveChangesAsync();

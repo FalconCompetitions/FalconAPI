@@ -9,7 +9,7 @@ namespace ProjetoTccBackend.Database
 {
     public class TccDbContext : IdentityDbContext<User>
     {
-        private IConfiguration _configuration;
+        private readonly IConfiguration? _configuration;
 
         public DbSet<Group> Groups { get; set; }
         public DbSet<Competition> Competitions { get; set; }
@@ -26,20 +26,20 @@ namespace ProjetoTccBackend.Database
         public DbSet<Log> Logs { get; set; }
         public DbSet<ExerciseSubmissionQueueItem> ExerciseSubmissionQueueItems { get; set; }
 
-        public TccDbContext(IConfiguration configuration)
-            : base()
-        {
-            this._configuration = configuration;
-        }
+        // Construtor para testes
+        public TccDbContext(DbContextOptions<TccDbContext> options) : base(options) { }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseMySql(
-                this._configuration.GetConnectionString("DefaultConnection"),
-                ServerVersion.AutoDetect(
-                    this._configuration.GetConnectionString("DefaultConnection")
-                )
-            );
+            if (_configuration != null)
+            {
+                optionsBuilder.UseMySql(
+                    _configuration.GetConnectionString("DefaultConnection"),
+                    ServerVersion.AutoDetect(
+                        _configuration.GetConnectionString("DefaultConnection")
+                    )
+                );
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder builder)

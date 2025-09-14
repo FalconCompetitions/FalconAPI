@@ -122,7 +122,8 @@ namespace ProjetoTccBackend.Controllers
                 Name = user.UserName!,
                 JoinYear = user.JoinYear,
                 PhoneNumber = user.PhoneNumber,
-                PhoneNumberConfirmed = user.PhoneNumberConfirmed
+                PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+                Role = role,
             };
 
             SetAuthCookie(jwtToken);
@@ -193,6 +194,7 @@ namespace ProjetoTccBackend.Controllers
                 PhoneNumber = user.PhoneNumber,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed,
                 Role = role,
+                Group = user.Group,
             };
 
             string jwtToken = this._tokenService.GenerateUserToken(user, role);
@@ -287,7 +289,7 @@ namespace ProjetoTccBackend.Controllers
         /// </code>
         /// </remarks>
         /// <returns>A <see cref="NoContentResult"/> indicating that the logout operation was successful.</returns>
-        /// <response code="204">If the user is logged out successfully.</response>
+        /// <response code="200">If the user is logged out successfully.</response>
         [HttpGet("logout")]
         [Authorize]
         public async Task<IActionResult> LogoutUser()

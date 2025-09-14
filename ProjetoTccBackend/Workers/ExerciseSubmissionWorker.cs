@@ -96,6 +96,8 @@ namespace ProjetoTccBackend.Workers
         /// <returns>A <see cref="Task"/> representing the asynchronous execution of the background service.</returns>
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            this._logger.LogInformation("ExerciseSubmissionWorkerInitialized...");
+
             int queueSize = this._queue.GetQueueSize();
             int workerCount = Environment.ProcessorCount;
             workerCount = (workerCount < queueSize) ? queueSize : workerCount;

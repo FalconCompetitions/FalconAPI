@@ -46,6 +46,8 @@ namespace ProjetoTccBackend.Controllers
                 Name = user.UserName!,
                 EmailConfirmed = user.EmailConfirmed,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+                CreatedAt = user.CreatedAt,
+                LastLoggedAt = user.LastLoggedAt,
             };
 
             return Ok(userResponse);

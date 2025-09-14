@@ -5,8 +5,11 @@ namespace ProjetoTccBackend.Database.Responses.User
 {
     public class UserInfoResponse : UserResponse
     {
-        [JsonPropertyName("ra")]
-        public string RA { get; set; }
+        [JsonPropertyName("createdAt")]
+        public DateTime CreatedAt { get; set; }
+
+        [JsonPropertyName("lastLoggedAt")]
+        public DateTime? LastLoggedAt { get; set; }
 
     }
 }

@@ -122,6 +122,8 @@ public class UserService : IUserService
                 });
         }
 
+        newUser.LastLoggedAt = DateTime.UtcNow;
+
         await this._userManager.UpdateAsync(newUser);
         //await _signInManager.UserManager.AddClaimAsync(newUser, new Claim(ClaimTypes.Role, user.Role));
 
@@ -163,6 +165,9 @@ public class UserService : IUserService
                 { "form", "RA e/ou senha incorreto(s)" }
             });
         }
+
+        existentUser.LastLoggedAt = DateTime.UtcNow;
+        await this._userManager.UpdateAsync(existentUser);
 
         string userRole = (await this._userManager.GetRolesAsync(existentUser)).First();
 

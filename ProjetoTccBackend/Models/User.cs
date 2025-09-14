@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProjetoTccBackend.Models
 {
@@ -14,6 +15,10 @@ namespace ProjetoTccBackend.Models
 
         public int? GroupId { get; set; }
         public Group? Group { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? LastLoggedAt { get; set; }
 
         public ICollection<Question> Questions { get; } = [];
         public ICollection<Answer> Answers { get; } = [];

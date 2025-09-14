@@ -1,4 +1,6 @@
 ﻿using System.Linq.Expressions;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace ProjetoTccBackend.Repositories.Interfaces
 {
@@ -63,5 +65,44 @@ namespace ProjetoTccBackend.Repositories.Interfaces
         /// </summary>
         /// <param name="entities">The collection of entities to be updated.</param>
         void UpdateRange(IEnumerable<T> entities);
+
+        /// <summary>
+        /// Asynchronously adds a new entity to the repository.
+        /// </summary>
+        /// <param name="entity">The entity to be added.</param>
+        Task AddAsync(T entity);
+
+        /// <summary>
+        /// Asynchronously adds a collection of new entities to the repository.
+        /// </summary>
+        /// <param name="entities">The collection of entities to be added.</param>
+        Task AddRangeAsync(IEnumerable<T> entities);
+
+        /// <summary>
+        /// Asynchronously retrieves all entities from the repository.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation, containing a collection of all entities.</returns>
+        Task<IEnumerable<T>> GetAllAsync();
+
+        /// <summary>
+        /// Asynchronously retrieves an entity by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the entity to be retrieved.</param>
+        /// <returns>A task that represents the asynchronous operation, containing the entity with the specified ID, or null if not found.</returns>
+        Task<T?> GetByIdAsync(int id);
+
+        /// <summary>
+        /// Asynchronously retrieves an entity by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the entity to be retrieved.</param>
+        /// <returns>A task that represents the asynchronous operation, containing the entity with the specified ID, or null if not found.</returns>
+        Task<T?> GetByIdAsync(string id);
+
+        /// <summary>
+        /// Asynchronously retrieves entities that match the specified filter expression.
+        /// </summary>
+        /// <param name="expression">The filter expression.</param>
+        /// <returns>A task that represents the asynchronous operation, containing a collection of entities that match the filter expression.</returns>
+        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression);
     }
 }
