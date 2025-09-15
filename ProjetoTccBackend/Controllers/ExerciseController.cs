@@ -68,7 +68,7 @@ namespace ProjetoTccBackend.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? search = null,
-            [FromQuery] ExerciseType? exerciseType = null
+            [FromQuery] int? exerciseType = null
         )
         {
             var result = await this._exerciseService.GetExercisesAsync(page, pageSize, search);
@@ -97,7 +97,7 @@ namespace ProjetoTccBackend.Controllers
         /// </remarks>
         /// <response code="201">Returns the created exercise.</response>
         /// <response code="400">If the request is invalid.</response>
-        [Authorize(Roles = "Admin,Teacher")]
+        // [Authorize(Roles = "Admin,Teacher")]
         [HttpPost()]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -118,6 +118,8 @@ namespace ProjetoTccBackend.Middlewares
         {
             if (context.Request.ContentType is null) return false;
 
+            if (context.Response.ContentType is null) return false;
+
             return context.Response.ContentType!.Contains("application/json", StringComparison.OrdinalIgnoreCase);
         }
 

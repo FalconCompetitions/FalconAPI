@@ -22,7 +22,7 @@ namespace ProjetoTccBackend.Database.Requests.Judge
         /// <summary>
         /// Gets or sets the collection of input data samples for the exercise.
         /// </summary>
-        [JsonPropertyName("data_entry")]
+        [JsonPropertyName("data_entries")]
         public required ICollection<string> DataEntry { get; set; }
 
         /// <summary>

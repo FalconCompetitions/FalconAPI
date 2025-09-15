@@ -47,6 +47,13 @@ namespace ProjetoTccBackend.Services
             {
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
+                BlockSubmissions = request.BlockSubmissions,
+                StartInscriptions = request.StartInscriptions,
+                EndInscriptions = request.EndInscriptions,
+                MaxExercises = request.MaxExercises,
+                MaxSubmissionSize = request.MaxSubmissionSize,
+                StopRanking = request.StopRanking,
+                SubmissionPenalty = request.SubmissionPenalty
             };
 
             this._competitionRepository.Add(newCompetition);

@@ -14,6 +14,19 @@ namespace ProjetoTccBackend.Models
         [Key]
         public int Id { get; set; }
 
+        /// <summary>
+        /// Gets or sets the maximum number of exercises allowed.
+        /// </summary>
+        [Required]
+        public int MaxExercises { get; set; }
+
+
+        /// <summary>
+        /// Gets or sets the maximum allowed size, in kb, for a submission.
+        /// </summary>
+        [Required]
+        public int MaxSubmissionSize { get; set; }
+
 
         /// <summary>
         /// Gets or sets the date and time when inscriptions start.

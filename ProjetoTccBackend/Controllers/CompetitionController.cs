@@ -50,7 +50,7 @@ namespace ProjetoTccBackend.Controllers
         /// Creates a new competition.
         /// </summary>
         /// <param name="request">The competition creation request containing start and end times.</param>
-        /// <returns>The created <see cref="Competition"/> object.</returns>
+        /// <returns>The created <see cref="Competition"/> object in <see cref="CompetitionResponse"/> format.</returns>
         /// <remarks>
         /// Accessible only to users with the "Admin" role.<br/>
         /// Exemplo de request:
@@ -86,7 +86,22 @@ namespace ProjetoTccBackend.Controllers
                 throw new ErrorException("Não foi possível criar uma nova competição");
             }
 
-            return CreatedAtAction(nameof(GetExistentCompetition), new { }, newCompetition);
+            CompetitionResponse response = new CompetitionResponse()
+            {
+                Id = newCompetition.Id,
+                SubmissionPenalty = newCompetition.SubmissionPenalty,
+                StopRanking = newCompetition.StopRanking,
+                MaxSubmissionSize = newCompetition.MaxSubmissionSize,
+                MaxExercises = newCompetition.MaxExercises,
+                BlockSubmissions = newCompetition.BlockSubmissions,
+                EndInscriptions = newCompetition.EndInscriptions,
+                EndTime = newCompetition.EndTime,
+                ExerciseIds = request.ExerciseIds,
+                StartInscriptions = newCompetition.StartInscriptions,
+                StartTime = newCompetition.StartTime,
+            };
+
+            return CreatedAtAction(nameof(GetExistentCompetition), new { }, response);
         }
     }
 }

@@ -7,9 +7,8 @@ namespace ProjetoTccBackend.Models
         [Key]
         public required int Id { get; set; }
 
-        [Required]
         [StringLength(100)]
-        public required string Label { get; set; }
+        public string Label { get; set; }
 
 
         public ICollection<Exercise> Exercises { get; set; } = [];

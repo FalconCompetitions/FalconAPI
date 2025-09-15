@@ -99,6 +99,12 @@ namespace ProjetoTccBackend.Workers
             this._logger.LogInformation("ExerciseSubmissionWorkerInitialized...");
 
             int queueSize = this._queue.GetQueueSize();
+
+            if(queueSize == 0)
+            {
+                return;
+            }
+
             int workerCount = Environment.ProcessorCount;
             workerCount = (workerCount < queueSize) ? queueSize : workerCount;
 

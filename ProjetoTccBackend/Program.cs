@@ -164,10 +164,10 @@ namespace ProjetoTccBackend
                 "JudgeAPI",
                 client =>
                 {
-                    client.BaseAddress = new Uri(builder.Configuration["JudgeApiUrl"]!);
+                    client.BaseAddress = new Uri(builder.Configuration["JudgeApi:Url"]!);
                     //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
                     //client.DefaultRequestHeaders.Add("Accept", "application/json");
-                    client.Timeout = TimeSpan.FromSeconds(20);
+                    client.Timeout = TimeSpan.FromSeconds(40);
                 }
             );
 
@@ -288,7 +288,7 @@ namespace ProjetoTccBackend
             });
             */
 
-            /*
+            
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("FrontendAppPolicy", policy =>
@@ -299,7 +299,7 @@ namespace ProjetoTccBackend
                         .AllowCredentials();
                 });
             });
-            */
+            
 
             var app = builder.Build();
 
@@ -331,14 +331,7 @@ namespace ProjetoTccBackend
 
             app.UseRouting();
 
-            //app.UseCors("FrontendAppPolicy");
-            app.UseCors(builder =>
-                builder
-                    .WithOrigins("http://localhost:3000")
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials()
-            );
+            app.UseCors("FrontendAppPolicy");
 
             ConfigureWebSocketOptions(app);
 

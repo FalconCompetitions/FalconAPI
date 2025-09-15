@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjetoTccBackend.Database;
 
@@ -11,9 +12,11 @@ using ProjetoTccBackend.Database;
 namespace ProjetoTccBackend.Migrations
 {
     [DbContext(typeof(TccDbContext))]
-    partial class TccDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250914231717_AddMaxExercisesAndSubmissionSize")]
+    partial class AddMaxExercisesAndSubmissionSize
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -174,7 +177,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Answers", (string)null);
+                    b.ToTable("Answers");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.Competition", b =>
@@ -220,7 +223,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Competitions", (string)null);
+                    b.ToTable("Competitions");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.CompetitionRanking", b =>
@@ -252,7 +255,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("GroupId");
 
-                    b.ToTable("CompetitionRankings", (string)null);
+                    b.ToTable("CompetitionRankings");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.Exercise", b =>
@@ -289,7 +292,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("ExerciseTypeId");
 
-                    b.ToTable("Exercises", (string)null);
+                    b.ToTable("Exercises");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseInCompetition", b =>
@@ -304,7 +307,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("ExerciseId");
 
-                    b.ToTable("ExercisesInCompetitions", (string)null);
+                    b.ToTable("ExercisesInCompetitions");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseInput", b =>
@@ -331,7 +334,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("ExerciseId");
 
-                    b.ToTable("ExerciseInputs", (string)null);
+                    b.ToTable("ExerciseInputs");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseOutput", b =>
@@ -363,7 +366,7 @@ namespace ProjetoTccBackend.Migrations
                     b.HasIndex("ExerciseInputId")
                         .IsUnique();
 
-                    b.ToTable("ExerciseOutputs", (string)null);
+                    b.ToTable("ExerciseOutputs");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseSubmissionQueueItem", b =>
@@ -382,7 +385,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExerciseSubmissionQueueItems", (string)null);
+                    b.ToTable("ExerciseSubmissionQueueItems");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseType", b =>
@@ -400,7 +403,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExerciseTypes", (string)null);
+                    b.ToTable("ExerciseTypes");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.Group", b =>
@@ -421,7 +424,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Groups", (string)null);
+                    b.ToTable("Groups");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.GroupExerciseAttempt", b =>
@@ -468,7 +471,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("GroupId");
 
-                    b.ToTable("GroupExerciseAttempts", (string)null);
+                    b.ToTable("GroupExerciseAttempts");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.GroupInCompetition", b =>
@@ -488,7 +491,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("GroupId");
 
-                    b.ToTable("GroupsInCompetitions", (string)null);
+                    b.ToTable("GroupsInCompetitions");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.Log", b =>
@@ -527,7 +530,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Logs", (string)null);
+                    b.ToTable("Logs");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.Question", b =>
@@ -570,7 +573,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Questions", (string)null);
+                    b.ToTable("Questions");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.User", b =>

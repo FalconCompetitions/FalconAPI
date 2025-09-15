@@ -1,9 +1,9 @@
-﻿using ProjetoTccBackend.Models;
-using ProjetoTccBackend.Services.Interfaces;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using ProjetoTccBackend.Models;
+using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
@@ -28,9 +28,9 @@ namespace ProjetoTccBackend.Services
             Claim[] claims =
             [
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.Email!),
-                        new Claim("id", user.Id),
-                        new Claim("role", role),
-                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim("id", user.Id),
+                new Claim("role", role),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             ];
 
             // Chave a ser usada para codificar o token:
@@ -38,8 +38,7 @@ namespace ProjetoTccBackend.Services
 
             var signInCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var token = new JwtSecurityToken
-            (
+            var token = new JwtSecurityToken(
                 expires: DateTime.Now.AddDays(5),
                 claims: claims,
                 issuer: this._issuer,
@@ -53,24 +52,24 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public string GenerateTeacherRoleInviteToken(TimeSpan expiration)
         {
-            Claim[] claims = [
+            Claim[] claims =
+            [
                 new Claim("Invite", "true"),
-                        new Claim(ClaimTypes.Role, "Teacher"),
-                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                ];
-
+                new Claim(ClaimTypes.Role, "Teacher"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            ];
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this._secretKey));
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                    issuer: this._issuer,
-                    audience: this._audience,
-                    claims: claims,
-                    expires: DateTime.UtcNow.Add(expiration),
-                    signingCredentials: creds
-                    );
+                issuer: this._issuer,
+                audience: this._audience,
+                claims: claims,
+                expires: DateTime.UtcNow.Add(expiration),
+                signingCredentials: creds
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -83,17 +82,21 @@ namespace ProjetoTccBackend.Services
 
             try
             {
-                tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
-                    ValidIssuer = this._issuer,
-                    ValidateAudience = true,
-                    ValidAudience = this._audience,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                }, out SecurityToken validatedToken);
+                tokenHandler.ValidateToken(
+                    token,
+                    new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = true,
+                        ValidIssuer = this._issuer,
+                        ValidateAudience = true,
+                        ValidAudience = this._audience,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero,
+                    },
+                    out SecurityToken validatedToken
+                );
 
                 return true;
             }
@@ -104,5 +107,28 @@ namespace ProjetoTccBackend.Services
             }
         }
 
+
+        /// <inheritdoc />
+        public string GenerateJudgeToken()
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this._secretKey));
+
+            Claim[] claims = [
+                new Claim("sub", this._secretKey)
+            ];
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                expires: DateTime.Now.AddDays(1),
+                claims: claims,
+                issuer: this._issuer,
+                audience: this._audience,
+                signingCredentials: creds
+            );
+
+            return tokenHandler.WriteToken(token);
+        }
     }
 }

@@ -56,5 +56,27 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="exercise">The exercise to update. Must not be <see langword="null"/>.</param>
         /// <returns><see langword="true"/> if the update was successful; otherwise, <see langword="false"/>.</returns>
         Task<bool> UpdateExerciseAsync(Exercise exercise);
+
+
+
+        /// <summary>
+        /// Authenticates a judge by generating a token and sending it to the authentication endpoint.
+        /// </summary>
+        /// <remarks>This method generates a token using the token service and sends it to the
+        /// authentication endpoint to retrieve an access token. If the authentication fails or an exception occurs, the
+        /// method logs the error and returns <see langword="null"/>.</remarks>
+        /// <returns>A <see cref="string"/> containing the access token if authentication is successful; otherwise,  <see
+        /// langword="null"/>.</returns>
+        Task<string?> AuthenticateJudge();
+
+
+        /// <summary>
+        /// Retrieves a valid judge token, either from the cache or by authenticating a new one.
+        /// </summary>
+        /// <remarks>This method first attempts to retrieve a cached token and validates its validity.  If
+        /// the cached token is invalid or unavailable, it authenticates a new token and caches it for future
+        /// use.</remarks>
+        /// <returns>A valid judge token as a string, or <see langword="null"/> if authentication fails.</returns>
+        Task<string?> FetchJudgeToken();
     }
 }

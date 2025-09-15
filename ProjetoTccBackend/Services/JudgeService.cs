@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using System.Text;
+using Microsoft.Extensions.Caching.Memory;
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Database.Requests.Exercise;
 using ProjetoTccBackend.Database.Requests.Judge;
@@ -13,21 +15,89 @@ namespace ProjetoTccBackend.Services
 {
     public class JudgeService : IJudgeService
     {
-        private HttpClient _httpClient;
-        private IExerciseRepository _exerciseRepository;
+        private readonly HttpClient _httpClient;
+        private readonly IExerciseRepository _exerciseRepository;
+        private readonly ITokenService _tokenService;
+        private readonly IMemoryCache _memoryCache;
+        private readonly ILogger<JudgeService> _logger;
+        private const string judgeMemoryToken = "JudgeJwtToken";
 
         public JudgeService(
             IHttpClientFactory httpClientFactory,
-            IExerciseRepository exerciseRepository
+            IExerciseRepository exerciseRepository,
+            ITokenService tokenService,
+            IMemoryCache memoryCache,
+            ILogger<JudgeService> logger
         )
         {
             this._httpClient = httpClientFactory.CreateClient("JudgeAPI");
             this._exerciseRepository = exerciseRepository;
+            this._tokenService = tokenService;
+            this._memoryCache = memoryCache;
+            this._logger = logger;
+        }
+
+        /// <inheritdoc />
+        public async Task<string?> AuthenticateJudge()
+        {
+            string generatedToken = this._tokenService.GenerateJudgeToken();
+
+            try
+            {
+                HttpResponseMessage response = await this._httpClient.PostAsJsonAsync(
+                    "/auth/integrator-token",
+                    new { api_key = generatedToken }
+                );
+
+                JudgeAuthenticationResponse authenticationResponse =
+                    await response.Content.ReadFromJsonAsync<JudgeAuthenticationResponse>();
+
+                return authenticationResponse!.AccessToken;
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogCritical("Was not possible to recover judge authentication token");
+                return null;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<string?> FetchJudgeToken()
+        {
+            if (this._memoryCache.TryGetValue(judgeMemoryToken, out string jwtToken))
+            {
+                bool isTokenValid = this._tokenService.ValidateToken(jwtToken);
+
+                if (isTokenValid)
+                {
+                    return jwtToken;
+                }
+            }
+
+            string? newToken = await this.AuthenticateJudge();
+
+            if (newToken == null)
+            {
+                return null;
+            }
+
+            this._memoryCache.Set(judgeMemoryToken, newToken);
+
+            return newToken;
         }
 
         /// <inheritdoc/>
         public async Task<string?> CreateJudgeExerciseAsync(CreateExerciseRequest exerciseRequest)
         {
+            string? currentToken = await this.FetchJudgeToken();
+
+            if (currentToken is null)
+            {
+                return null;
+            }
+
+            this._httpClient.DefaultRequestHeaders.Add("Authorization", currentToken);
+
             var exerciseInputs = exerciseRequest.Inputs.ToList();
             var exerciseOutputs = exerciseRequest.Outputs.ToList();
 
@@ -36,34 +106,43 @@ namespace ProjetoTccBackend.Services
 
             for (int i = 0; i < exerciseRequest.Inputs.Count; i++)
             {
-                inputs.Add(exerciseInputs[i].Input);
-                outputs.Add(exerciseOutputs[i].Output);
+                inputs.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes(exerciseInputs[i].Input)));
+                outputs.Add(
+                    Convert.ToBase64String(Encoding.UTF8.GetBytes(exerciseOutputs[i].Output))
+                );
             }
 
-            CreateJudgeExerciseRequest payload = new CreateJudgeExerciseRequest()
+            try
             {
-                Name = exerciseRequest.Title,
-                Description = exerciseRequest.Description,
-                DataEntry = inputs,
-                DataOutput = outputs,
-                EntryDescription = "",
-                OutputDescription = "",
-            };
-
-            var result = await this._httpClient.PostAsJsonAsync<CreateJudgeExerciseRequest>(
-                "/problems",
-                payload
-            );
-
-            if (result.StatusCode == HttpStatusCode.Created)
-            {
-                JudgeExerciseResponse? exerciseResponse =
-                    await result.Content.ReadFromJsonAsync<JudgeExerciseResponse>();
-
-                if (exerciseResponse != null)
+                CreateJudgeExerciseRequest payload = new CreateJudgeExerciseRequest()
                 {
-                    return exerciseResponse.Id;
+                    Name = exerciseRequest.Title,
+                    Description = exerciseRequest.Description,
+                    DataEntry = inputs,
+                    DataOutput = outputs,
+                    EntryDescription = "",
+                    OutputDescription = "",
+                };
+
+                var result = await this._httpClient.PostAsJsonAsync<CreateJudgeExerciseRequest>(
+                    "/problems",
+                    payload
+                );
+
+                if (result.StatusCode == HttpStatusCode.Created)
+                {
+                    JudgeExerciseResponse? exerciseResponse =
+                        await result.Content.ReadFromJsonAsync<JudgeExerciseResponse>();
+
+                    if (exerciseResponse != null)
+                    {
+                        return exerciseResponse.Id;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex.ToString(), ex.StackTrace);
             }
 
             return null;
@@ -72,6 +151,15 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public async Task<Exercise?> GetExerciseByUuidAsync(string judgeUuid)
         {
+            string? currentToken = await this.FetchJudgeToken();
+
+            if (currentToken is null)
+            {
+                return null;
+            }
+
+            this._httpClient.DefaultRequestHeaders.Add("Authorization", currentToken);
+
             var judgeExercise = await this._httpClient.GetFromJsonAsync<JudgeExerciseResponse>(
                 $"/problems/{judgeUuid}"
             );
@@ -99,6 +187,15 @@ namespace ProjetoTccBackend.Services
             GroupExerciseAttemptRequest request
         )
         {
+            string? currentToken = await this.FetchJudgeToken();
+
+            if (currentToken is null)
+            {
+                throw new JudgeSubmissionException("Erro em recurso externo");
+            }
+
+            this._httpClient.DefaultRequestHeaders.Add("Authorization", currentToken);
+
             Exercise? exercise = this._exerciseRepository.GetById(request.ExerciseId);
 
             if (exercise is null)
@@ -174,6 +271,15 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc />
         public async Task<bool> UpdateExerciseAsync(Exercise exercise)
         {
+            string? currentToken = await this.FetchJudgeToken();
+
+            if (currentToken is null)
+            {
+                throw new JudgeSubmissionException("Erro em recurso externo");
+            }
+
+            this._httpClient.DefaultRequestHeaders.Add("Authorization", currentToken);
+
             UpdateJudgeExerciseRequest request = new UpdateJudgeExerciseRequest()
             {
                 ProblemId = exercise.JudgeUuid!,
