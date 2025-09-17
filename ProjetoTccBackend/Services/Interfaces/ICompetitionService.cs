@@ -102,5 +102,13 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// cref="Competition"/> objects representing the open competitions. If no competitions are open,  the
         /// collection will be empty.</returns>
         Task<ICollection<Competition>> GetOpenCompetitionsAsync();
+
+        /// <summary>
+        /// Updates an existing competition asynchronously.
+        /// </summary>
+        /// <param name="id">The unique identifier of the competition to update.</param>
+        /// <param name="request">The update request containing new competition data.</param>
+        /// <returns>The updated <see cref="Competition"/> object, or null if not found.</returns>
+        Task<Competition?> UpdateCompetitionAsync(int id, UpdateCompetitionRequest request);
     }
 }

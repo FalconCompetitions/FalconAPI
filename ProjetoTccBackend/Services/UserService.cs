@@ -130,6 +130,8 @@ public class UserService : IUserService
         // Adiciono o usuário registrado ao role "User"
         IdentityResult res = await this._userManager.AddToRoleAsync(newUser, user.Role);
 
+        await this._signInManager.PasswordSignInAsync(newUser, user.Password, true, false);
+
         if (res.Succeeded == false)
         {
             throw new FormException(new Dictionary<string, string>

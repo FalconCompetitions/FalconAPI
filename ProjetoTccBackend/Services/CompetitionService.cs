@@ -43,18 +43,8 @@ namespace ProjetoTccBackend.Services
                 throw new ExistentCompetitionException();
             }
 
-            Competition newCompetition = new Competition()
-            {
-                StartTime = request.StartTime,
-                EndTime = request.EndTime,
-                BlockSubmissions = request.BlockSubmissions,
-                StartInscriptions = request.StartInscriptions,
-                EndInscriptions = request.EndInscriptions,
-                MaxExercises = request.MaxExercises,
-                MaxSubmissionSize = request.MaxSubmissionSize,
-                StopRanking = request.StopRanking,
-                SubmissionPenalty = request.SubmissionPenalty
-            };
+            Competition newCompetition = new Competition();
+            newCompetition.ProcessCompetitionData(request);
 
             this._competitionRepository.Add(newCompetition);
             await this._dbContext.SaveChangesAsync();
@@ -189,6 +179,35 @@ namespace ProjetoTccBackend.Services
         public async Task<ICollection<Competition>> GetOpenCompetitionsAsync()
         {
             return await this._competitionRepository.GetOpenCompetitionsAsync();
+        }
+
+        /// <inheritdoc/>
+        public async Task<Competition?> UpdateCompetitionAsync(int id, UpdateCompetitionRequest request)
+        {
+            var competition = await this._dbContext.Competitions.FindAsync(id);
+            if (competition == null)
+            {
+                return null;
+            }
+
+            competition.ProcessCompetitionData(new CompetitionRequest()
+            {
+                StartTime = request.StartTime,
+                BlockSubmissions = request.BlockSubmissions,
+                Duration = request.Duration,
+                ExerciseIds = request.ExerciseIds,
+                MaxExercises = request.MaxExercises,
+                MaxSubmissionSize = request.MaxSubmissionSize,
+                Name = request.Name,
+                StopRanking = request.StopRanking,
+                SubmissionPenalty = request.SubmissionPenalty
+            });
+
+            // Atualização dos exercícios pode ser feita conforme a lógica de negócio
+            // Exemplo: newCompetition.Exercices = ...
+
+            await this._dbContext.SaveChangesAsync();
+            return competition;
         }
     }
 }

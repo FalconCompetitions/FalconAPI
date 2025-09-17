@@ -29,7 +29,7 @@ namespace ProjetoTccBackend.Services
             [
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.Email!),
                 new Claim("id", user.Id),
-                new Claim("role", role),
+                new Claim(ClaimTypes.Role, role),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             ];
 

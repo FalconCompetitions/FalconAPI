@@ -97,7 +97,7 @@ namespace ProjetoTccBackend.Controllers
         /// </remarks>
         /// <response code="201">Returns the created exercise.</response>
         /// <response code="400">If the request is invalid.</response>
-        // [Authorize(Roles = "Admin,Teacher")]
+        [Authorize(Roles = "Admin,Teacher")]
         [HttpPost()]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -1,11 +1,11 @@
-﻿using ProjetoTccBackend.Database.Requests.Competition;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace ProjetoTccBackend.Database.Responses.Competition
+namespace ProjetoTccBackend.Database.Requests.Competition
 {
-    public class CompetitionResponse
+    public class UpdateCompetitionRequest
     {
+        [Required]
         [JsonPropertyName("id")]
         public int Id { get; set; }
 
@@ -18,49 +18,24 @@ namespace ProjetoTccBackend.Database.Responses.Competition
         public DateTime StartTime { get; set; }
 
         [Required]
-        [JsonPropertyName("endTime")]
-        public DateTime EndTime { get; set; }
-
-
-        public DateTime? StartInscriptions { get; set; }
-
-        public DateTime? EndInscriptions { get; set; }
-
-        [Required]
         [JsonPropertyName("duration")]
         public TimeSpan Duration { get; set; }
 
-        /// <summary>
-        /// The date and time when the ranking will be stopped.
-        /// </summary>
         [Required]
         [JsonPropertyName("stopRanking")]
-        public DateTime StopRanking { get; set; }
+        public TimeSpan StopRanking { get; set; }
 
-        /// <summary>
-        /// The date and time after which submissions are blocked.
-        /// </summary>
         [JsonPropertyName("blockSubmissions")]
-        public DateTime BlockSubmissions { get; set; }
+        public TimeSpan BlockSubmissions { get; set; }
 
-        /// <summary>
-        /// The penalty of the submission if rejected.
-        /// </summary>
         [Required]
         [JsonPropertyName("submissionPenalty")]
         public TimeSpan SubmissionPenalty { get; set; }
 
-        /// <summary>
-        /// Gets or sets the maximum number of exercises allowed.
-        /// </summary>
         [Required]
         [JsonPropertyName("maxExercises")]
         public int MaxExercises { get; set; }
 
-
-        /// <summary>
-        /// Gets or sets the maximum allowed size, in kb, for a submission.
-        /// </summary>
         [Required]
         [JsonPropertyName("maxSubmissionSize")]
         public int MaxSubmissionSize { get; set; }

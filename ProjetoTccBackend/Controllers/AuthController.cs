@@ -51,7 +51,7 @@ namespace ProjetoTccBackend.Controllers
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.Lax,
                 Path = "/",
             };
 
@@ -297,7 +297,7 @@ namespace ProjetoTccBackend.Controllers
             await this._userService.LogoutAsync();
 
             this.Response.Cookies.Delete("CompetitionAuthToken");
-            return NoContent();
+            return Ok();
         }
 
     }

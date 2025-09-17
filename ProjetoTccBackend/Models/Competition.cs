@@ -1,5 +1,6 @@
-﻿using ProjetoTccBackend.Enums.Competition;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using ProjetoTccBackend.Database.Requests.Competition;
+using ProjetoTccBackend.Enums.Competition;
 
 namespace ProjetoTccBackend.Models
 {
@@ -15,11 +16,15 @@ namespace ProjetoTccBackend.Models
         public int Id { get; set; }
 
         /// <summary>
+        /// Name of the Competition
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
         /// Gets or sets the maximum number of exercises allowed.
         /// </summary>
         [Required]
         public int MaxExercises { get; set; }
-
 
         /// <summary>
         /// Gets or sets the maximum allowed size, in kb, for a submission.
@@ -27,19 +32,15 @@ namespace ProjetoTccBackend.Models
         [Required]
         public int MaxSubmissionSize { get; set; }
 
-
         /// <summary>
         /// Gets or sets the date and time when inscriptions start.
         /// </summary>
-        [Required]
-        public DateTime StartInscriptions { get; set; }
+        public DateTime? StartInscriptions { get; set; }
 
         /// <summary>
         /// Gets or sets the date and time when inscriptions end.
         /// </summary>
-        [Required]
-        public DateTime EndInscriptions { get; set; }
-
+        public DateTime? EndInscriptions { get; set; }
 
         /// <summary>
         /// Gets or sets the current status of the competition.
@@ -124,7 +125,6 @@ namespace ProjetoTccBackend.Models
         /// </summary>
         public ICollection<Log> Logs { get; } = [];
 
-
         /// <summary>
         /// Updates the status of the competition to the specified value.
         /// </summary>
@@ -134,6 +134,32 @@ namespace ProjetoTccBackend.Models
         public void ChangeCompetitionStatus(CompetitionStatus status)
         {
             this.Status = status;
+        }
+
+
+        /// <summary>
+        /// Updates the competition's configuration and timing details based on the provided data.
+        /// </summary>
+        /// <remarks>This method calculates and updates the competition's end time, stop ranking date, 
+        /// and block submissions date based on the start time and respective durations provided  in the <paramref
+        /// name="newData"/> object. It also updates other competition settings  such as the maximum number of
+        /// exercises, maximum submission size, competition name, submission penalty, and Duration in minutes.</remarks>
+        /// <param name="newData">An instance of <see cref="CompetitionRequest"/> containing the new competition settings,  including start
+        /// time, duration, and other configuration parameters.</param>
+        public void ProcessCompetitionData(CompetitionRequest newData)
+        {
+            DateTime newEndTime = newData.StartTime.Add(newData.Duration);
+            DateTime newStopRankingDate = newData.StartTime.Add(newData.StopRanking);
+            DateTime newBlockSubmissionsDate = newData.StartTime.Add(newData.BlockSubmissions);
+
+            this.EndTime = newEndTime;
+            this.StopRanking = newStopRankingDate;
+            this.BlockSubmissions = newBlockSubmissionsDate;
+            this.MaxExercises = newData.MaxExercises;
+            this.MaxSubmissionSize = newData.MaxSubmissionSize;
+            this.Name = newData.Name;
+            this.SubmissionPenalty = newData.SubmissionPenalty;
+            this.Duration = newData.Duration;
         }
     }
 }

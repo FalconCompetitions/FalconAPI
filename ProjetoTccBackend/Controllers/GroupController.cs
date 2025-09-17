@@ -1,18 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Linq;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
-using System.Linq;
-using System.Security.Claims;
 
 namespace ProjetoTccBackend.Controllers
 {
-
-
-
     /// <summary>
     /// Controller responsible for managing groups.
     /// </summary>
@@ -57,11 +54,7 @@ namespace ProjetoTccBackend.Controllers
         public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest request)
         {
             var group = await this._groupService.CreateGroupAsync(request);
-            return Ok(new
-            {
-                group.Id,
-                group.Name
-            });
+            return Ok(new { group.Id, group.Name });
         }
 
         /// <summary>
@@ -114,7 +107,11 @@ namespace ProjetoTccBackend.Controllers
         [Authorize(Roles = "Admin,Teacher")]
         [HttpGet()]
         [ProducesResponseType(typeof(PagedResult<GroupResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetGroups([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        public async Task<IActionResult> GetGroups(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null
+        )
         {
             var result = await this._groupService.GetGroupsAsync(page, pageSize, search);
             return Ok(result);
@@ -148,8 +145,16 @@ namespace ProjetoTccBackend.Controllers
         public async Task<IActionResult> UpdateGroup(int id, [FromBody] UpdateGroupRequest request)
         {
             var loggedUserId = User.Claims.FirstOrDefault(c => c.Type.Equals("id"))?.Value;
-            var userRoles = User.Claims.Where(c => c.Type.Equals("role")).Select(c => c.Value).ToList();
-            var updatedGroup = await this._groupService.UpdateGroupAsync(id, request, loggedUserId, userRoles);
+            var userRoles = User
+                .Claims.Where(c => c.Type.Equals("role"))
+                .Select(c => c.Value)
+                .ToList();
+            var updatedGroup = await this._groupService.UpdateGroupAsync(
+                id,
+                request,
+                loggedUserId,
+                userRoles
+            );
             if (updatedGroup == null)
                 return Forbid();
             return Ok(updatedGroup);
