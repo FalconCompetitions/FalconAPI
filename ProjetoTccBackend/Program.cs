@@ -67,10 +67,10 @@ namespace ProjetoTccBackend
                     EmailConfirmed = false,
                     PhoneNumberConfirmed = false,
                     TwoFactorEnabled = false,
-                }
+                },
             };
 
-            foreach(User user in users)
+            foreach (User user in users)
             {
                 User? existentUser = await userManager.FindByEmailAsync(user.Email!);
                 if (existentUser is null)
@@ -116,7 +116,9 @@ namespace ProjetoTccBackend
             {
                 options.UseMySql(
                     builder.Configuration.GetConnectionString("DefaultConnection"),
-                    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+                    ServerVersion.AutoDetect(
+                        builder.Configuration.GetConnectionString("DefaultConnection")
+                    )
                 );
             });
             builder
@@ -146,6 +148,10 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<
                 ICompetitionRankingRepository,
                 CompetitionRankingRepository
+            >();
+            builder.Services.AddScoped<
+                IExerciseInCompetitionRepository,
+                ExerciseInCompetitionRepository
             >();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
             builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
@@ -288,18 +294,20 @@ namespace ProjetoTccBackend
             });
             */
 
-            
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("FrontendAppPolicy", policy =>
-                {
-                    policy.WithOrigins("https://localhost:3000")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
-                });
+                options.AddPolicy(
+                    "FrontendAppPolicy",
+                    policy =>
+                    {
+                        policy
+                            .WithOrigins("https://localhost:3000")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    }
+                );
             });
-            
 
             var app = builder.Build();
 

@@ -109,5 +109,11 @@ namespace ProjetoTccBackend.Repositories
         {
             this._dbContext.Set<T>().UpdateRange(entities);
         }
+
+        /// <inheritdoc />
+        public virtual IQueryable<T> Query()
+        {
+            return this._dbContext.Set<T>();
+        }
     }
 }

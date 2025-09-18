@@ -1,4 +1,5 @@
-﻿using ProjetoTccBackend.Database;
+﻿using Microsoft.EntityFrameworkCore;
+using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Enums.Competition;
 using ProjetoTccBackend.Exceptions;
@@ -13,6 +14,7 @@ namespace ProjetoTccBackend.Services
         private readonly ICompetitionRepository _competitionRepository;
         private readonly IQuestionRepository _questionRepository;
         private readonly IAnswerRepository _answerRepository;
+        private readonly IExerciseInCompetitionRepository _exerciseInCompetitionRepository;
         private readonly ICompetitionStateService _competitionStateService;
         private readonly TccDbContext _dbContext;
 
@@ -20,6 +22,7 @@ namespace ProjetoTccBackend.Services
             ICompetitionRepository competitionRepository,
             IQuestionRepository questionRepository,
             IAnswerRepository answerRepository,
+            IExerciseInCompetitionRepository exerciseInCompetitionRepository,
             ICompetitionStateService competitionStateService,
             TccDbContext dbContext
         )
@@ -27,6 +30,7 @@ namespace ProjetoTccBackend.Services
             this._competitionRepository = competitionRepository;
             this._questionRepository = questionRepository;
             this._answerRepository = answerRepository;
+            this._exerciseInCompetitionRepository = exerciseInCompetitionRepository;
             this._competitionStateService = competitionStateService;
             this._dbContext = dbContext;
         }
@@ -47,6 +51,29 @@ namespace ProjetoTccBackend.Services
             newCompetition.ProcessCompetitionData(request);
 
             this._competitionRepository.Add(newCompetition);
+
+            if (request.ExerciseIds.Count > 0)
+            {
+                List<Task> exerciseTasks = new List<Task>();
+                foreach (var exerciseId in request.ExerciseIds)
+                {
+                    exerciseTasks.Add(
+                        Task.Run(async () =>
+                        {
+                            await this._exerciseInCompetitionRepository.AddAsync(
+                                new ExerciseInCompetition()
+                                {
+                                    CompetitionId = newCompetition.Id,
+                                    ExerciseId = exerciseId,
+                                }
+                            );
+                        })
+                    );
+                }
+
+                await Task.WhenAll(exerciseTasks);
+            }
+
             await this._dbContext.SaveChangesAsync();
 
             this._competitionStateService.SignalNewCompetition();
@@ -120,11 +147,7 @@ namespace ProjetoTccBackend.Services
                 throw new Exception("Questão não encontrada");
             }
 
-            Answer answer = new Answer()
-            {
-                UserId = loggedUser.Id,
-                Content = request.Answer,
-            };
+            Answer answer = new Answer() { UserId = loggedUser.Id, Content = request.Answer };
 
             this._answerRepository.Add(answer);
             questionToAnswer.AnswerId = answer.Id;
@@ -174,15 +197,17 @@ namespace ProjetoTccBackend.Services
             this._competitionStateService.SignalNoActiveCompetitions();
         }
 
-
         /// <inheritdoc />
         public async Task<ICollection<Competition>> GetOpenCompetitionsAsync()
         {
             return await this._competitionRepository.GetOpenCompetitionsAsync();
         }
 
-        /// <inheritdoc/>
-        public async Task<Competition?> UpdateCompetitionAsync(int id, UpdateCompetitionRequest request)
+        /// <inheritdoc />
+        public async Task<Competition?> UpdateCompetitionAsync(
+            int id,
+            UpdateCompetitionRequest request
+        )
         {
             var competition = await this._dbContext.Competitions.FindAsync(id);
             if (competition == null)
@@ -190,23 +215,51 @@ namespace ProjetoTccBackend.Services
                 return null;
             }
 
-            competition.ProcessCompetitionData(new CompetitionRequest()
-            {
-                StartTime = request.StartTime,
-                BlockSubmissions = request.BlockSubmissions,
-                Duration = request.Duration,
-                ExerciseIds = request.ExerciseIds,
-                MaxExercises = request.MaxExercises,
-                MaxSubmissionSize = request.MaxSubmissionSize,
-                Name = request.Name,
-                StopRanking = request.StopRanking,
-                SubmissionPenalty = request.SubmissionPenalty
-            });
+            competition.ProcessCompetitionData(
+                new CompetitionRequest()
+                {
+                    StartTime = request.StartTime,
+                    BlockSubmissions = request.BlockSubmissions,
+                    Duration = request.Duration,
+                    ExerciseIds = request.ExerciseIds,
+                    MaxExercises = request.MaxExercises,
+                    MaxSubmissionSize = request.MaxSubmissionSize,
+                    Name = request.Name,
+                    StopRanking = request.StopRanking,
+                    SubmissionPenalty = request.SubmissionPenalty,
+                }
+            );
 
-            // Atualização dos exercícios pode ser feita conforme a lógica de negócio
-            // Exemplo: newCompetition.Exercices = ...
+            List<int> currentExerciseIds = await this
+                ._exerciseInCompetitionRepository.Query()
+                .Where(x => x.CompetitionId.Equals(competition.Id))
+                .Select(x => x.ExerciseId)
+                .ToListAsync();
+
+            List<int> newExerciseIds = request.ExerciseIds.ToList();
+
+            List<int> exerciseIdsToAdd = newExerciseIds.Except(currentExerciseIds).ToList();
+            List<int> exerciseIdsToDelete = currentExerciseIds.Except(newExerciseIds).ToList();
+
+            await this
+                ._exerciseInCompetitionRepository.Query()
+                .Where(x =>
+                    x.CompetitionId.Equals(competition.Id)
+                    && exerciseIdsToDelete.Contains(x.ExerciseId)
+                )
+                .ExecuteDeleteAsync();
+
+            IEnumerable<ExerciseInCompetition> newExercisesEntities = exerciseIdsToAdd.Select(
+                exerciseId => new ExerciseInCompetition()
+                {
+                    CompetitionId = competition.Id,
+                    ExerciseId = exerciseId,
+                }
+            );
+            await this._exerciseInCompetitionRepository.AddRangeAsync(newExercisesEntities);
 
             await this._dbContext.SaveChangesAsync();
+
             return competition;
         }
     }

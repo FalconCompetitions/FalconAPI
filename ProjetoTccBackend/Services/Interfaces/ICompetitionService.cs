@@ -103,12 +103,17 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// collection will be empty.</returns>
         Task<ICollection<Competition>> GetOpenCompetitionsAsync();
 
+
         /// <summary>
-        /// Updates an existing competition asynchronously.
+        /// Updates an existing competition with the specified data.
         /// </summary>
+        /// <remarks>This method updates the competition's details and synchronizes its associated
+        /// exercises based on the provided request. Any exercises not included in the request will be removed from the
+        /// competition, and new exercises will be added.</remarks>
         /// <param name="id">The unique identifier of the competition to update.</param>
-        /// <param name="request">The update request containing new competition data.</param>
-        /// <returns>The updated <see cref="Competition"/> object, or null if not found.</returns>
+        /// <param name="request">An <see cref="UpdateCompetitionRequest"/> object containing the updated competition details,  such as name,
+        /// start time, duration, exercise IDs, and other configuration settings.</param>
+        /// <returns>The updated <see cref="Competition"/> object if the competition exists; otherwise, <see langword="null"/>.</returns>
         Task<Competition?> UpdateCompetitionAsync(int id, UpdateCompetitionRequest request);
     }
 }

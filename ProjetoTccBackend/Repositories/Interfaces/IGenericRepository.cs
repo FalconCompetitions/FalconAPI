@@ -104,5 +104,18 @@ namespace ProjetoTccBackend.Repositories.Interfaces
         /// <param name="expression">The filter expression.</param>
         /// <returns>A task that represents the asynchronous operation, containing a collection of entities that match the filter expression.</returns>
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression);
+
+
+        /// <summary>
+        /// Returns an <see cref="IQueryable{T}"/> for the entity, allowing dynamic query composition
+        /// using LINQ outside the repository.
+        /// </summary>
+        /// <remarks>
+        /// Use this method to build custom queries, apply filters, ordering, joins, and includes
+        /// before executing the query against the database. The query will only be executed when
+        /// methods like <c>ToList()</c>, <c>FirstOrDefault()</c>, <c>Count()</c>, etc. are called.
+        /// </remarks>
+        /// <returns>An <see cref="IQueryable{T}"/> representing the collection of entities of type <typeparamref name="T"/>.</returns>
+        IQueryable<T> Query();
     }
 }
