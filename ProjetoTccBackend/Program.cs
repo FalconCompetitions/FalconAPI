@@ -139,6 +139,7 @@ namespace ProjetoTccBackend
             // Repositories
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             builder.Services.AddScoped<IGroupRepository, GroupRepository>();
+            builder.Services.AddScoped<IGroupInviteRepository, GroupInviteRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<ILogRepository, LogRepository>(); // Adicionado para Log
             builder.Services.AddScoped<IExerciseInputRepository, ExerciseInputRepository>();
@@ -182,6 +183,7 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<IJudgeService, JudgeService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IGroupInviteService, GroupInviteService>();
             builder.Services.AddScoped<IGroupService, GroupService>();
             builder.Services.AddScoped<ILogService, LogService>(); // Adicionado para Log
             builder.Services.AddScoped<ICompetitionRankingService, CompetitionRankingService>();
@@ -209,7 +211,7 @@ namespace ProjetoTccBackend
                 })
                 .AddJsonOptions(options =>
                 {
-                    options.JsonSerializerOptions.MaxDepth = 4;
+                    options.JsonSerializerOptions.MaxDepth = 8;
                     options.JsonSerializerOptions.ReferenceHandler = System
                         .Text
                         .Json

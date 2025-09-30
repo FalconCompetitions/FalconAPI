@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Database.Responses.Group;
+using ProjetoTccBackend.Exceptions.Group;
+using ProjetoTccBackend.Exceptions.User;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
 
@@ -18,14 +20,17 @@ namespace ProjetoTccBackend.Controllers
     public class GroupController : ControllerBase
     {
         private readonly IGroupService _groupService;
+        private readonly IGroupInviteService _groupInviteService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GroupController"/> class.
         /// </summary>
         /// <param name="groupService">The service responsible for group operations.</param>
-        public GroupController(IGroupService groupService)
+        /// <param name="groupInviteService">The service responsible for group invitation</param>
+        public GroupController(IGroupService groupService, IGroupInviteService groupInviteService)
         {
             this._groupService = groupService;
+            this._groupInviteService = groupInviteService;
         }
 
         /// <summary>
@@ -158,6 +163,92 @@ namespace ProjetoTccBackend.Controllers
             if (updatedGroup == null)
                 return Forbid();
             return Ok(updatedGroup);
+        }
+
+
+
+        /// <summary>
+        /// Sends an invitation to a user to join a specified group.
+        /// </summary>
+        /// <remarks>This action is restricted to users with the "Student" role. Ensure the request body
+        /// contains valid data for the invitation.</remarks>
+        /// <param name="request">The request containing the details of the invitation, including the user ID and group ID.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation. Returns: <list type="bullet">
+        /// <item><description><see cref="StatusCodes.Status201Created"/> if the invitation is successfully
+        /// created.</description></item> <item><description><see cref="StatusCodes.Status400BadRequest"/> if the group
+        /// does not exist, the user is not found, or the user is already part of a group.</description></item> </list></returns>
+        [Authorize(Roles = "Student")]
+        [HttpPost("invite")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> InviteUserToGroup(
+            [FromBody] InviteUserToGroupRequest request
+        )
+        {
+            try
+            {
+                GroupInvite? groupInvite = await this._groupInviteService.SendGroupInviteToUser(
+                    request
+                );
+
+                if (groupInvite is null)
+                {
+                    return BadRequest($"O grupo de id {request.GroupId} não existe!");
+                }
+
+                return CreatedAtAction(
+                    nameof(InviteUserToGroup),
+                    new { userId = request.UserId },
+                    groupInvite
+                );
+            }
+            catch (UserNotFoundException exc)
+            {
+                return BadRequest(new { exc.Message });
+            }
+            catch (UserHasGroupException exc)
+            {
+                return BadRequest(new { exc.Message });
+            }
+        }
+
+        /// <summary>
+        /// Accepts a group invitation for the currently authenticated user.
+        /// </summary>
+        /// <remarks>This action requires the user to be authenticated and have the "Student"
+        /// role.</remarks>
+        /// <param name="groupId">The unique identifier of the group whose invitation is being accepted.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.  Returns <see cref="OkObjectResult"/>
+        /// with the result of the acceptance if successful,  or <see cref="BadRequestObjectResult"/> if the operation
+        /// fails.</returns>
+        /// <remarks>
+        /// Request example:
+        /// <code>
+        ///     PUT /api/group/accept/1
+        ///     {}
+        /// </code>
+        /// </remarks>
+        [Authorize(Roles = "Student")]
+        [HttpPut("accept/{groupId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> AcceptGroupInvite(int groupId)
+        {
+            try
+            {
+                var res = await this._groupInviteService.AcceptGroupInviteAsync(groupId);
+
+                if (res is null)
+                {
+                    return BadRequest();
+                }
+
+                return Ok(res);
+            }
+            catch (GroupInvitationException ex)
+            {
+                return BadRequest(new { ex.Message });
+            }
         }
     }
 }

@@ -12,5 +12,10 @@ namespace ProjetoTccBackend.Models
 
 
         public ICollection<Exercise> Exercises { get; set; } = [];
+
+        public static explicit operator ExerciseType(int? v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

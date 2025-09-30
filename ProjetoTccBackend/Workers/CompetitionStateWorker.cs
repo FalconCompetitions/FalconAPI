@@ -39,7 +39,7 @@ namespace ProjetoTccBackend.Workers
         /// <summary>
         /// Checks the initial state of open competitions and signals the competition state service if any are found.
         /// </summary>
-        /// <remarks>This method retrieves the list of open competitions using the competition service. 
+        /// <remarks>This method retrieves the list of open competitions using the competition service.
         /// If one or more open competitions are detected, it signals the competition state service  to indicate the
         /// presence of a new competition.</remarks>
         /// <returns></returns>
@@ -48,7 +48,8 @@ namespace ProjetoTccBackend.Workers
             using var scope = this._scopeFactory.CreateScope();
             var competitionService =
                 scope.ServiceProvider.GetRequiredService<ICompetitionService>();
-            var competitions = await competitionService.GetOpenCompetitionsAsync();
+            ICollection<Competition> competitions =
+                await competitionService.GetOpenCompetitionsAsync();
 
             if (competitions.Any())
             {
@@ -91,7 +92,6 @@ namespace ProjetoTccBackend.Workers
             }
         }
 
-
         /// <summary>
         /// Processes all open competitions asynchronously.
         /// </summary>
@@ -122,7 +122,6 @@ namespace ProjetoTccBackend.Workers
             }
         }
 
-
         /// <summary>
         /// Processes the current state of a competition and transitions it to the appropriate next state based on the
         /// current time and its status.
@@ -148,25 +147,25 @@ namespace ProjetoTccBackend.Workers
         {
             if (competition.Status.Equals(CompetitionStatus.Pending))
             {
-                if(competition.StartInscriptions < now && competition.EndInscriptions > now)
+                if (competition.StartInscriptions < now && competition.EndInscriptions > now)
                 {
                     await competitionService.OpenCompetitionInscriptionsAsync(competition);
                 }
                 return;
             }
 
-            if(competition.Status.Equals(CompetitionStatus.OpenInscriptions))
+            if (competition.Status.Equals(CompetitionStatus.OpenInscriptions))
             {
-                if(competition.EndInscriptions < now)
+                if (competition.EndInscriptions < now)
                 {
                     await competitionService.CloseCompetitionInscriptionsAsync(competition);
                 }
                 return;
             }
 
-            if(competition.Status.Equals(CompetitionStatus.Ongoing))
+            if (competition.Status.Equals(CompetitionStatus.Ongoing))
             {
-                if(competition.EndTime < now)
+                if (competition.EndTime < now)
                 {
                     await competitionService.EndCompetitionAsync(competition);
                 }

@@ -52,5 +52,10 @@ namespace ProjetoTccBackend.Models
         public ICollection<GroupExerciseAttempt> GroupExerciseAttempts { get; set; } = [];
 
         public ICollection<Log> Logs { get; } = [];
+
+        /// <summary>
+        /// Gets the collection of group invites associated with the current user.
+        /// </summary>
+        public ICollection<GroupInvite> GroupInvites { get; } = [];
     }
 }

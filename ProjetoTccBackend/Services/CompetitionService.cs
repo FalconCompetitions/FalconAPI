@@ -47,6 +47,8 @@ namespace ProjetoTccBackend.Services
                 throw new ExistentCompetitionException();
             }
 
+
+
             Competition newCompetition = new Competition();
             newCompetition.ProcessCompetitionData(request);
 
@@ -200,7 +202,13 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc />
         public async Task<ICollection<Competition>> GetOpenCompetitionsAsync()
         {
-            return await this._competitionRepository.GetOpenCompetitionsAsync();
+            List<Competition> validCompetitions = await this
+                ._competitionRepository.Query()
+                .Where(c => c.StartInscriptions != null && c.EndInscriptions != null)
+                .Select(c => c)
+                .ToListAsync();
+
+            return validCompetitions;
         }
 
         /// <inheritdoc />

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoTccBackend.Database.Requests.Exercise;
+using ProjetoTccBackend.Database.Responses.Exercise;
+using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
 
@@ -68,11 +70,50 @@ namespace ProjetoTccBackend.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? search = null,
-            [FromQuery] int? exerciseType = null
+            [FromQuery(Name = "exerciseType")] int? exerciseType = null
         )
         {
-            var result = await this._exerciseService.GetExercisesAsync(page, pageSize, search);
-            return Ok(result);
+
+            var result = await this._exerciseService.GetExercisesAsync(
+                page,
+                pageSize,
+                search,
+                exerciseType
+            );
+
+            var response = new PagedResult<ExerciseResponse>()
+            {
+                Items = result.Items.Select(x => new ExerciseResponse()
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Description = x.Description,
+                    ExerciseTypeId = x.ExerciseTypeId,
+                    Inputs = x
+                        .ExerciseInputs.Select(input => new ExerciseInputResponse()
+                        {
+                            Id = input.Id,
+                            ExerciseId = input.ExerciseId,
+                            Input = input.Input,
+                        })
+                        .ToList(),
+                    Outputs = x
+                        .ExerciseOutputs.Select(output => new ExerciseOutputResponse()
+                        {
+                            Id = output.Id,
+                            Output = output.Output,
+                            ExerciseId = output.ExerciseId,
+                            ExerciseInputId = output.ExerciseInputId,
+                        })
+                        .ToList(),
+                }),
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount,
+                TotalPages = result.TotalPages,
+            };
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -114,7 +155,29 @@ namespace ProjetoTccBackend.Controllers
             return this.CreatedAtAction(
                 nameof(this.GetExerciseById),
                 new { id = exercise.Id },
-                exercise
+                new ExerciseResponse()
+                {
+                    Id = exercise.Id,
+                    Title = exercise.Title,
+                    Description = exercise.Description,
+                    Inputs = exercise
+                        .ExerciseInputs.Select(x => new ExerciseInputResponse()
+                        {
+                            Id = x.Id,
+                            ExerciseId = x.Id,
+                            Input = x.Input,
+                        })
+                        .ToList(),
+                    Outputs = exercise
+                        .ExerciseOutputs.Select(x => new ExerciseOutputResponse()
+                        {
+                            Id = x.Id,
+                            ExerciseId = x.ExerciseId,
+                            Output = x.Output,
+                            ExerciseInputId = x.ExerciseInputId,
+                        })
+                        .ToList(),
+                }
             );
         }
 
@@ -149,8 +212,34 @@ namespace ProjetoTccBackend.Controllers
             [FromBody] UpdateExerciseRequest request
         )
         {
-            await this._exerciseService.UpdateExerciseAsync(id, request);
-            return Ok();
+            Exercise updatedExercise = await this._exerciseService.UpdateExerciseAsync(id, request);
+
+            ExerciseResponse response = new ExerciseResponse()
+            {
+                Id = updatedExercise.Id,
+                Title = updatedExercise.Title,
+                Description = updatedExercise.Description,
+                ExerciseTypeId = updatedExercise.ExerciseTypeId,
+                Inputs = updatedExercise
+                    .ExerciseInputs.Select(x => new ExerciseInputResponse()
+                    {
+                        Id = x.Id,
+                        ExerciseId = x.Id,
+                        Input = x.Input,
+                    })
+                    .ToList(),
+                Outputs = updatedExercise
+                    .ExerciseOutputs.Select(x => new ExerciseOutputResponse()
+                    {
+                        Id = x.Id,
+                        Output = x.Output,
+                        ExerciseId = x.ExerciseId,
+                        ExerciseInputId = updatedExercise.Id,
+                    })
+                    .ToList(),
+            };
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -165,15 +254,15 @@ namespace ProjetoTccBackend.Controllers
         ///     DELETE /api/exercise/1
         /// </code>
         /// </remarks>
-        /// <response code="204">If the deletion is successful.</response>
+        /// <response code="200">If the deletion is successful.</response>
         /// <response code="404">If the exercise is not found.</response>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteExercise(int id)
         {
             await this._exerciseService.DeleteExerciseAsync(id);
-            return NoContent();
+            return Ok();
         }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Exercise;
+using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
-using ProjetoTccBackend.Database.Responses.Global;
 
 namespace ProjetoTccBackend.Services
 {
@@ -38,12 +39,14 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public async Task<Exercise> CreateExerciseAsync(CreateExerciseRequest request)
         {
-            string? judgeUuid = await this._judgeService.CreateJudgeExerciseAsync(request);
+            string? judgeUuid = "ed2e8459-c43a-42d5-9a1e-87835a769ea1"; //await this._judgeService.CreateJudgeExerciseAsync(request);
 
+            /*
             if (judgeUuid == null)
             {
                 throw new ErrorException(new { Message = "Não foi possível criar o exercício" });
             }
+            */
 
             var inputsRequest = request.Inputs.ToList();
             var outputsRequest = request.Outputs.ToList();
@@ -53,11 +56,12 @@ namespace ProjetoTccBackend.Services
                 JudgeUuid = judgeUuid,
                 Title = request.Title,
                 Description = request.Description,
-                EstimatedTime = request.EstimatedTime,
+                EstimatedTime = TimeSpan.FromMinutes(20),
                 ExerciseTypeId = request.ExerciseTypeId,
             };
 
             this._exerciseRepository.Add(exercise);
+            await this._dbContext.SaveChangesAsync();
 
             List<ExerciseInput> inputs = new List<ExerciseInput>();
             List<ExerciseOutput> outputs = new List<ExerciseOutput>();
@@ -75,6 +79,7 @@ namespace ProjetoTccBackend.Services
             }
 
             this._exerciseInputRepository.AddRange(inputs);
+            await this._dbContext.SaveChangesAsync();
 
             for (int i = 0; i < outputsRequest.Count; i++)
             {
@@ -91,9 +96,16 @@ namespace ProjetoTccBackend.Services
 
             this._exerciseOutputRepository.AddRange(outputs);
 
-            this._dbContext.SaveChanges();
+            await this._dbContext.SaveChangesAsync();
 
-            return exercise;
+            Exercise createdExercise = await this
+                ._exerciseRepository.Query()
+                .Where(x => x.Equals(exercise.Id))
+                .Include(x => x.ExerciseInputs)
+                .Include(x => x.ExerciseOutputs)
+                .FirstAsync();
+
+            return createdExercise;
         }
 
         /// <inheritdoc/>
@@ -111,26 +123,52 @@ namespace ProjetoTccBackend.Services
             return exercises;
         }
 
-        public async Task<PagedResult<Exercise>> GetExercisesAsync(int page, int pageSize, string? search = null, ExerciseType? exerciseType = null)
+        /// <inheritdoc />
+        public async Task<PagedResult<Exercise>> GetExercisesAsync(
+            int page,
+            int pageSize,
+            string? search = null,
+            int? exerciseTypeId = null
+        )
         {
-            var query = this._exerciseRepository.GetAll().AsQueryable();
+            var query = this._exerciseRepository.Query();
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(e => e.Title.Contains(search) || e.Description.Contains(search));
+                query = query.Where(e =>
+                    e.Title.Contains(search) || e.Description.Contains(search)
+                );
             }
+
+            this._logger.LogInformation($"ExerciseTypeId: {exerciseTypeId}");
+
+            if(exerciseTypeId != null)
+            {
+                query = query.Where(e =>
+                    e.ExerciseTypeId == exerciseTypeId
+                );
+            }
+
             int totalCount = query.Count();
-            var items = query.OrderBy(e => e.Id).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-            return await Task.FromResult(new PagedResult<Exercise>
+            var items = await query
+                .AsSplitQuery()
+                .OrderBy(e => e.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Include(x => x.ExerciseInputs)
+                .Include(x => x.ExerciseOutputs)
+                .ToListAsync();
+
+            return new PagedResult<Exercise>
             {
                 Items = items,
                 TotalCount = totalCount,
                 Page = page,
-                PageSize = pageSize
-            });
+                PageSize = pageSize,
+            };
         }
 
         /// <inheritdoc/>
-        public async Task UpdateExerciseAsync(int id, UpdateExerciseRequest request)
+        public async Task<Exercise> UpdateExerciseAsync(int id, UpdateExerciseRequest request)
         {
             var exercise = this._exerciseRepository.GetById(id);
 
@@ -204,6 +242,7 @@ namespace ProjetoTccBackend.Services
             }
 
             this._exerciseInputRepository.AddRange(createdInputs);
+            await this._dbContext.SaveChangesAsync();
 
             for (int i = 0; i < outputsToCreate.Count; i++)
             {
@@ -219,6 +258,7 @@ namespace ProjetoTccBackend.Services
             }
 
             this._exerciseOutputRepository.AddRange(createdOutputs);
+            await this._dbContext.SaveChangesAsync();
 
             List<ExerciseInput> inputsToDelete = new List<ExerciseInput>();
             List<ExerciseOutput> outputsToDelete = new List<ExerciseOutput>();
@@ -251,6 +291,15 @@ namespace ProjetoTccBackend.Services
             this._exerciseRepository.Update(exercise);
 
             await this._dbContext.SaveChangesAsync();
+
+            var updatedExercise = await this
+                ._exerciseRepository.Query()
+                .Where(x => x.Id.Equals(request.Id))
+                .Include(x => x.ExerciseInputs)
+                .Include(x => x.ExerciseOutputs)
+                .FirstAsync();
+
+            return updatedExercise;
         }
 
         /// <inheritdoc/>

@@ -12,6 +12,7 @@ namespace ProjetoTccBackend.Database
         private readonly IConfiguration? _configuration;
 
         public DbSet<Group> Groups { get; set; }
+        public DbSet<GroupInvite> GroupInvites { get; set; }
         public DbSet<Competition> Competitions { get; set; }
         public DbSet<CompetitionRanking> CompetitionRankings { get; set; }
         public DbSet<ExerciseType> ExerciseTypes { get; set; }
@@ -27,7 +28,8 @@ namespace ProjetoTccBackend.Database
         public DbSet<ExerciseSubmissionQueueItem> ExerciseSubmissionQueueItems { get; set; }
 
         // Construtor para testes
-        public TccDbContext(DbContextOptions<TccDbContext> options) : base(options) { }
+        public TccDbContext(DbContextOptions<TccDbContext> options)
+            : base(options) { }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -171,7 +173,7 @@ namespace ProjetoTccBackend.Database
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(required: true);
 
-            // Exercise - ExerciseType
+            // Exercise - ExerciseTypeId
             builder
                 .Entity<Exercise>()
                 .HasOne(e => e.ExerciseType)
@@ -227,9 +229,26 @@ namespace ProjetoTccBackend.Database
                     )
             );
 
-            builder.Entity<ExerciseSubmissionQueueItem>()
+            builder
+                .Entity<ExerciseSubmissionQueueItem>()
                 .Property(e => e.Request)
                 .HasConversion(groupExerciseAttemptRequestConverter);
+
+            builder
+                .Entity<GroupInvite>()
+                .HasOne(g => g.User)
+                .WithMany(u => u.GroupInvites)
+                .HasForeignKey(g => g.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(required: true);
+
+            builder
+                .Entity<GroupInvite>()
+                .HasOne(g => g.Group)
+                .WithMany(g => g.GroupInvites)
+                .HasForeignKey(g => g.GroupId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(required: true);
         }
     }
 }

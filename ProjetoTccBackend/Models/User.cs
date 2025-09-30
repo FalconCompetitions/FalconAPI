@@ -20,6 +20,8 @@ namespace ProjetoTccBackend.Models
 
         public DateTime? LastLoggedAt { get; set; }
 
+
+        public ICollection<GroupInvite> GroupInvites { get; } = [];
         public ICollection<Question> Questions { get; } = [];
         public ICollection<Answer> Answers { get; } = [];
 

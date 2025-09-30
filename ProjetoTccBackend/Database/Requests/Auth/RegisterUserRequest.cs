@@ -13,7 +13,7 @@ namespace ProjetoTccBackend.Database.Requests.Auth
         /// Gets or sets the RA (student/employee registration number).
         /// </summary>
         [Required]
-        [MaxLength(6, ErrorMessage = "RA inválido!")]
+        [MaxLength(7, ErrorMessage = "RA inválido!")]
         [JsonPropertyName("ra")]
         public string RA { get; set; }
 
