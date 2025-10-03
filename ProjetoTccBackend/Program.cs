@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoTccBackend.Database;
@@ -138,6 +139,7 @@ namespace ProjetoTccBackend
 
             // Repositories
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            builder.Services.AddScoped<IAttachedFileRepository, AttachedFileRepository>();
             builder.Services.AddScoped<IGroupRepository, GroupRepository>();
             builder.Services.AddScoped<IGroupInviteRepository, GroupInviteRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -180,6 +182,7 @@ namespace ProjetoTccBackend
 
             // Services
             builder.Services.AddSingleton<ICompetitionStateService, CompetitionStateService>();
+            builder.Services.AddScoped<IAttachedFileService, AttachedFileService>();
             builder.Services.AddScoped<IJudgeService, JudgeService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
@@ -288,6 +291,11 @@ namespace ProjetoTccBackend
                         },
                     };
                 });
+
+            builder.Services.Configure<KestrelServerOptions>(options =>
+            {
+                options.Limits.MaxRequestBodySize = 40 * 1024 * 1024; // 40MB
+            });
 
             /*
             builder.Services.AddAuthorization(options =>

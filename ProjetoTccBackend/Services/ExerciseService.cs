@@ -4,6 +4,7 @@ using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Exercise;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Exceptions;
+using ProjetoTccBackend.Exceptions.AttachedFile;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
@@ -16,6 +17,7 @@ namespace ProjetoTccBackend.Services
         private readonly IExerciseInputRepository _exerciseInputRepository;
         private readonly IExerciseOutputRepository _exerciseOutputRepository;
         private readonly IJudgeService _judgeService;
+        private readonly IAttachedFileService _attachedFileService;
         private readonly TccDbContext _dbContext;
         private readonly ILogger<ExerciseService> _logger;
 
@@ -24,6 +26,7 @@ namespace ProjetoTccBackend.Services
             IExerciseInputRepository exerciseInputRepository,
             IExerciseOutputRepository exerciseOutputRepository,
             IJudgeService judgeService,
+            IAttachedFileService attachedFileService,
             TccDbContext dbContext,
             ILogger<ExerciseService> logger
         )
@@ -32,13 +35,24 @@ namespace ProjetoTccBackend.Services
             this._exerciseInputRepository = exerciseInputRepository;
             this._exerciseOutputRepository = exerciseOutputRepository;
             this._judgeService = judgeService;
+            this._attachedFileService = attachedFileService;
             this._dbContext = dbContext;
             this._logger = logger;
         }
 
-        /// <inheritdoc/>
-        public async Task<Exercise> CreateExerciseAsync(CreateExerciseRequest request)
+        /// <inheritdoc />
+        public async Task<Exercise> CreateExerciseAsync(CreateExerciseRequest request, IFormFile file)
         {
+            bool isFileFormatValid = this._attachedFileService.IsSubmittedFileValid(file);
+
+            if(isFileFormatValid is false)
+            {
+                throw new InvalidAttachedFileException("Formato de arquivo inválido!");
+            }
+
+            AttachedFile attachedFile = await this._attachedFileService.ProcessAndSaveFile(file);
+
+
             string? judgeUuid = "ed2e8459-c43a-42d5-9a1e-87835a769ea1"; //await this._judgeService.CreateJudgeExerciseAsync(request);
 
             /*
@@ -54,6 +68,7 @@ namespace ProjetoTccBackend.Services
             Exercise exercise = new Exercise()
             {
                 JudgeUuid = judgeUuid,
+                AttachedFileId = attachedFile.Id,
                 Title = request.Title,
                 Description = request.Description,
                 EstimatedTime = TimeSpan.FromMinutes(20),
@@ -103,6 +118,7 @@ namespace ProjetoTccBackend.Services
                 .Where(x => x.Equals(exercise.Id))
                 .Include(x => x.ExerciseInputs)
                 .Include(x => x.ExerciseOutputs)
+                .Include(x => x.AttachedFile)
                 .FirstAsync();
 
             return createdExercise;

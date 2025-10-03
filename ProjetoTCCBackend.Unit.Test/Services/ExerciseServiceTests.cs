@@ -21,6 +21,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var inputRepoMock = new Mock<IExerciseInputRepository>();
             var outputRepoMock = new Mock<IExerciseOutputRepository>();
             var judgeServiceMock = new Mock<IJudgeService>();
+            var attachedFileServiceMock = new Mock<IAttachedFileService>();
             var dbContext = DbContextTestFactory.Create();
             var loggerMock = new Mock<ILogger<ExerciseService>>();
             var expectedExercise = new Exercise
@@ -35,6 +36,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 inputRepoMock.Object,
                 outputRepoMock.Object,
                 judgeServiceMock.Object,
+                attachedFileServiceMock.Object,
                 dbContext,
                 loggerMock.Object
             );

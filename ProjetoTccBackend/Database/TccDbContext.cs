@@ -11,6 +11,7 @@ namespace ProjetoTccBackend.Database
     {
         private readonly IConfiguration? _configuration;
 
+        public DbSet<AttachedFile> AttachedFiles { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupInvite> GroupInvites { get; set; }
         public DbSet<Competition> Competitions { get; set; }
@@ -249,6 +250,14 @@ namespace ProjetoTccBackend.Database
                 .HasForeignKey(g => g.GroupId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(required: true);
+
+            builder
+                .Entity<Exercise>()
+                .HasOne(e => e.AttachedFile)
+                .WithMany(a => a.Exercises)
+                .HasForeignKey(e => e.AttachedFileId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(required: false);
         }
     }
 }

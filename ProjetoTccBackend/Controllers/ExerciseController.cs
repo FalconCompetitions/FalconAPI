@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoTccBackend.Database.Requests.Exercise;
 using ProjetoTccBackend.Database.Responses.Exercise;
+using ProjetoTccBackend.Database.Responses.Form;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
@@ -12,16 +14,16 @@ namespace ProjetoTccBackend.Controllers
     [ApiController]
     public class ExerciseController : ControllerBase
     {
-        private readonly ILogger<ExerciseController> _logger;
         private readonly IExerciseService _exerciseService;
+        private readonly ILogger<ExerciseController> _logger;
 
         public ExerciseController(
-            ILogger<ExerciseController> logger,
-            IExerciseService exerciseService
+            IExerciseService exerciseService,
+            ILogger<ExerciseController> logger
         )
         {
-            this._logger = logger;
             this._exerciseService = exerciseService;
+            this._logger = logger;
         }
 
         /// <summary>
@@ -73,7 +75,6 @@ namespace ProjetoTccBackend.Controllers
             [FromQuery(Name = "exerciseType")] int? exerciseType = null
         )
         {
-
             var result = await this._exerciseService.GetExercisesAsync(
                 page,
                 pageSize,
@@ -119,7 +120,8 @@ namespace ProjetoTccBackend.Controllers
         /// <summary>
         /// Creates a new exercise based on the provided request data.
         /// </summary>
-        /// <param name="request">The request object containing the details of the exercise to be created. This must include all required fields for creating an exercise.</param>
+        /// <param name="file">The attached file with details of the exercise.</param>
+        /// <param name="requestMetadata">The request object containing the details of the exercise to be created. This must include all required fields for creating an exercise.</param>
         /// <returns>An <see cref="IActionResult"/> indicating the result of the operation. Returns <see cref="CreatedAtActionResult"/> with the created exercise if successful, or <see cref="BadRequestResult"/> if the creation fails.</returns>
         /// <remarks>
         /// This action is restricted to users with the "Admin" or "Teacher" roles.<br/>
@@ -142,9 +144,50 @@ namespace ProjetoTccBackend.Controllers
         [HttpPost()]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateNewExercise([FromBody] CreateExerciseRequest request)
+        public async Task<IActionResult> CreateNewExercise(
+            [FromForm(Name = "file")] IFormFile file,
+            [FromForm(Name = "metadata")] string requestMetadata
+        )
         {
-            Exercise? exercise = await this._exerciseService.CreateExerciseAsync(request);
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(
+                    new InvalidFormResponse() { Target = "file", Error = "Arquivo é obrigatório!" }
+                );
+            }
+
+            if (String.IsNullOrEmpty(requestMetadata))
+            {
+                return BadRequest(
+                    new InvalidFormResponse()
+                    {
+                        Target = "metadata",
+                        Error = "Dados da requisição ausentes!",
+                    }
+                );
+            }
+
+            CreateExerciseRequest? request = null;
+
+            try
+            {
+                request = JsonSerializer.Deserialize<CreateExerciseRequest>(requestMetadata);
+            }
+            catch (JsonException ex)
+            {
+                return BadRequest(
+                    new InvalidFormResponse() { Target = "metadata", Error = ex.Message }
+                );
+            }
+
+            this.TryValidateModel(request);
+
+            if (this.ModelState.IsValid is false)
+            {
+                return ValidationProblem(this.ModelState);
+            }
+
+            Exercise? exercise = await this._exerciseService.CreateExerciseAsync(request, file);
 
             if (exercise == null)
             {
