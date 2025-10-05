@@ -1,14 +1,16 @@
-﻿using ProjetoTccBackend.Models;
-using ProjetoTccBackend.Services.Interfaces;
-using ProjetoTccBackend.Exceptions;
-using Microsoft.AspNetCore.Identity;
+﻿using System.Linq;
 using System.Security.Claims;
-using ProjetoTccBackend.Repositories.Interfaces;
-using ProjetoTccBackend.Database.Requests.Auth;
-using ProjetoTccBackend.Database.Responses.Global;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
+using ProjetoTccBackend.Database.Requests.Auth;
 using ProjetoTccBackend.Database.Requests.User;
+using ProjetoTccBackend.Database.Responses.Global;
+using ProjetoTccBackend.Database.Responses.Group;
+using ProjetoTccBackend.Database.Responses.User;
+using ProjetoTccBackend.Exceptions;
+using ProjetoTccBackend.Models;
+using ProjetoTccBackend.Repositories.Interfaces;
+using ProjetoTccBackend.Services.Interfaces;
 
 namespace ApiEstoqueASP.Services;
 
@@ -22,7 +24,14 @@ public class UserService : IUserService
     private readonly ITokenService _tokenService;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(UserManager<User> userManager, IUserRepository userRepository, SignInManager<User> signInManager, IHttpContextAccessor httpContextAccessor, ITokenService tokenService, ILogger<UserService> logger)
+    public UserService(
+        UserManager<User> userManager,
+        IUserRepository userRepository,
+        SignInManager<User> signInManager,
+        IHttpContextAccessor httpContextAccessor,
+        ITokenService tokenService,
+        ILogger<UserService> logger
+    )
     {
         this._userManager = userManager;
         this._userRepository = userRepository;
@@ -70,32 +79,35 @@ public class UserService : IUserService
         if (existentUser is not null)
         {
             this._logger.LogError("Email already in use");
-            throw new FormException(new Dictionary<string, string>()
-                {
-                    { "email", """E-mail já utilizado""" }
-                });
+            throw new FormException(
+                new Dictionary<string, string>() { { "email", """E-mail já utilizado""" } }
+            );
         }
 
-        if(user.Role.Equals("Admin"))
+        if (user.Role.Equals("Admin"))
         {
-            throw new FormException(new Dictionary<string, string>()
-            {
-                { "general", "Não foi possível criar o usuário" }
-            });
+            throw new FormException(
+                new Dictionary<string, string>()
+                {
+                    { "general", "Não foi possível criar o usuário" },
+                }
+            );
         }
 
-        if(user.Role.Equals("Teacher"))
+        if (user.Role.Equals("Teacher"))
         {
             string accessCode = user.AccessCode!;
 
             bool isValid = this._tokenService.ValidateToken(accessCode);
 
-            if(!isValid)
+            if (!isValid)
             {
-                throw new FormException(new Dictionary<string, string>()
-                {
-                    { "accessCode", "Código de acesso inválido" }
-                });
+                throw new FormException(
+                    new Dictionary<string, string>()
+                    {
+                        { "accessCode", "Código de acesso inválido" },
+                    }
+                );
             }
         }
 
@@ -116,10 +128,9 @@ public class UserService : IUserService
         if (result.Succeeded == false)
         {
             this._logger.LogDebug(result.Errors.Count().ToString());
-            throw new FormException(new Dictionary<string, string>
-                {
-                    { "Error", result.Errors.First().Code }
-                });
+            throw new FormException(
+                new Dictionary<string, string> { { "Error", result.Errors.First().Code } }
+            );
         }
 
         newUser.LastLoggedAt = DateTime.UtcNow;
@@ -134,10 +145,9 @@ public class UserService : IUserService
 
         if (res.Succeeded == false)
         {
-            throw new FormException(new Dictionary<string, string>
-                {
-                    { "Error", result.Errors.First().Code }
-                });
+            throw new FormException(
+                new Dictionary<string, string> { { "Error", result.Errors.First().Code } }
+            );
         }
 
         return Tuple.Create(newUser, user.Role);
@@ -152,20 +162,23 @@ public class UserService : IUserService
 
         if (existentUser == null)
         {
-            throw new FormException(new Dictionary<string, string>
-            {
-                { "form", "RA e/ou senha incorreto(s)" }
-            });
+            throw new FormException(
+                new Dictionary<string, string> { { "form", "RA e/ou senha incorreto(s)" } }
+            );
         }
 
-        SignInResult result = await this._signInManager.PasswordSignInAsync(existentUser, usr.Password, false, false);
+        SignInResult result = await this._signInManager.PasswordSignInAsync(
+            existentUser,
+            usr.Password,
+            false,
+            false
+        );
 
         if (result.Succeeded == false)
         {
-            throw new FormException(new Dictionary<string, string>
-            {
-                { "form", "RA e/ou senha incorreto(s)" }
-            });
+            throw new FormException(
+                new Dictionary<string, string> { { "form", "RA e/ou senha incorreto(s)" } }
+            );
         }
 
         existentUser.LastLoggedAt = DateTime.UtcNow;
@@ -175,7 +188,7 @@ public class UserService : IUserService
 
         return Tuple.Create(existentUser, userRole);
     }
-    
+
     /// <inheritdoc/>
     public async Task<User?> GetUser(string id)
     {
@@ -199,9 +212,14 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<User>> GetUsersAsync(int page, int pageSize, string? search = null, string? role = null)
+    public async Task<PagedResult<GenericUserInfoResponse>> GetUsersAsync(
+        int page,
+        int pageSize,
+        string? search = null,
+        string? role = null
+    )
     {
-        var query = this._userRepository.GetAll().AsQueryable();
+        var query = this._userRepository.Query();
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(u => u.UserName.Contains(search) || u.Email.Contains(search));
@@ -213,15 +231,40 @@ public class UserService : IUserService
             query = query.Where(u => userIds.Contains(u.Id));
         }
         int totalCount = query.Count();
-        var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var items = await query
+            .AsSplitQuery()
+            .OrderBy(e => e.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(x => x.Group)
+            .ToListAsync();
+
         int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
-        return new PagedResult<User>
+        return new PagedResult<GenericUserInfoResponse>
         {
-            Items = items,
+            Items = items
+                .Select(x => new GenericUserInfoResponse()
+                {
+                    Id = x.Id,
+                    Ra = x.RA,
+                    Name = x.Name,
+                    Email = x.Email!,
+                    JoinYear = x.JoinYear,
+                    LastLoggedAt = x.LastLoggedAt,
+                    CreatedAt = x.CreatedAt,
+                    Group = new GroupResponse()
+                    {
+                        Id = x.Group!.Id,
+                        Name = x.Group.Name,
+                        LeaderId = x.Group.LeaderId,
+                        Users = [],
+                    },
+                })
+                .ToList(),
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize,
-            TotalPages = totalPages
+            TotalPages = totalPages,
         };
     }
 

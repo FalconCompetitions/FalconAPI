@@ -145,7 +145,7 @@ namespace ProjetoTccBackend.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateNewExercise(
-            [FromForm(Name = "file")] IFormFile file,
+            IFormFile file,
             [FromForm(Name = "metadata")] string requestMetadata
         )
         {

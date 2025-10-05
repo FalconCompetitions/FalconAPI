@@ -1,9 +1,10 @@
 ﻿using ProjetoTccBackend.Database.Requests.Auth;
-using ProjetoTccBackend.Models;
-using ProjetoTccBackend.Exceptions;
-using ProjetoTccBackend.Database.Responses.Global;
-using System.Threading.Tasks;
 using ProjetoTccBackend.Database.Requests.User;
+using ProjetoTccBackend.Database.Responses.Global;
+using ProjetoTccBackend.Database.Responses.User;
+using ProjetoTccBackend.Exceptions;
+using ProjetoTccBackend.Models;
+using System.Threading.Tasks;
 
 namespace ProjetoTccBackend.Services.Interfaces
 {
@@ -71,7 +72,7 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="search">Optional search term for filtering users.</param>
         /// <param name="role">Optional role filter.</param>
         /// <returns>A paginated result of users.</returns>
-        Task<PagedResult<User>> GetUsersAsync(int page, int pageSize, string? search = null, string? role = null);
+        Task<PagedResult<GenericUserInfoResponse>> GetUsersAsync(int page, int pageSize, string? search = null, string? role = null);
 
         /// <summary>
         /// Updates the profile data of a user.
