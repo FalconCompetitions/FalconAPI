@@ -23,5 +23,17 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="file">The file to validate. Must not be null.</param>
         /// <returns><see langword="true"/> if the file has a permitted extension; otherwise, <see langword="false"/>.</returns>
         bool IsSubmittedFileValid(IFormFile file);
+
+
+        /// <summary>
+        /// Retrieves the file information associated with the specified file ID.
+        /// </summary>
+        /// <remarks>The method retrieves the file information for the currently logged-in user. The
+        /// returned tuple  includes the full path to the file on the server, the file's original name, and its MIME
+        /// type.</remarks>
+        /// <param name="fileId">The unique identifier of the file to retrieve. This parameter cannot be null or empty.</param>
+        /// <returns>A <see cref="Tuple{T1, T2, T3}"/> containing the full file path, file name, and file type,  or <see
+        /// langword="null"/> if no file is found for the specified <paramref name="fileId"/>.</returns>
+        Task<Tuple<string, string, string>?> GetFileAsync(string fileId);
     }
 }

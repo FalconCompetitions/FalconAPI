@@ -34,7 +34,10 @@ namespace ProjetoTccBackend.Models
         /// </summary>
         public required string FilePath { get; set; }
 
-
+        /// <summary>
+        /// Gets or sets the date and time when the entity was created.
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Gets the collection of exercises associated with this instance.

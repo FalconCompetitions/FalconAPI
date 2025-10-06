@@ -96,7 +96,7 @@ namespace ProjetoTccBackend.Services
                 return null;
             }
 
-            this._httpClient.DefaultRequestHeaders.Add("Authorization", currentToken);
+            this._httpClient.DefaultRequestHeaders.Add("Authorization", $"bearer {currentToken}");
 
             var exerciseInputs = exerciseRequest.Inputs.ToList();
             var exerciseOutputs = exerciseRequest.Outputs.ToList();
@@ -106,10 +106,8 @@ namespace ProjetoTccBackend.Services
 
             for (int i = 0; i < exerciseRequest.Inputs.Count; i++)
             {
-                inputs.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes(exerciseInputs[i].Input)));
-                outputs.Add(
-                    Convert.ToBase64String(Encoding.UTF8.GetBytes(exerciseOutputs[i].Output))
-                );
+                inputs.Add(exerciseInputs[i].Input);
+                outputs.Add(exerciseOutputs[i].Output);
             }
 
             try
@@ -125,7 +123,7 @@ namespace ProjetoTccBackend.Services
                 };
 
                 var result = await this._httpClient.PostAsJsonAsync<CreateJudgeExerciseRequest>(
-                    "/problems",
+                    "/v0/problems",
                     payload
                 );
 
@@ -158,10 +156,10 @@ namespace ProjetoTccBackend.Services
                 return null;
             }
 
-            this._httpClient.DefaultRequestHeaders.Add("Authorization", currentToken);
+            this._httpClient.DefaultRequestHeaders.Add("Authorization", $"bearer {currentToken}");
 
             var judgeExercise = await this._httpClient.GetFromJsonAsync<JudgeExerciseResponse>(
-                $"/problems/{judgeUuid}"
+                $"/v0/problems/{judgeUuid}"
             );
 
             if (judgeExercise is null)
@@ -194,7 +192,7 @@ namespace ProjetoTccBackend.Services
                 throw new JudgeSubmissionException("Erro em recurso externo");
             }
 
-            this._httpClient.DefaultRequestHeaders.Add("Authorization", currentToken);
+            this._httpClient.DefaultRequestHeaders.Add("Authorization", $"bearer {currentToken}");
 
             Exercise? exercise = this._exerciseRepository.GetById(request.ExerciseId);
 
@@ -212,7 +210,7 @@ namespace ProjetoTccBackend.Services
 
             HttpResponseMessage response =
                 await this._httpClient.PostAsJsonAsync<JudgeSubmissionRequest>(
-                    "/submissions",
+                    "/v0/submissions",
                     judgeRequest
                 );
 
@@ -278,7 +276,7 @@ namespace ProjetoTccBackend.Services
                 throw new JudgeSubmissionException("Erro em recurso externo");
             }
 
-            this._httpClient.DefaultRequestHeaders.Add("Authorization", currentToken);
+            this._httpClient.DefaultRequestHeaders.Add("Authorization", $"bearer {currentToken}");
 
             UpdateJudgeExerciseRequest request = new UpdateJudgeExerciseRequest()
             {
@@ -291,7 +289,7 @@ namespace ProjetoTccBackend.Services
 
             HttpResponseMessage response =
                 await this._httpClient.PutAsJsonAsync<UpdateJudgeExerciseRequest>(
-                    $"/problems/{exercise.JudgeUuid!}",
+                    $"/v0/problems/{exercise.JudgeUuid!}",
                     request
                 );
 

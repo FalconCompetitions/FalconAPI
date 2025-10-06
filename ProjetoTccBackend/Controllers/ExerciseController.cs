@@ -184,14 +184,14 @@ namespace ProjetoTccBackend.Controllers
 
             if (this.ModelState.IsValid is false)
             {
-                return ValidationProblem(this.ModelState);
+                return ValidationProblem(modelStateDictionary: this.ModelState, statusCode: 400);
             }
 
             Exercise? exercise = await this._exerciseService.CreateExerciseAsync(request, file);
 
             if (exercise == null)
             {
-                this._logger.LogDebug("Exercise not created", new { bodyContent = exercise });
+                this._logger.LogCritical("Exercise not created", new { bodyContent = exercise });
                 return this.BadRequest();
             }
 
@@ -203,6 +203,7 @@ namespace ProjetoTccBackend.Controllers
                     Id = exercise.Id,
                     Title = exercise.Title,
                     Description = exercise.Description,
+                    ExerciseTypeId = exercise.ExerciseTypeId,
                     Inputs = exercise
                         .ExerciseInputs.Select(x => new ExerciseInputResponse()
                         {

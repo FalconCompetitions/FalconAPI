@@ -222,16 +222,19 @@ public class UserService : IUserService
         var query = this._userRepository.Query();
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(u => u.UserName.Contains(search) || u.Email.Contains(search));
+            query = query.Where(u =>
+                u.Name.Contains(search) || u.Email.Contains(search) || u.RA.Contains(search)
+            );
         }
         if (!string.IsNullOrWhiteSpace(role))
         {
+            this._logger.LogDebug($"Chegou: {role}");
             var userIdsWithRole = await _userManager.GetUsersInRoleAsync(role);
             var userIds = userIdsWithRole.Select(u => u.Id).ToList();
             query = query.Where(u => userIds.Contains(u.Id));
         }
         int totalCount = query.Count();
-        var items = await query
+        List<User> items = await query
             .AsSplitQuery()
             .OrderBy(e => e.Id)
             .Skip((page - 1) * pageSize)
@@ -252,13 +255,16 @@ public class UserService : IUserService
                     JoinYear = x.JoinYear,
                     LastLoggedAt = x.LastLoggedAt,
                     CreatedAt = x.CreatedAt,
-                    Group = new GroupResponse()
-                    {
-                        Id = x.Group!.Id,
-                        Name = x.Group.Name,
-                        LeaderId = x.Group.LeaderId,
-                        Users = [],
-                    },
+                    Group =
+                        x.Group != null
+                            ? new GroupResponse()
+                            {
+                                Id = x.Group.Id,
+                                Name = x.Group.Name,
+                                LeaderId = x.Group.LeaderId,
+                                Users = [],
+                            }
+                            : null,
                 })
                 .ToList(),
             TotalCount = totalCount,
@@ -281,5 +287,20 @@ public class UserService : IUserService
         user.JoinYear = request.JoinYear;
         await this._userManager.UpdateAsync(user);
         return user;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> DeleteUserAsync(string userId)
+    {
+        var user = this._userRepository.GetById(userId);
+        if (user == null)
+            return false;
+
+        var result = await _userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+            return false;
+
+        await this._userRepository.DeleteByIdAsync(userId);
+        return true;
     }
 }

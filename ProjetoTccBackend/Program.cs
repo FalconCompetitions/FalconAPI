@@ -178,7 +178,14 @@ namespace ProjetoTccBackend
                     //client.DefaultRequestHeaders.Add("Accept", "application/json");
                     client.Timeout = TimeSpan.FromSeconds(40);
                 }
-            );
+            )
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                return new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+                };
+            });
 
             // Services
             builder.Services.AddSingleton<ICompetitionStateService, CompetitionStateService>();
@@ -317,6 +324,14 @@ namespace ProjetoTccBackend
                             .AllowCredentials();
                     }
                 );
+
+                options.AddPolicy("JudgeApiPolicy", policy =>
+                {
+                    policy.WithOrigins("https://localhost:8000")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
             });
 
             var app = builder.Build();
@@ -350,6 +365,8 @@ namespace ProjetoTccBackend
             app.UseRouting();
 
             app.UseCors("FrontendAppPolicy");
+            app.UseCors("JudgeApiPolicy");
+            
 
             ConfigureWebSocketOptions(app);
 

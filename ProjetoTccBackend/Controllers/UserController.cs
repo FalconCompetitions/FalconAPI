@@ -107,5 +107,24 @@ namespace ProjetoTccBackend.Controllers
             }
             return Ok(updatedUser);
         }
+
+        /// <summary>
+        /// Deletes a user with the specified identifier.
+        /// </summary>
+        /// <remarks>This action requires the caller to have the "Admin" role. The user ID must correspond
+        /// to an existing user in the system.</remarks>
+        /// <param name="userId">The unique identifier of the user to delete. Cannot be null or empty.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.  Returns <see cref="NotFoundResult"/>
+        /// if the user does not exist, or <see cref="OkResult"/> if the user was successfully deleted.</returns>
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{userId}")]
+        public async Task<IActionResult> DeleteUser(string userId)
+        {
+            var deleted = await this._userService.DeleteUserAsync(userId);
+            if (!deleted)
+                return NotFound(userId);
+            return Ok();
+        }
+
     }
 }

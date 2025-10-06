@@ -81,5 +81,12 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="request">The update request data.</param>
         /// <returns>The updated user object, or null if not found.</returns>
         Task<User?> UpdateUserAsync(string userId, UpdateUserRequest request);
+
+        /// <summary>
+        /// Deletes a user by ID.
+        /// </summary>
+        /// <param name="userId">The ID of the user to be deleted.</param>
+        /// <returns>True if successfully deleted, false if not found.</returns>
+        Task<bool> DeleteUserAsync(string userId);
     }
 }

@@ -13,7 +13,6 @@ namespace ProjetoTccBackend.Database.Requests.Exercise
         [JsonPropertyName("title")]
         public string Title { get; set; }
 
-        [Required]
         [JsonPropertyName("description")]
         public string Description { get; set; }
 

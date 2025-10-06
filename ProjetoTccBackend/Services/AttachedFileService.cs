@@ -9,19 +9,28 @@ namespace ProjetoTccBackend.Services
 {
     public class AttachedFileService : IAttachedFileService
     {
+        private readonly IUserService _userService;
         private readonly IAttachedFileRepository _attachedFileRepository;
         private readonly TccDbContext _dbContext;
         private readonly ILogger<AttachedFileService> _logger;
+        private readonly string _privateFilesPath;
 
         public AttachedFileService(
+            IUserService userService,
             IAttachedFileRepository attachedFileRepository,
             TccDbContext dbContext,
             ILogger<AttachedFileService> logger
         )
         {
+            this._userService = userService;
             this._attachedFileRepository = attachedFileRepository;
             this._dbContext = dbContext;
             this._logger = logger;
+            this._privateFilesPath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "..",
+                "UserUploads"
+            );
         }
 
         /// <inheritdoc />
@@ -32,10 +41,13 @@ namespace ProjetoTccBackend.Services
             string originalName = Path.GetFileNameWithoutExtension(file.FileName);
             string uniqueFileName = $"{Guid.NewGuid()}{validatedExtension}";
 
-            string uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "AttachedFiles");
-            Directory.CreateDirectory(uploadPath);
+            if(!Directory.Exists(this._privateFilesPath))
+            {
+                Directory.CreateDirectory(this._privateFilesPath);
+            }
+            
 
-            string filePath = Path.Combine(uploadPath, uniqueFileName);
+            string filePath = Path.Combine(this._privateFilesPath, uniqueFileName);
 
             try
             {
@@ -75,6 +87,26 @@ namespace ProjetoTccBackend.Services
             }
 
             return true;
+        }
+
+
+        /// <inheritdoc />
+        public async Task<Tuple<string, string, string>?> GetFileAsync(string fileId)
+        {
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            AttachedFile? file = (
+                await this._attachedFileRepository.FindAsync(f => f.Id.Equals(fileId))
+            ).FirstOrDefault();
+
+            if (file == null)
+            {
+                return null;
+            }
+
+            string fullPath = Path.Combine(this._privateFilesPath, file.FilePath);
+
+            return Tuple.Create(fullPath, file.Name, file.Type);
         }
     }
 }

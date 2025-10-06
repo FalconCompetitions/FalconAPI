@@ -115,7 +115,7 @@ namespace ProjetoTccBackend.Services
 
             Exercise createdExercise = await this
                 ._exerciseRepository.Query()
-                .Where(x => x.Equals(exercise.Id))
+                .Where(x => x.Id.Equals(exercise.Id))
                 .Include(x => x.ExerciseInputs)
                 .Include(x => x.ExerciseOutputs)
                 .Include(x => x.AttachedFile)
