@@ -14,6 +14,7 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <inheritdoc />
     public class GroupService : IGroupService
     {
         private readonly IUserService _userService;
@@ -107,16 +108,20 @@ namespace ProjetoTccBackend.Services
             string? search
         )
         {
-            var query = this._groupRepository.GetAll().AsQueryable();
+            var query = this._groupRepository.Query();
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(g => g.Name.Contains(search));
             }
 
-            query = query.Include(g => g.Users);
-
             int totalCount = query.Count();
-            var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            List<Group> items = await query
+                .AsSplitQuery()
+                .OrderBy(e => e.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Include(x => x.Users)
+                .ToListAsync();
 
             List<GroupResponse> groupResponses = new List<GroupResponse>();
 
@@ -131,10 +136,12 @@ namespace ProjetoTccBackend.Services
                         new GenericUserInfoResponse()
                         {
                             Id = user.Id,
+                            Ra = user.RA,
                             Name = user.UserName!,
                             Email = user.Email!,
                             JoinYear = (int)user.JoinYear!,
-                            CreatedAt = user.CreatedAt
+                            CreatedAt = user.CreatedAt,
+                            LastLoggedAt = user.LastLoggedAt,
                         }
                     );
                 }
@@ -150,15 +157,13 @@ namespace ProjetoTccBackend.Services
                 );
             }
 
-            return await Task.FromResult(
-                new PagedResult<GroupResponse>
-                {
-                    Items = groupResponses,
-                    TotalCount = totalCount,
-                    Page = page,
-                    PageSize = pageSize,
-                }
-            );
+            return new PagedResult<GroupResponse>
+            {
+                Items = groupResponses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+            };
         }
 
         /// <inheritdoc/>
@@ -218,14 +223,16 @@ namespace ProjetoTccBackend.Services
                 Id = group.Id,
                 LeaderId = group.LeaderId,
                 Name = group.Name,
-                Users = users.Select(user => new GenericUserInfoResponse()
-                {
-                    Id = user.Id,
-                    Email = user.Email!,
-                    JoinYear = (int)user.JoinYear!,
-                    Name = user.Name,
-                    CreatedAt = user.CreatedAt
-                }).ToList(),
+                Users = users
+                    .Select(user => new GenericUserInfoResponse()
+                    {
+                        Id = user.Id,
+                        Email = user.Email!,
+                        JoinYear = (int)user.JoinYear!,
+                        Name = user.Name,
+                        CreatedAt = user.CreatedAt,
+                    })
+                    .ToList(),
             };
 
             return response;

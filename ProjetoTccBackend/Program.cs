@@ -27,10 +27,10 @@ namespace ProjetoTccBackend
     public class ProjetoTccBackend
     {
         /// <summary>
-        /// Cria as funções padrão no sistema se elas não existirem.
+        /// Cria as funï¿½ï¿½es padrï¿½o no sistema se elas nï¿½o existirem.
         /// </summary>
-        /// <param name="serviceProvider">Provedor de serviços para obter os gerenciadores de função e usuário.</param>
-        /// <returns>Uma tarefa assíncrona.</returns>
+        /// <param name="serviceProvider">Provedor de serviï¿½os para obter os gerenciadores de funï¿½ï¿½o e usuï¿½rio.</param>
+        /// <returns>Uma tarefa assï¿½ncrona.</returns>
         public static async Task CreateRoles(IServiceProvider serviceProvider)
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -69,7 +69,6 @@ namespace ProjetoTccBackend
                     PhoneNumberConfirmed = false,
                     TwoFactorEnabled = false,
                 },
-
             };
 
             List<User> teacherUsers = new List<User>()
@@ -78,7 +77,7 @@ namespace ProjetoTccBackend
                 {
                     RA = "222222",
                     Email = "professor1@gmail.com",
-                    Name = "João",
+                    Name = "Joï¿½o",
                     UserName = "professor1@gmail.com",
                     EmailConfirmed = false,
                     PhoneNumberConfirmed = false,
@@ -88,7 +87,7 @@ namespace ProjetoTccBackend
                 {
                     RA = "222223",
                     Email = "professor2@gmail.com",
-                    Name = "Álvaro",
+                    Name = "ï¿½lvaro",
                     UserName = "professor2@gmail.com",
                     EmailConfirmed = false,
                     PhoneNumberConfirmed = false,
@@ -116,14 +115,13 @@ namespace ProjetoTccBackend
                 },
             };
 
-
             List<User> studentUsers = new List<User>()
             {
                 new User()
                 {
                     RA = "111111",
                     Email = "aluno1@gmail.com",
-                    Name = "Diego Júnior",
+                    Name = "Diego Jï¿½nior",
                     UserName = "aluno1@gmail.com",
                     EmailConfirmed = false,
                     PhoneNumberConfirmed = false,
@@ -133,7 +131,7 @@ namespace ProjetoTccBackend
                 {
                     RA = "111112",
                     Email = "aluno2@gmail.com",
-                    Name = "Canário Arregaçado",
+                    Name = "Canï¿½rio Arregaï¿½ado",
                     UserName = "aluno2@gmail.com",
                     EmailConfirmed = false,
                     PhoneNumberConfirmed = false,
@@ -153,7 +151,7 @@ namespace ProjetoTccBackend
                 {
                     RA = "111114",
                     Email = "aluno4@gmail.com",
-                    Name = "Coach Júnior",
+                    Name = "Coach Jï¿½nior",
                     UserName = "aluno4@gmail.com",
                     EmailConfirmed = false,
                     PhoneNumberConfirmed = false,
@@ -171,7 +169,6 @@ namespace ProjetoTccBackend
                     {
                         var createdUser = await userManager.FindByEmailAsync(user.Email!);
                         await userManager.AddToRoleAsync(createdUser, "Admin");
-                        
                     }
                 }
             }
@@ -187,7 +184,6 @@ namespace ProjetoTccBackend
                     {
                         var createdUser = await userManager.FindByEmailAsync(user.Email!);
                         await userManager.AddToRoleAsync(createdUser, "Teacher");
-                        
                     }
                 }
             }
@@ -203,7 +199,6 @@ namespace ProjetoTccBackend
                     {
                         var createdUser = await userManager.FindByEmailAsync(user.Email!);
                         await userManager.AddToRoleAsync(createdUser, "Student");
-
                     }
                 }
             }
@@ -296,23 +291,29 @@ namespace ProjetoTccBackend
 
             builder.Services.AddHttpContextAccessor();
 
-            builder.Services.AddHttpClient(
-                "JudgeAPI",
-                client =>
+            builder
+                .Services.AddHttpClient(
+                    "JudgeAPI",
+                    client =>
+                    {
+                        client.BaseAddress = new Uri(builder.Configuration["JudgeApi:Url"]!);
+                        //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
+                        //client.DefaultRequestHeaders.Add("Accept", "application/json");
+                        client.Timeout = TimeSpan.FromSeconds(40);
+                    }
+                )
+                .ConfigurePrimaryHttpMessageHandler(() =>
                 {
-                    client.BaseAddress = new Uri(builder.Configuration["JudgeApi:Url"]!);
-                    //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-                    //client.DefaultRequestHeaders.Add("Accept", "application/json");
-                    client.Timeout = TimeSpan.FromSeconds(40);
-                }
-            )
-            .ConfigurePrimaryHttpMessageHandler(() =>
-            {
-                return new HttpClientHandler
-                {
-                    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
-                };
-            });
+                    return new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = (
+                            message,
+                            cert,
+                            chain,
+                            errors
+                        ) => true,
+                    };
+                });
 
             // Services
             builder.Services.AddSingleton<ICompetitionStateService, CompetitionStateService>();
@@ -409,7 +410,7 @@ namespace ProjetoTccBackend
                             }
                             else
                             {
-                                // Mantém a lógica para SignalR
+                                // Mantï¿½m a lï¿½gica para SignalR
                                 var accessToken = context.Request.Query["token"];
                                 var path = context.HttpContext.Request.Path;
                                 if (
@@ -452,13 +453,17 @@ namespace ProjetoTccBackend
                     }
                 );
 
-                options.AddPolicy("JudgeApiPolicy", policy =>
-                {
-                    policy.WithOrigins("https://localhost:8000")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
-                });
+                options.AddPolicy(
+                    "JudgeApiPolicy",
+                    policy =>
+                    {
+                        policy
+                            .WithOrigins("https://localhost:8000")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    }
+                );
             });
 
             var app = builder.Build();
@@ -486,14 +491,13 @@ namespace ProjetoTccBackend
                 });
                 app.UseDeveloperExceptionPage();
 
-                // Adicione no pipeline logo após app.UseRouting();
+                // Adicione no pipeline logo apï¿½s app.UseRouting();
             }
 
             app.UseRouting();
 
             app.UseCors("FrontendAppPolicy");
             app.UseCors("JudgeApiPolicy");
-            
 
             ConfigureWebSocketOptions(app);
 
@@ -513,11 +517,11 @@ namespace ProjetoTccBackend
     }
 
     //
-    // Plano em pseudocódigo:
-    // 1. Antes de iniciar o pipeline, adicionar um middleware que apague todos os cookies da requisição.
-    // 2. O middleware será executado no início de cada execução do app (a cada requisição).
-    // 3. Para cada cookie presente, definir o mesmo nome com valor vazio e expiração no passado.
-    // 4. Adicionar esse middleware antes de qualquer autenticação ou autorização.
+    // Plano em pseudocï¿½digo:
+    // 1. Antes de iniciar o pipeline, adicionar um middleware que apague todos os cookies da requisiï¿½ï¿½o.
+    // 2. O middleware serï¿½ executado no inï¿½cio de cada execuï¿½ï¿½o do app (a cada requisiï¿½ï¿½o).
+    // 3. Para cada cookie presente, definir o mesmo nome com valor vazio e expiraï¿½ï¿½o no passado.
+    // 4. Adicionar esse middleware antes de qualquer autenticaï¿½ï¿½o ou autorizaï¿½ï¿½o.
 
     // Middleware para resetar cookies
 
