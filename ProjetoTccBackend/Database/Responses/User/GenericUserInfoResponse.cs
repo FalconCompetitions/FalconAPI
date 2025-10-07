@@ -21,6 +21,8 @@ namespace ProjetoTccBackend.Database.Responses.User
         [JsonPropertyName("group")]
         public GroupResponse Group { get; set; }
 
+        [JsonPropertyName("exercisesCreated")]
+        public int? ExercisesCreated { get; set; }
 
         [JsonPropertyName("joinYear")]
         public int? JoinYear { get; set; }

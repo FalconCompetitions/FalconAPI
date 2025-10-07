@@ -57,7 +57,7 @@ namespace ProjetoTccBackend
             var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
             var signInManager = serviceProvider.GetRequiredService<SignInManager<User>>();
 
-            List<User> users = new List<User>()
+            List<User> adminUser = new List<User>()
             {
                 new User()
                 {
@@ -69,19 +69,146 @@ namespace ProjetoTccBackend
                     PhoneNumberConfirmed = false,
                     TwoFactorEnabled = false,
                 },
+
             };
 
-            foreach (User user in users)
+            List<User> teacherUsers = new List<User>()
+            {
+                new User()
+                {
+                    RA = "222222",
+                    Email = "professor1@gmail.com",
+                    Name = "João",
+                    UserName = "professor1@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "222223",
+                    Email = "professor2@gmail.com",
+                    Name = "Álvaro",
+                    UserName = "professor2@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "222224",
+                    Email = "professor3@gmail.com",
+                    Name = "Manuel",
+                    UserName = "professor3@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "222225",
+                    Email = "professor4@gmail.com",
+                    Name = "Renato Coach",
+                    UserName = "professor4@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+            };
+
+
+            List<User> studentUsers = new List<User>()
+            {
+                new User()
+                {
+                    RA = "111111",
+                    Email = "aluno1@gmail.com",
+                    Name = "Diego Júnior",
+                    UserName = "aluno1@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "111112",
+                    Email = "aluno2@gmail.com",
+                    Name = "Canário Arregaçado",
+                    UserName = "aluno2@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "111113",
+                    Email = "aluno3@gmail.com",
+                    Name = "Roberto",
+                    UserName = "aluno3@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "111114",
+                    Email = "aluno4@gmail.com",
+                    Name = "Coach Júnior",
+                    UserName = "aluno4@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+            };
+
+            foreach (User user in adminUser)
             {
                 User? existentUser = await userManager.FindByEmailAsync(user.Email!);
                 if (existentUser is null)
                 {
-                    await userManager.CreateAsync(user, "00000000#Ra");
-                    await userManager.UpdateAsync(user);
-                    await userManager.AddToRoleAsync(user, "Admin");
-                    await dbContext.SaveChangesAsync();
+                    var result = await userManager.CreateAsync(user, "00000000#Ra");
+                    if (result.Succeeded)
+                    {
+                        var createdUser = await userManager.FindByEmailAsync(user.Email!);
+                        await userManager.AddToRoleAsync(createdUser, "Admin");
+                        
+                    }
                 }
             }
+
+            foreach (User user in teacherUsers)
+            {
+                User? existentUser = await userManager.FindByEmailAsync(user.Email!);
+                if (existentUser is null)
+                {
+                    var result = await userManager.CreateAsync(user, "00000000#Ra");
+
+                    if (result.Succeeded)
+                    {
+                        var createdUser = await userManager.FindByEmailAsync(user.Email!);
+                        await userManager.AddToRoleAsync(createdUser, "Teacher");
+                        
+                    }
+                }
+            }
+
+            foreach (User user in studentUsers)
+            {
+                User? existentUser = await userManager.FindByEmailAsync(user.Email!);
+                if (existentUser is null)
+                {
+                    var result = await userManager.CreateAsync(user, "00000000#Ra");
+
+                    if (result.Succeeded)
+                    {
+                        var createdUser = await userManager.FindByEmailAsync(user.Email!);
+                        await userManager.AddToRoleAsync(createdUser, "Student");
+
+                    }
+                }
+            }
+
+            await dbContext.SaveChangesAsync();
         }
 
         public static void ExecuteMigrations(WebApplication app)

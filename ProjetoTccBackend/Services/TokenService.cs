@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
@@ -12,14 +13,32 @@ namespace ProjetoTccBackend.Services
         private readonly string _secretKey;
         private readonly string _issuer;
         private readonly string _audience;
+        private readonly IMemoryCache _memoryCache;
+        private const string _tokenKey = "privateAccessToken";
         private readonly ILogger<TokenService> _logger;
 
-        public TokenService(IConfiguration configuration, ILogger<TokenService> logger)
+        public TokenService(
+            IConfiguration configuration,
+            IMemoryCache memoryCache,
+            ILogger<TokenService> logger
+        )
         {
+            this._memoryCache = memoryCache;
             this._secretKey = configuration["Jwt:Key"]!;
             this._issuer = configuration["Jwt:Issuer"]!;
             this._audience = configuration["Jwt:Audience"]!;
             this._logger = logger;
+        }
+
+
+        private string? FetchPrivateAccessToken()
+        {
+            if(this._memoryCache.TryGetValue(_tokenKey, out string? token))
+            {
+                return token!;
+            }
+
+            return null;
         }
 
         /// <inheritdoc/>
@@ -52,6 +71,13 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public string GenerateTeacherRoleInviteToken(TimeSpan expiration)
         {
+            string? existentToken = this.FetchPrivateAccessToken();
+
+            if(existentToken != null)
+            {
+                return existentToken;
+            }
+
             Claim[] claims =
             [
                 new Claim("Invite", "true"),
@@ -71,7 +97,11 @@ namespace ProjetoTccBackend.Services
                 signingCredentials: creds
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            string generatedToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+            this._memoryCache.Set(_tokenKey, generatedToken);
+
+            return generatedToken;
         }
 
         /// <inheritdoc />
@@ -107,16 +137,13 @@ namespace ProjetoTccBackend.Services
             }
         }
 
-
         /// <inheritdoc />
         public string GenerateJudgeToken()
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this._secretKey));
 
-            Claim[] claims = [
-                new Claim("sub", this._secretKey)
-            ];
+            Claim[] claims = [new Claim("sub", this._secretKey)];
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
