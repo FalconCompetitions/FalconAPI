@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
 using ProjetoTccBackend.Database.Responses.Exercise;
+using ProjetoTccBackend.Enums;
 using ProjetoTccBackend.Hubs;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Workers.Queues;
-
 
 namespace ProjetoTccBackend.Workers
 {
@@ -24,6 +24,14 @@ namespace ProjetoTccBackend.Workers
         private readonly IServiceProvider _serviceProvider;
         private readonly IMemoryCache _memoryCache;
         private readonly ILogger<ExerciseSubmissionWorker> _logger;
+
+        /// <summary>
+        /// Represents the maximum number of worker threads that can be utilized.
+        /// </summary>
+        /// <remarks>This constant defines an upper limit for worker thread allocation, ensuring that no
+        /// more than the specified number of threads are used in operations. It is intended for internal use
+        /// only.</remarks>
+        private const int MAX_WORKER_COUNT = 8;
 
         private const string CompetitionCacheKey = "currentCompetition";
 
@@ -100,13 +108,15 @@ namespace ProjetoTccBackend.Workers
 
             int queueSize = this._queue.GetQueueSize();
 
-            if(queueSize == 0)
+            if (queueSize == 0)
             {
                 return;
             }
 
             int workerCount = Environment.ProcessorCount;
-            workerCount = (workerCount < queueSize) ? queueSize : workerCount;
+            workerCount = (queueSize < workerCount) ? queueSize : workerCount;
+
+            workerCount = (workerCount > MAX_WORKER_COUNT) ? MAX_WORKER_COUNT : workerCount;
 
             List<Task> tasks = new List<Task>();
 
@@ -120,15 +130,28 @@ namespace ProjetoTccBackend.Workers
                             {
                                 var queueItem = await this._queue.DequeueAsync(cancellationToken);
 
-                                if(queueItem is null)
+                                if (queueItem is null)
                                 {
-                                    this._logger.LogCritical($"null item received from queue submission.");
+                                    this._logger.LogCritical(
+                                        $"null item received from queue submission."
+                                    );
                                     continue;
                                 }
 
                                 using (var scope = this._serviceProvider.CreateScope())
                                 {
-                                    await this.ProcessExerciseAttempt(scope, queueItem);
+                                    try
+                                    {
+                                        await this.ProcessExerciseAttempt(scope, queueItem);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        this._logger.LogCritical(
+                                            eventId: (int)LoggerEvent.ExerciseSubmissionQueue,
+                                            exception: ex,
+                                            message: $"The processing of ExerciseId: {queueItem.Request.ExerciseId}, from: {queueItem.ConnectionId} failed"
+                                        );
+                                    }
                                 }
                             }
                         },

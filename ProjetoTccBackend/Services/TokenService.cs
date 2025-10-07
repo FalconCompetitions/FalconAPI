@@ -30,8 +30,8 @@ namespace ProjetoTccBackend.Services
             this._logger = logger;
         }
 
-
-        private string? FetchPrivateAccessToken()
+        /// <inheritdoc />
+        public string? FetchPrivateAccessToken()
         {
             if(this._memoryCache.TryGetValue(_tokenKey, out string? token))
             {
@@ -71,13 +71,6 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public string GenerateTeacherRoleInviteToken(TimeSpan expiration)
         {
-            string? existentToken = this.FetchPrivateAccessToken();
-
-            if(existentToken != null)
-            {
-                return existentToken;
-            }
-
             Claim[] claims =
             [
                 new Claim("Invite", "true"),

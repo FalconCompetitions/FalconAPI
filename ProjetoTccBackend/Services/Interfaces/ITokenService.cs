@@ -49,5 +49,12 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// credentials.</remarks>
         /// <returns>A string representation of the generated JWT.</returns>
         string GenerateJudgeToken();
+
+        /// <summary>
+        /// Retrieves a private access token from the memory cache, if available.
+        /// </summary>
+        /// <returns>The private access token as a <see cref="string"/>, or <see langword="null"/> if the token is not found in
+        /// the cache.</returns>
+        string? FetchPrivateAccessToken();
     }
 }
