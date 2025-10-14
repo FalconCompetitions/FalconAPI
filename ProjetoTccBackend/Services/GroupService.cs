@@ -142,6 +142,7 @@ namespace ProjetoTccBackend.Services
                             JoinYear = (int)user.JoinYear!,
                             CreatedAt = user.CreatedAt,
                             LastLoggedAt = user.LastLoggedAt,
+                            Department = user.Department,
                         }
                     );
                 }

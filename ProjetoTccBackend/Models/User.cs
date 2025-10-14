@@ -10,6 +10,8 @@ namespace ProjetoTccBackend.Models
         public string Name { get; set; }
         public int? JoinYear { get; set; }
 
+        public string? Department { get; set; }
+
         [StringLength(15)]
         public string RA { get; set; }
 

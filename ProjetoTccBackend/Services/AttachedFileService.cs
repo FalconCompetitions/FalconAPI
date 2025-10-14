@@ -4,6 +4,7 @@ using ProjetoTccBackend.Exceptions.AttachedFile;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
+using System.Threading.Tasks;
 
 namespace ProjetoTccBackend.Services
 {
@@ -41,11 +42,10 @@ namespace ProjetoTccBackend.Services
             string originalName = Path.GetFileNameWithoutExtension(file.FileName);
             string uniqueFileName = $"{Guid.NewGuid()}{validatedExtension}";
 
-            if(!Directory.Exists(this._privateFilesPath))
+            if (!Directory.Exists(this._privateFilesPath))
             {
                 Directory.CreateDirectory(this._privateFilesPath);
             }
-            
 
             string filePath = Path.Combine(this._privateFilesPath, uniqueFileName);
 
@@ -75,6 +75,34 @@ namespace ProjetoTccBackend.Services
             return attachedFile;
         }
 
+        public void DeleteAttachedFile(AttachedFile attachedFile)
+        {
+            this._attachedFileRepository.Remove(attachedFile);
+
+            try
+            {
+                File.Delete(attachedFile.FilePath);
+            }
+            catch (IOException exception)
+            {
+                throw new ErrorException(new { Target = "file", Error = exception.Message });
+            }
+        }
+
+        public async Task<AttachedFile> DeleteAndReplaceExistentFile(int fileId, IFormFile newFile)
+        {
+            AttachedFile? existentFile = await this._attachedFileRepository.GetByIdAsync(fileId);
+
+            if (existentFile != null)
+            {
+                this.DeleteAttachedFile(existentFile);
+            }
+
+            AttachedFile newSavedFile = await this.ProcessAndSaveFile(newFile);
+
+            return newSavedFile;
+        }
+
         /// <inheritdoc />
         public bool IsSubmittedFileValid(IFormFile file)
         {
@@ -88,7 +116,6 @@ namespace ProjetoTccBackend.Services
 
             return true;
         }
-
 
         /// <inheritdoc />
         public async Task<Tuple<string, string, string>?> GetFileAsync(string fileId)

@@ -221,6 +221,7 @@ namespace ProjetoTccBackend.Controllers
                             ExerciseInputId = x.ExerciseInputId,
                         })
                         .ToList(),
+                    AttachedFileId = (int)exercise.AttachedFileId!,
                 }
             );
         }
@@ -228,8 +229,9 @@ namespace ProjetoTccBackend.Controllers
         /// <summary>
         /// Updates an existing exercise with the specified ID using the provided update request.
         /// </summary>
+        /// <param name="file">The attached file of the exercise</param>
         /// <param name="id">The unique identifier of the exercise to update.</param>
-        /// <param name="request">The request object containing the updated exercise details.</param>
+        /// <param name="requestMetadata">The request object containing the updated exercise details.</param>
         /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
         /// <remarks>
         /// This action requires the caller to be authenticated and authorized with either the "Admin" or "Teacher" role.<br/>
@@ -253,10 +255,49 @@ namespace ProjetoTccBackend.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateExercise(
             int id,
-            [FromBody] UpdateExerciseRequest request
+            IFormFile file,
+            [FromForm(Name = "metadata")] string requestMetadata
         )
         {
-            Exercise updatedExercise = await this._exerciseService.UpdateExerciseAsync(id, request);
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(
+                    new InvalidFormResponse() { Target = "file", Error = "Arquivo é obrigatório!" }
+                );
+            }
+
+            if (String.IsNullOrEmpty(requestMetadata))
+            {
+                return BadRequest(
+                    new InvalidFormResponse()
+                    {
+                        Target = "metadata",
+                        Error = "Dados da requisição ausentes!",
+                    }
+                );
+            }
+
+            UpdateExerciseRequest? request = null;
+
+            try
+            {
+                request = JsonSerializer.Deserialize<UpdateExerciseRequest>(requestMetadata);
+            }
+            catch (JsonException ex)
+            {
+                return BadRequest(
+                    new InvalidFormResponse() { Target = "metadata", Error = ex.Message }
+                );
+            }
+
+            this.TryValidateModel(request);
+
+            if (this.ModelState.IsValid is false)
+            {
+                return ValidationProblem(modelStateDictionary: this.ModelState, statusCode: 400);
+            }
+
+            Exercise updatedExercise = await this._exerciseService.UpdateExerciseAsync(id, file, request);
 
             ExerciseResponse response = new ExerciseResponse()
             {
@@ -281,6 +322,7 @@ namespace ProjetoTccBackend.Controllers
                         ExerciseInputId = updatedExercise.Id,
                     })
                     .ToList(),
+                AttachedFileId = (int)updatedExercise.AttachedFileId!,
             };
 
             return Ok(response);

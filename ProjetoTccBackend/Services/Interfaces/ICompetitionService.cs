@@ -1,4 +1,6 @@
 ﻿using ProjetoTccBackend.Database.Requests.Competition;
+using ProjetoTccBackend.Database.Responses.Competition;
+using ProjetoTccBackend.Enums.Competition;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 
@@ -22,6 +24,18 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <returns>The existing <see cref="Competition"/> object.</returns>
         Task<Competition> GetExistentCompetition();
+
+
+        /// <summary>
+        /// Retrieves a collection of competitions that are marked as template models.
+        /// </summary>
+        /// <remarks>This method queries the competition repository to retrieve competitions with a status
+        /// of <see cref="CompetitionStatus.ModelTemplate"/>. The returned competitions are mapped to <see
+        /// cref="CompetitionResponse"/> objects, which include key details such as competition metadata and associated
+        /// exercise IDs.</remarks>
+        /// <returns>A collection of <see cref="CompetitionResponse"/> objects representing competitions that are designated as
+        /// templates. If no template competitions exist, an empty collection is returned.</returns>
+        Task<ICollection<CompetitionResponse>> GetCreatedTemplateCompetitions();
 
         /// <summary>
         /// Retrieves the current competition based on the system's current date and time.

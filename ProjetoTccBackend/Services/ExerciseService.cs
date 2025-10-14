@@ -41,17 +41,19 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public async Task<Exercise> CreateExerciseAsync(CreateExerciseRequest request, IFormFile file)
+        public async Task<Exercise> CreateExerciseAsync(
+            CreateExerciseRequest request,
+            IFormFile file
+        )
         {
             bool isFileFormatValid = this._attachedFileService.IsSubmittedFileValid(file);
 
-            if(isFileFormatValid is false)
+            if (isFileFormatValid is false)
             {
                 throw new InvalidAttachedFileException("Formato de arquivo inválido!");
             }
 
             AttachedFile attachedFile = await this._attachedFileService.ProcessAndSaveFile(file);
-
 
             string? judgeUuid = "ed2e8459-c43a-42d5-9a1e-87835a769ea1"; //await this._judgeService.CreateJudgeExerciseAsync(request);
 
@@ -157,11 +159,9 @@ namespace ProjetoTccBackend.Services
 
             this._logger.LogInformation($"ExerciseTypeId: {exerciseTypeId}");
 
-            if(exerciseTypeId != null)
+            if (exerciseTypeId != null)
             {
-                query = query.Where(e =>
-                    e.ExerciseTypeId == exerciseTypeId
-                );
+                query = query.Where(e => e.ExerciseTypeId == exerciseTypeId);
             }
 
             int totalCount = query.Count();
@@ -184,17 +184,35 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc/>
-        public async Task<Exercise> UpdateExerciseAsync(int id, UpdateExerciseRequest request)
+        public async Task<Exercise> UpdateExerciseAsync(
+            int id,
+            IFormFile file,
+            UpdateExerciseRequest request
+        )
         {
             var exercise = this._exerciseRepository.GetById(id);
 
             if (exercise == null)
                 throw new ErrorException($"Exercício com id {id} não encontrado.");
 
+            bool isFileValid = this._attachedFileService.IsSubmittedFileValid(file);
+
+            if (isFileValid is false)
+            {
+                throw new InvalidAttachedFileException("Formato de arquivo inválido!");
+            }
+
+            AttachedFile newAttachedFile =
+                await this._attachedFileService.DeleteAndReplaceExistentFile(
+                    (int)exercise.AttachedFileId!,
+                    file
+                );
+
             exercise.Title = request.Title;
             exercise.Description = request.Description;
             exercise.EstimatedTime = request.EstimatedTime;
             exercise.ExerciseTypeId = request.ExerciseTypeId;
+            exercise.AttachedFileId = newAttachedFile.Id;
 
             // Current inputs and outputs in the database
 
@@ -321,7 +339,12 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public async Task DeleteExerciseAsync(int id)
         {
-            var exercise = this._exerciseRepository.GetById(id);
+            var exercise = this
+                ._exerciseRepository.Query()
+                .Include(e => e.AttachedFile)
+                .Where(e => e.Id == id)
+                .FirstOrDefault();
+            
             if (exercise == null)
                 throw new ErrorException($"Exercício com id {id} não encontrado.");
 
@@ -331,6 +354,7 @@ namespace ProjetoTccBackend.Services
             this._exerciseOutputRepository.RemoveRange(outputs);
             this._exerciseInputRepository.RemoveRange(inputs);
 
+            this._attachedFileService.DeleteAttachedFile(exercise.AttachedFile!);
             this._exerciseRepository.Remove(exercise);
             await this._dbContext.SaveChangesAsync();
         }

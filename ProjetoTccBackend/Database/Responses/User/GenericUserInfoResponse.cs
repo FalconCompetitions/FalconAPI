@@ -12,6 +12,9 @@ namespace ProjetoTccBackend.Database.Responses.User
         [JsonPropertyName("ra")]
         public string Ra { get; set; }
 
+        [JsonPropertyName("department")]
+        public string? Department { get; set; }
+
         [JsonPropertyName("name")]
         public string Name { get; set; }
 

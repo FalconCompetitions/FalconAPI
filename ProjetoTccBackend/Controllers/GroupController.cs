@@ -21,16 +21,22 @@ namespace ProjetoTccBackend.Controllers
     {
         private readonly IGroupService _groupService;
         private readonly IGroupInviteService _groupInviteService;
+        private readonly IUserService _userService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GroupController"/> class.
         /// </summary>
         /// <param name="groupService">The service responsible for group operations.</param>
         /// <param name="groupInviteService">The service responsible for group invitation</param>
-        public GroupController(IGroupService groupService, IGroupInviteService groupInviteService)
+        public GroupController(
+            IGroupService groupService,
+            IGroupInviteService groupInviteService,
+            IUserService userService
+        )
         {
             this._groupService = groupService;
             this._groupInviteService = groupInviteService;
+            this._userService = userService;
         }
 
         /// <summary>
@@ -165,7 +171,18 @@ namespace ProjetoTccBackend.Controllers
             return Ok(updatedGroup);
         }
 
+        [HttpGet("invite")]
+        [Authorize]
+        public async Task<IActionResult> GetGroupInvitations()
+        {
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
 
+            List<GroupInvite> invitations = await this._groupInviteService.GetUserGroupInvites(
+                loggedUser.Id
+            );
+
+            return Ok(invitations);
+        }
 
         /// <summary>
         /// Sends an invitation to a user to join a specified group.

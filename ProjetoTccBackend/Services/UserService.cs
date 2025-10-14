@@ -255,6 +255,7 @@ public class UserService : IUserService
                     JoinYear = x.JoinYear,
                     LastLoggedAt = x.LastLoggedAt,
                     CreatedAt = x.CreatedAt,
+                    Department = x.Department,
                     Group =
                         x.Group != null
                             ? new GroupResponse()

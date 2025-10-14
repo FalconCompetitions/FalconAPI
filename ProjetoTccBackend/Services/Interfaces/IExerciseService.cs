@@ -73,7 +73,7 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="request">The data to update the exercise with.</param>
         /// <returns>The updated <see cref="Exercise"/> object</returns>
         /// <exception cref="ErrorException">Thrown when the exercise with the specified ID is not found.</exception>
-        Task<Exercise> UpdateExerciseAsync(int id, UpdateExerciseRequest request);
+        Task<Exercise> UpdateExerciseAsync(int id, IFormFile file, UpdateExerciseRequest request);
 
 
         /// <summary>

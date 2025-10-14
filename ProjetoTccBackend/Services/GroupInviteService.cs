@@ -33,6 +33,17 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
+        public async Task<List<GroupInvite>> GetUserGroupInvites(string userId)
+        {
+            List<GroupInvite> groupInvitations = await this
+                ._groupInviteRepository.Query()
+                .Where(g => g.UserId == userId && g.Accepted == false)
+                .ToListAsync();
+
+            return groupInvitations;
+        }
+
+        /// <inheritdoc />
         public async Task<GroupInvite?> SendGroupInviteToUser(InviteUserToGroupRequest request)
         {
             User? user = await this
@@ -107,6 +118,17 @@ namespace ProjetoTccBackend.Services
                 .Where(x => x.Id.Equals(invite.Id))
                 .Include(g => g.Group)
                 .FirstAsync();
+
+            List<GroupInvite> remainingInvites = await this
+                ._groupInviteRepository.Query()
+                .Where(g => g.Id != invite.Id && g.UserId == loggedUser.Id)
+                .ToListAsync();
+
+            if (remainingInvites.Count > 0)
+            {
+                this._groupInviteRepository.RemoveRange(remainingInvites);
+                await this._dbContext.SaveChangesAsync();
+            }
 
             return invite;
         }

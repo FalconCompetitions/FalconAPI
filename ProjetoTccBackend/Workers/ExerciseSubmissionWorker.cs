@@ -81,7 +81,7 @@ namespace ProjetoTccBackend.Workers
             if (competition is not null)
             {
                 var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(
-                    competition.EndTime
+                    competition.EndTime!.Value
                 );
 
                 this._memoryCache.Set(CompetitionCacheKey, competition, cacheEntryOptions);

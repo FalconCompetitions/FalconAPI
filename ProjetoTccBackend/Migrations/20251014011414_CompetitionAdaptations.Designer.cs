@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjetoTccBackend.Database;
 
@@ -11,9 +12,11 @@ using ProjetoTccBackend.Database;
 namespace ProjetoTccBackend.Migrations
 {
     [DbContext(typeof(TccDbContext))]
-    partial class TccDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251014011414_CompetitionAdaptations")]
+    partial class CompetitionAdaptations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -219,10 +222,6 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<DateTime?>("BlockSubmissions")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<TimeSpan>("Duration")
                         .HasColumnType("time(6)");
 
@@ -233,9 +232,6 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<int?>("MaxExercises")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MaxMembers")
                         .HasColumnType("int");
 
                     b.Property<int?>("MaxSubmissionSize")

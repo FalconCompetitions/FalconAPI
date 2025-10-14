@@ -15,7 +15,10 @@ namespace ProjetoTccBackend.Controllers
         private readonly ICompetitionService _competitionService;
         private readonly ILogger<CompetitionController> _logger;
 
-        public CompetitionController(ICompetitionService competitionService, ILogger<CompetitionController> logger)
+        public CompetitionController(
+            ICompetitionService competitionService,
+            ILogger<CompetitionController> logger
+        )
         {
             this._competitionService = competitionService;
             this._logger = logger;
@@ -36,14 +39,34 @@ namespace ProjetoTccBackend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetExistentCompetition()
         {
-            Competition? existentCompetition = await this._competitionService.GetExistentCompetition();
+            Competition? existentCompetition =
+                await this._competitionService.GetExistentCompetition();
 
-            if(existentCompetition is null)
+            if (existentCompetition is null)
             {
                 return NoContent();
             }
 
             return Ok(existentCompetition);
+        }
+
+
+        /// <summary>
+        /// Retrieves a collection of competitions that were created as templates.
+        /// </summary>
+        /// <remarks>This method is accessible only to users with the "Admin" or "Teacher" roles. It
+        /// returns a collection of competitions that are marked as templates, which can be used for creating new
+        /// competitions based on predefined settings.</remarks>
+        /// <returns>An <see cref="IActionResult"/> containing a collection of <see cref="CompetitionResponse"/> objects
+        /// representing the template competitions. The response is returned with an HTTP 200 status code.</returns>
+        [HttpGet("template")]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<IActionResult> GetCreatedTemplateCompetitions()
+        {
+            ICollection<CompetitionResponse> response =
+                await this._competitionService.GetCreatedTemplateCompetitions();
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -66,24 +89,25 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="400">If the request is invalid or a competition already exists for the same date.</response>
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> CreateNewCompetition([FromBody]CompetitionRequest request)
+        public async Task<IActionResult> CreateNewCompetition([FromBody] CompetitionRequest request)
         {
-            this._logger.LogInformation("Chegou");
-
             Competition? newCompetition = null;
 
             try
             {
                 newCompetition = await this._competitionService.CreateCompetition(request);
-            } catch(ExistentCompetitionException ex)
+            }
+            catch (ExistentCompetitionException ex)
             {
-                throw new FormException(new Dictionary<string, string>
-                {
-                    { "general", "Já existe uma competição marcada para a mesma data" }
-                });
+                throw new FormException(
+                    new Dictionary<string, string>
+                    {
+                        { "general", "Já existe uma competição marcada para a mesma data" },
+                    }
+                );
             }
 
-            if(newCompetition is null)
+            if (newCompetition is null)
             {
                 throw new ErrorException("Não foi possível criar uma nova competição");
             }
@@ -101,6 +125,11 @@ namespace ProjetoTccBackend.Controllers
                 ExerciseIds = request.ExerciseIds,
                 StartInscriptions = newCompetition.StartInscriptions,
                 StartTime = newCompetition.StartTime,
+                Name = newCompetition.Name,
+                Duration = newCompetition.Duration,
+                Status = newCompetition.Status,
+                Description = newCompetition.Description,
+                MaxMembers = newCompetition.MaxMembers,
             };
 
             return CreatedAtAction(nameof(GetExistentCompetition), new { }, response);
@@ -127,9 +156,15 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="404">If the competition is not found.</response>
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCompetition(int id, [FromBody] UpdateCompetitionRequest request)
+        public async Task<IActionResult> UpdateCompetition(
+            int id,
+            [FromBody] UpdateCompetitionRequest request
+        )
         {
-            var updatedCompetition = await this._competitionService.UpdateCompetitionAsync(id, request);
+            var updatedCompetition = await this._competitionService.UpdateCompetitionAsync(
+                id,
+                request
+            );
             if (updatedCompetition == null)
             {
                 return NotFound();
@@ -148,6 +183,11 @@ namespace ProjetoTccBackend.Controllers
                 ExerciseIds = request.ExerciseIds,
                 StartInscriptions = updatedCompetition.StartInscriptions,
                 StartTime = updatedCompetition.StartTime,
+                Status = updatedCompetition.Status,
+                Duration = updatedCompetition.Duration,
+                Name = updatedCompetition.Name,
+                Description = updatedCompetition.Description,
+                MaxMembers = updatedCompetition.MaxMembers,
             };
 
             return Ok(response);

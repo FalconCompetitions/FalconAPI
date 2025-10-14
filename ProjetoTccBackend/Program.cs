@@ -490,8 +490,6 @@ namespace ProjetoTccBackend
                     );
                 });
                 app.UseDeveloperExceptionPage();
-
-                // Adicione no pipeline logo ap�s app.UseRouting();
             }
 
             app.UseRouting();

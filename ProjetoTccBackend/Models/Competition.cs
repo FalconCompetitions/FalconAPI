@@ -21,16 +21,24 @@ namespace ProjetoTccBackend.Models
         public string Name { get; set; }
 
         /// <summary>
+        /// Gets or sets the description associated with the object.
+        /// </summary>
+        public string Description { get; set; }
+
+        /// <summary>
         /// Gets or sets the maximum number of exercises allowed.
         /// </summary>
-        [Required]
-        public int MaxExercises { get; set; }
+        public int? MaxExercises { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of members allowed in the group.
+        /// </summary>
+        public int MaxMembers { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum allowed size, in kb, for a submission.
         /// </summary>
-        [Required]
-        public int MaxSubmissionSize { get; set; }
+        public int? MaxSubmissionSize { get; set; }
 
         /// <summary>
         /// Gets or sets the date and time when inscriptions start.
@@ -48,7 +56,7 @@ namespace ProjetoTccBackend.Models
         /// <remarks>This property is required and must be set to a valid <see cref="CompetitionStatus"/>
         /// value.</remarks>
         [Required]
-        public CompetitionStatus Status { get; set; } = CompetitionStatus.Pending;
+        public CompetitionStatus Status { get; set; } = CompetitionStatus.ModelTemplate;
 
         /// <summary>
         /// The start date and time of the competition.
@@ -59,8 +67,7 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// The end date and time of the competition.
         /// </summary>
-        [Required]
-        public DateTime EndTime { get; set; }
+        public DateTime? EndTime { get; set; }
 
         /// <summary>
         /// The total duration of the competition.
@@ -71,13 +78,12 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// The date and time when the ranking will be stopped.
         /// </summary>
-        [Required]
-        public DateTime StopRanking { get; set; }
+        public DateTime? StopRanking { get; set; }
 
         /// <summary>
         /// The date and time after which submissions are blocked.
         /// </summary>
-        public DateTime BlockSubmissions { get; set; }
+        public DateTime? BlockSubmissions { get; set; }
 
         /// <summary>
         /// The penalty of the submission if rejected.
@@ -136,30 +142,34 @@ namespace ProjetoTccBackend.Models
             this.Status = status;
         }
 
-
         /// <summary>
         /// Updates the competition's configuration and timing details based on the provided data.
         /// </summary>
-        /// <remarks>This method calculates and updates the competition's end time, stop ranking date, 
+        /// <remarks>This method calculates and updates the competition's end time, stop ranking date,
         /// and block submissions date based on the start time and respective durations provided  in the <paramref
         /// name="newData"/> object. It also updates other competition settings  such as the maximum number of
         /// exercises, maximum submission size, competition name, submission penalty, and Duration in minutes.</remarks>
         /// <param name="newData">An instance of <see cref="CompetitionRequest"/> containing the new competition settings,  including start
         /// time, duration, and other configuration parameters.</param>
-        public void ProcessCompetitionData(CompetitionRequest newData)
+        public void ProcessCompetitionData(CompetitionRequest newData, bool isNew)
         {
-            DateTime newEndTime = newData.StartTime.Add(newData.Duration);
-            DateTime newStopRankingDate = newData.StartTime.Add(newData.StopRanking);
-            DateTime newBlockSubmissionsDate = newData.StartTime.Add(newData.BlockSubmissions);
+            DateTime? newEndTime = (isNew) ? null : newData.StartTime.Add(newData.Duration!.Value);
+            DateTime? newStopRankingDate =
+                (isNew) ? null : newData.StartTime.Add(newData.StopRanking!.Value);
+            DateTime? newBlockSubmissionsDate =
+                (isNew) ? null : newData.StartTime.Add(newData.BlockSubmissions!.Value);
 
+            this.StartTime = newData.StartTime;
             this.EndTime = newEndTime;
             this.StopRanking = newStopRankingDate;
             this.BlockSubmissions = newBlockSubmissionsDate;
-            this.MaxExercises = newData.MaxExercises;
-            this.MaxSubmissionSize = newData.MaxSubmissionSize;
+            this.MaxExercises = (isNew) ? null : newData.MaxExercises;
+            this.MaxMembers = newData.MaxMembers;
+            this.MaxSubmissionSize = (isNew) ? null : newData.MaxSubmissionSize;
             this.Name = newData.Name;
+            this.Description = newData.Description;
             this.SubmissionPenalty = newData.SubmissionPenalty;
-            this.Duration = newData.Duration;
+            this.Duration = newData.Duration!.Value;
         }
     }
 }

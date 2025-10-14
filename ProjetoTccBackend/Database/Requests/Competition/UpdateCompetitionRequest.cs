@@ -13,6 +13,13 @@ namespace ProjetoTccBackend.Database.Requests.Competition
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
+        [JsonPropertyName("description")]
+        public string Description { get; set; }
+
+        [Required(ErrorMessage = "Número de membros é obrigatório")]
+        [JsonPropertyName("maxMembers")]
+        public int MaxMembers { get; set; }
+
         [Required]
         [JsonPropertyName("startTime")]
         public DateTime StartTime { get; set; }

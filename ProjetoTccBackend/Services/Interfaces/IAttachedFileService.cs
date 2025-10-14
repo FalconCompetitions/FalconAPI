@@ -17,6 +17,11 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <exception cref="ErrorException">Thrown if an I/O error occurs while saving the file to the server.</exception>
         Task<AttachedFile> ProcessAndSaveFile(IFormFile file);
 
+        void DeleteAttachedFile(AttachedFile attachedFile);
+
+
+        Task<AttachedFile> DeleteAndReplaceExistentFile(int fileId, IFormFile newFile);
+
         /// <summary>
         /// Determines whether the submitted file is valid based on its extension.
         /// </summary>

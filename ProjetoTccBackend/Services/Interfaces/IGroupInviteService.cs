@@ -32,5 +32,17 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// langword="null"/> if the invitation does not belong to the logged-in user.</returns>
         /// <exception cref="GroupInvitationException">Thrown if the specified group invitation does not exist.</exception>
         Task<GroupInvite?> AcceptGroupInviteAsync(int groupId);
+
+
+        /// <summary>
+        /// Retrieves a collection of pending group invitations for a specified user.
+        /// </summary>
+        /// <remarks>This method queries the underlying data store for group invitations associated with
+        /// the specified user that have not yet been accepted. The returned collection will only include invitations
+        /// where the  <c>Accepted</c> property is <see langword="false"/>.</remarks>
+        /// <param name="userId">The unique identifier of the user whose group invitations are to be retrieved. Cannot be null or empty.</param>
+        /// <returns>A collection of <see cref="GroupInvite"/> objects representing the user's pending group invitations. 
+        /// Returns an empty collection if no pending invitations are found.</returns>
+        Task<List<GroupInvite>> GetUserGroupInvites(string userId);
     }
 }

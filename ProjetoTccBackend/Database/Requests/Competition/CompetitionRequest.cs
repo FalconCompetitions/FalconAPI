@@ -9,41 +9,44 @@ namespace ProjetoTccBackend.Database.Requests.Competition
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
+        [JsonPropertyName("description")]
+        public string Description { get; set; }
+
+        [Required(ErrorMessage = "Número de membros é obrigatório")]
+        [JsonPropertyName("maxMembers")]
+        public int MaxMembers { get; set; }
+
         [Required]
         [JsonPropertyName("startTime")]
         public DateTime StartTime { get; set; }
 
 
-        [Required]
         [JsonPropertyName("duration")]
-        public TimeSpan Duration { get; set; }
+        public TimeSpan? Duration { get; set; }
 
         /// <summary>
         /// The date and time when the ranking will be stopped.
         /// </summary>
-        [Required]
         [JsonPropertyName("stopRanking")]
-        public TimeSpan StopRanking { get; set; }
+        public TimeSpan? StopRanking { get; set; }
 
         /// <summary>
         /// The date and time after which submissions are blocked.
         /// </summary>
         [JsonPropertyName("blockSubmissions")]
-        public TimeSpan BlockSubmissions { get; set; }
+        public TimeSpan? BlockSubmissions { get; set; }
 
         /// <summary>
         /// The penalty of the submission if rejected.
         /// </summary>
-        [Required]
         [JsonPropertyName("submissionPenalty")]
         public TimeSpan SubmissionPenalty { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of exercises allowed.
         /// </summary>
-        [Required]
         [JsonPropertyName("maxExercises")]
-        public int MaxExercises { get; set; }
+        public int? MaxExercises { get; set; }
 
 
         /// <summary>

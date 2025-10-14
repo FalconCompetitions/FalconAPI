@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjetoTccBackend.Database;
 
@@ -11,9 +12,11 @@ using ProjetoTccBackend.Database;
 namespace ProjetoTccBackend.Migrations
 {
     [DbContext(typeof(TccDbContext))]
-    partial class TccDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251010234117_AddNewTemplateModelStatusTypeToCompetition")]
+    partial class AddNewTemplateModelStatusTypeToCompetition
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -216,12 +219,8 @@ namespace ProjetoTccBackend.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("BlockSubmissions")
+                    b.Property<DateTime>("BlockSubmissions")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<TimeSpan>("Duration")
                         .HasColumnType("time(6)");
@@ -229,16 +228,13 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<DateTime?>("EndInscriptions")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime?>("EndTime")
+                    b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int?>("MaxExercises")
+                    b.Property<int>("MaxExercises")
                         .HasColumnType("int");
 
-                    b.Property<int>("MaxMembers")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MaxSubmissionSize")
+                    b.Property<int>("MaxSubmissionSize")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
@@ -254,7 +250,7 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("StopRanking")
+                    b.Property<DateTime>("StopRanking")
                         .HasColumnType("datetime(6)");
 
                     b.Property<TimeSpan>("SubmissionPenalty")
@@ -661,9 +657,6 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Department")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)

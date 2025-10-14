@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Competition;
+using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Enums.Competition;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
@@ -47,38 +48,23 @@ namespace ProjetoTccBackend.Services
                 throw new ExistentCompetitionException();
             }
 
-
-
             Competition newCompetition = new Competition();
-            newCompetition.ProcessCompetitionData(request);
+            newCompetition.ProcessCompetitionData(request, true);
 
             this._competitionRepository.Add(newCompetition);
 
             if (request.ExerciseIds.Count > 0)
             {
-                List<Task> exerciseTasks = new List<Task>();
-                foreach (var exerciseId in request.ExerciseIds)
-                {
-                    exerciseTasks.Add(
-                        Task.Run(async () =>
-                        {
-                            await this._exerciseInCompetitionRepository.AddAsync(
-                                new ExerciseInCompetition()
-                                {
-                                    CompetitionId = newCompetition.Id,
-                                    ExerciseId = exerciseId,
-                                }
-                            );
-                        })
-                    );
-                }
-
-                await Task.WhenAll(exerciseTasks);
+                await this._exerciseInCompetitionRepository.AddRangeAsync(
+                    request.ExerciseIds.Select(e => new ExerciseInCompetition()
+                    {
+                        CompetitionId = newCompetition.Id,
+                        ExerciseId = e,
+                    })
+                );
             }
 
             await this._dbContext.SaveChangesAsync();
-
-            this._competitionStateService.SignalNewCompetition();
 
             return newCompetition;
         }
@@ -94,15 +80,50 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
+        public async Task<ICollection<CompetitionResponse>> GetCreatedTemplateCompetitions()
+        {
+            List<Competition> templateCompetitions = await this
+                ._competitionRepository.Query()
+                .Include(c => c.Exercices)
+                .Where(c => c.Status == CompetitionStatus.ModelTemplate)
+                .ToListAsync();
+
+            List<CompetitionResponse> response = templateCompetitions
+                .Select(c => new CompetitionResponse()
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    BlockSubmissions = c.BlockSubmissions,
+                    Duration = c.Duration,
+                    StartInscriptions = c.StartInscriptions,
+                    EndInscriptions = c.EndInscriptions,
+                    StartTime = c.StartTime,
+                    EndTime = c.EndTime,
+                    ExerciseIds = c.Exercices.Select(e => e.Id).ToList(),
+                    MaxExercises = c.MaxExercises,
+                    MaxSubmissionSize = c.MaxSubmissionSize,
+                    Status = c.Status,
+                    StopRanking = c.StopRanking,
+                    SubmissionPenalty = c.SubmissionPenalty,
+                    Description = c.Description,
+                    MaxMembers = c.MaxMembers,
+                })
+                .ToList();
+
+            return response;
+        }
+
+        /// <inheritdoc />
         public async Task<Competition?> GetCurrentCompetition()
         {
             DateTime currentTime = DateTime.UtcNow;
 
-            Competition? existentCompetition = this
-                ._competitionRepository.Find(c =>
-                    c.StartTime.Ticks <= currentTime.Ticks && c.EndTime.Ticks >= currentTime.Ticks
+            Competition? existentCompetition = (
+                await this._competitionRepository.FindAsync(c =>
+                    c.StartTime.Ticks <= currentTime.Ticks
+                    && ((c.EndTime != null) ? c.EndTime!.Value.Ticks : 0) >= currentTime.Ticks
                 )
-                .FirstOrDefault();
+            ).FirstOrDefault();
 
             return existentCompetition;
         }
@@ -204,7 +225,11 @@ namespace ProjetoTccBackend.Services
         {
             List<Competition> validCompetitions = await this
                 ._competitionRepository.Query()
-                .Where(c => c.StartInscriptions != null && c.EndInscriptions != null)
+                .Where(c =>
+                    c.StartInscriptions != null
+                    && c.EndInscriptions != null
+                    && c.Status != CompetitionStatus.ModelTemplate
+                )
                 .Select(c => c)
                 .ToListAsync();
 
@@ -235,8 +260,12 @@ namespace ProjetoTccBackend.Services
                     Name = request.Name,
                     StopRanking = request.StopRanking,
                     SubmissionPenalty = request.SubmissionPenalty,
-                }
+                    Description = request.Description,
+                    MaxMembers = request.MaxMembers
+                },
+                false
             );
+            competition.ChangeCompetitionStatus(CompetitionStatus.Pending);
 
             List<int> currentExerciseIds = await this
                 ._exerciseInCompetitionRepository.Query()
@@ -267,6 +296,8 @@ namespace ProjetoTccBackend.Services
             await this._exerciseInCompetitionRepository.AddRangeAsync(newExercisesEntities);
 
             await this._dbContext.SaveChangesAsync();
+
+            this._competitionStateService.SignalNewCompetition();
 
             return competition;
         }
