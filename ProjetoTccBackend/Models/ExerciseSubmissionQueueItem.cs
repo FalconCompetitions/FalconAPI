@@ -43,7 +43,13 @@ namespace ProjetoTccBackend.Models
             this.ConnectionId = connectionId;
         }
 
-
+        /// <summary>
+        /// Represents an item in the exercise submission queue, containing details about a group exercise attempt
+        /// request and its associated connection.
+        /// </summary>
+        /// <param name="id">The unique identifier for the queue item.</param>
+        /// <param name="groupExerciseAttemptRequest">The request object containing details about the group exercise attempt. Cannot be null.</param>
+        /// <param name="connectionId">The connection identifier associated with the request. Cannot be null or empty.</param>
         public ExerciseSubmissionQueueItem(Guid id, GroupExerciseAttemptRequest groupExerciseAttemptRequest, string connectionId)
         {
             this.Id = id;

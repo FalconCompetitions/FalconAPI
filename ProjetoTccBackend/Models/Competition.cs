@@ -43,12 +43,12 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// Gets or sets the date and time when inscriptions start.
         /// </summary>
-        public DateTime? StartInscriptions { get; set; }
+        public DateTime StartInscriptions { get; set; }
 
         /// <summary>
         /// Gets or sets the date and time when inscriptions end.
         /// </summary>
-        public DateTime? EndInscriptions { get; set; }
+        public DateTime EndInscriptions { get; set; }
 
         /// <summary>
         /// Gets or sets the current status of the competition.
@@ -61,7 +61,6 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// The start date and time of the competition.
         /// </summary>
-        [Required]
         public DateTime StartTime { get; set; }
 
         /// <summary>
@@ -151,7 +150,7 @@ namespace ProjetoTccBackend.Models
         /// exercises, maximum submission size, competition name, submission penalty, and Duration in minutes.</remarks>
         /// <param name="newData">An instance of <see cref="CompetitionRequest"/> containing the new competition settings,  including start
         /// time, duration, and other configuration parameters.</param>
-        public void ProcessCompetitionData(CompetitionRequest newData, bool isNew)
+        public void ProcessCompetitionData(CompetitionRequest newData, bool isNew, bool forceInscriptionsUpdate)
         {
             DateTime? newEndTime = (isNew) ? null : newData.StartTime.Add(newData.Duration!.Value);
             DateTime? newStopRankingDate =
@@ -166,6 +165,8 @@ namespace ProjetoTccBackend.Models
             this.MaxExercises = (isNew) ? null : newData.MaxExercises;
             this.MaxMembers = newData.MaxMembers;
             this.MaxSubmissionSize = (isNew) ? null : newData.MaxSubmissionSize;
+            this.StartInscriptions = (forceInscriptionsUpdate) ? newData.StartInscriptions : this.StartInscriptions;
+            this.EndInscriptions = (forceInscriptionsUpdate) ?  newData.EndInscriptions : this.EndInscriptions;
             this.Name = newData.Name;
             this.Description = newData.Description;
             this.SubmissionPenalty = newData.SubmissionPenalty;

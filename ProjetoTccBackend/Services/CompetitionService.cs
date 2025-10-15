@@ -18,6 +18,7 @@ namespace ProjetoTccBackend.Services
         private readonly IExerciseInCompetitionRepository _exerciseInCompetitionRepository;
         private readonly ICompetitionStateService _competitionStateService;
         private readonly TccDbContext _dbContext;
+        private readonly ILogger<CompetitionService> _logger;
 
         public CompetitionService(
             ICompetitionRepository competitionRepository,
@@ -25,7 +26,8 @@ namespace ProjetoTccBackend.Services
             IAnswerRepository answerRepository,
             IExerciseInCompetitionRepository exerciseInCompetitionRepository,
             ICompetitionStateService competitionStateService,
-            TccDbContext dbContext
+            TccDbContext dbContext,
+            ILogger<CompetitionService> logger
         )
         {
             this._competitionRepository = competitionRepository;
@@ -34,6 +36,7 @@ namespace ProjetoTccBackend.Services
             this._exerciseInCompetitionRepository = exerciseInCompetitionRepository;
             this._competitionStateService = competitionStateService;
             this._dbContext = dbContext;
+            this._logger = logger;
         }
 
         /// <inheritdoc/>
@@ -49,7 +52,7 @@ namespace ProjetoTccBackend.Services
             }
 
             Competition newCompetition = new Competition();
-            newCompetition.ProcessCompetitionData(request, true);
+            newCompetition.ProcessCompetitionData(request, true, true);
 
             this._competitionRepository.Add(newCompetition);
 
@@ -120,7 +123,7 @@ namespace ProjetoTccBackend.Services
 
             Competition? existentCompetition = (
                 await this._competitionRepository.FindAsync(c =>
-                    c.StartTime.Ticks <= currentTime.Ticks
+                    c.StartInscriptions.Ticks <= currentTime.Ticks
                     && ((c.EndTime != null) ? c.EndTime!.Value.Ticks : 0) >= currentTime.Ticks
                 )
             ).FirstOrDefault();
@@ -226,9 +229,7 @@ namespace ProjetoTccBackend.Services
             List<Competition> validCompetitions = await this
                 ._competitionRepository.Query()
                 .Where(c =>
-                    c.StartInscriptions != null
-                    && c.EndInscriptions != null
-                    && c.Status != CompetitionStatus.ModelTemplate
+                   c.Status != CompetitionStatus.ModelTemplate
                 )
                 .Select(c => c)
                 .ToListAsync();
@@ -261,9 +262,12 @@ namespace ProjetoTccBackend.Services
                     StopRanking = request.StopRanking,
                     SubmissionPenalty = request.SubmissionPenalty,
                     Description = request.Description,
-                    MaxMembers = request.MaxMembers
+                    MaxMembers = request.MaxMembers,
+                    StartInscriptions = request.StartInscriptions,
+                    EndInscriptions = request.EndInscriptions,
                 },
-                false
+                false,
+                true
             );
             competition.ChangeCompetitionStatus(CompetitionStatus.Pending);
 

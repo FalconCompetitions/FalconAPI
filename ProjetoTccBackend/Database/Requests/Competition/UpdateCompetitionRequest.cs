@@ -39,6 +39,12 @@ namespace ProjetoTccBackend.Database.Requests.Competition
         [JsonPropertyName("submissionPenalty")]
         public TimeSpan SubmissionPenalty { get; set; }
 
+        [JsonPropertyName("startInscriptions")]
+        public DateTime StartInscriptions { get; set; }
+
+        [JsonPropertyName("endInscriptions")]
+        public DateTime EndInscriptions { get; set; }
+
         [Required]
         [JsonPropertyName("maxExercises")]
         public int MaxExercises { get; set; }

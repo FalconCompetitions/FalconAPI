@@ -21,9 +21,8 @@ namespace ProjetoTccBackend.Database.Responses.Competition
         [JsonPropertyName("maxMembers")]
         public int MaxMembers { get; set; }
 
-        [Required]
         [JsonPropertyName("startTime")]
-        public DateTime StartTime { get; set; }
+        public DateTime? StartTime { get; set; }
 
         [JsonPropertyName("endTime")]
         public DateTime? EndTime { get; set; }

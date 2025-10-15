@@ -20,6 +20,14 @@ namespace ProjetoTccBackend.Database.Requests.Competition
         [JsonPropertyName("startTime")]
         public DateTime StartTime { get; set; }
 
+        [Required]
+        [JsonPropertyName("startInscriptions")]
+        public DateTime StartInscriptions { get; set; }
+
+        [Required]
+        [JsonPropertyName("endInscriptions")]
+        public DateTime EndInscriptions { get; set; }
+
 
         [JsonPropertyName("duration")]
         public TimeSpan? Duration { get; set; }
