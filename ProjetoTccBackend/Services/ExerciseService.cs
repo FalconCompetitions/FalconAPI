@@ -165,6 +165,7 @@ namespace ProjetoTccBackend.Services
             }
 
             int totalCount = query.Count();
+            int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
             var items = await query
                 .AsSplitQuery()
                 .OrderBy(e => e.Id)
@@ -178,6 +179,7 @@ namespace ProjetoTccBackend.Services
             {
                 Items = items,
                 TotalCount = totalCount,
+                TotalPages = totalPages,
                 Page = page,
                 PageSize = pageSize,
             };
@@ -344,7 +346,7 @@ namespace ProjetoTccBackend.Services
                 .Include(e => e.AttachedFile)
                 .Where(e => e.Id == id)
                 .FirstOrDefault();
-            
+
             if (exercise == null)
                 throw new ErrorException($"Exercício com id {id} não encontrado.");
 
