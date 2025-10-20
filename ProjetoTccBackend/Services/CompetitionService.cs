@@ -121,12 +121,16 @@ namespace ProjetoTccBackend.Services
         {
             DateTime currentTime = DateTime.UtcNow;
 
-            Competition? existentCompetition = (
-                await this._competitionRepository.FindAsync(c =>
+            Competition? existentCompetition = await this
+                ._competitionRepository.Query()
+                .Include(c => c.Exercices)
+                .Include(c => c.Groups)
+                .Include(c => c.CompetitionRankings)
+                .Where(c =>
                     c.StartInscriptions.Ticks <= currentTime.Ticks
                     && ((c.EndTime != null) ? c.EndTime!.Value.Ticks : 0) >= currentTime.Ticks
                 )
-            ).FirstOrDefault();
+                .FirstOrDefaultAsync();
 
             return existentCompetition;
         }
@@ -228,9 +232,7 @@ namespace ProjetoTccBackend.Services
         {
             List<Competition> validCompetitions = await this
                 ._competitionRepository.Query()
-                .Where(c =>
-                   c.Status != CompetitionStatus.ModelTemplate
-                )
+                .Where(c => c.Status != CompetitionStatus.ModelTemplate)
                 .Select(c => c)
                 .ToListAsync();
 

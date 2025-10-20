@@ -5,6 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Database.Requests.Log;
+using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Database.Responses.Exercise;
 using ProjetoTccBackend.Enums.Log;
 using ProjetoTccBackend.Models;
@@ -99,6 +100,15 @@ namespace ProjetoTccBackend.Hubs
             return user;
         }
 
+        /// <summary>
+        /// Handles a new client connection to the competition hub.
+        /// </summary>
+        /// <remarks>
+        /// Upon connection, the method retrieves the current competition and checks the user's roles. Depending on the
+        /// roles, the user is added to appropriate groups (Admins, Teachers, Students). It also logs the login action and sends
+        /// the competition details back to the caller. If the user has no valid roles, the connection is aborted.
+        /// </remarks>
+        /// <returns></returns>
         public override async Task OnConnectedAsync()
         {
             var currentCompetition = await this.FetchCurrentCompetitionAsync();
@@ -153,6 +163,31 @@ namespace ProjetoTccBackend.Hubs
                 this.Context.Abort();
                 return;
             }
+
+            await this.Clients.Caller.SendAsync(
+                "OnConnectionResponse",
+                new Competition()
+                {
+                    Id = currentCompetition.Id,
+                    Name = currentCompetition.Name,
+                    Description = currentCompetition.Description,
+                    StartTime = currentCompetition.StartTime,
+                    EndTime = currentCompetition.EndTime,
+                    StartInscriptions = currentCompetition.StartInscriptions,
+                    EndInscriptions = currentCompetition.EndInscriptions,
+                    BlockSubmissions = currentCompetition.BlockSubmissions,
+                    Status = currentCompetition.Status,
+                    MaxExercises = currentCompetition.MaxExercises,
+                    MaxMembers = currentCompetition.MaxMembers,
+                    MaxSubmissionSize = currentCompetition.MaxSubmissionSize,
+                    Duration = currentCompetition.Duration,
+                    StopRanking = currentCompetition.StopRanking,
+                    SubmissionPenalty = currentCompetition.SubmissionPenalty,
+                    Exercices = currentCompetition.Exercices,
+                    Groups = currentCompetition.Groups,
+                    CompetitionRankings = currentCompetition.CompetitionRankings,
+                }
+            );
 
             await base.OnConnectedAsync();
         }
@@ -258,15 +293,15 @@ namespace ProjetoTccBackend.Hubs
         [Authorize(Roles = "Admin,Teacher")]
         public async Task ChangeJudgeSubmissionResponse(RevokeGroupSubmissionRequest request)
         {
-            bool succeeded = await this._groupAttemptService.ChangeGroupExerciseAttempt(request.SubmissionId, request.NewJudgeResponse);
+            bool succeeded = await this._groupAttemptService.ChangeGroupExerciseAttempt(
+                request.SubmissionId,
+                request.NewJudgeResponse
+            );
 
             await this.Clients.Caller.SendAsync("ReceiveChangeJudgeSubmissionResponse", succeeded);
         }
 
         [Authorize(Roles = "Admin,Teacher")]
-        public async Task BlockGroupSubmission()
-        {
-
-        }
+        public async Task BlockGroupSubmission() { }
     }
 }

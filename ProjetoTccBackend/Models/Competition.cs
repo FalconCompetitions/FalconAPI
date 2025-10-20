@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Enums.Competition;
 
@@ -18,36 +19,43 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// Name of the Competition
         /// </summary>
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the description associated with the object.
         /// </summary>
+        [JsonPropertyName("description")]
         public string Description { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of exercises allowed.
         /// </summary>
+        [JsonPropertyName("maxExercises")]
         public int? MaxExercises { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of members allowed in the group.
         /// </summary>
+        [JsonPropertyName("maxMembers")]
         public int MaxMembers { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum allowed size, in kb, for a submission.
         /// </summary>
+        [JsonPropertyName("maxSubmissionSize")]
         public int? MaxSubmissionSize { get; set; }
 
         /// <summary>
         /// Gets or sets the date and time when inscriptions start.
         /// </summary>
+        [JsonPropertyName("startInscriptions")]
         public DateTime StartInscriptions { get; set; }
 
         /// <summary>
         /// Gets or sets the date and time when inscriptions end.
         /// </summary>
+        [JsonPropertyName("endInscriptions")]
         public DateTime EndInscriptions { get; set; }
 
         /// <summary>
@@ -56,79 +64,94 @@ namespace ProjetoTccBackend.Models
         /// <remarks>This property is required and must be set to a valid <see cref="CompetitionStatus"/>
         /// value.</remarks>
         [Required]
+        [JsonPropertyName("status")]
         public CompetitionStatus Status { get; set; } = CompetitionStatus.ModelTemplate;
 
         /// <summary>
         /// The start date and time of the competition.
         /// </summary>
+        [JsonPropertyName("startTime")]
         public DateTime StartTime { get; set; }
 
         /// <summary>
         /// The end date and time of the competition.
         /// </summary>
+        [JsonPropertyName("endTime")]
         public DateTime? EndTime { get; set; }
 
         /// <summary>
         /// The total duration of the competition.
         /// </summary>
         [Required]
+        [JsonPropertyName("duration")]
         public TimeSpan Duration { get; set; }
 
         /// <summary>
         /// The date and time when the ranking will be stopped.
         /// </summary>
+        [JsonPropertyName("stopRanking")]
         public DateTime? StopRanking { get; set; }
 
         /// <summary>
         /// The date and time after which submissions are blocked.
         /// </summary>
+        [JsonPropertyName("blockSubmissions")]
         public DateTime? BlockSubmissions { get; set; }
 
         /// <summary>
         /// The penalty of the submission if rejected.
         /// </summary>
+        [JsonPropertyName("submissionPenalty")]
         [Required]
         public TimeSpan SubmissionPenalty { get; set; }
 
         /// <summary>
         /// The collection of groups participating in the competition.
         /// </summary>
-        public ICollection<Group> Groups { get; } = [];
+        [JsonPropertyName("groups")]
+        public ICollection<Group> Groups { get; set; } = [];
 
         /// <summary>
         /// The collection of group-competition relationships.
         /// </summary>
-        public ICollection<GroupInCompetition> GroupInCompetitions { get; } = [];
+        [JsonPropertyName("groupInCompetitions")]
+        public ICollection<GroupInCompetition> GroupInCompetitions { get; set; } = [];
 
         /// <summary>
         /// The collection of exercises included in the competition.
         /// </summary>
-        public ICollection<Exercise> Exercices { get; } = [];
+        [JsonPropertyName("exercises")]
+        public ICollection<Exercise> Exercices { get; set; } = [];
 
         /// <summary>
         /// The collection of exercise-competition relationships.
         /// </summary>
-        public ICollection<ExerciseInCompetition> ExercisesInCompetition { get; } = [];
+        [JsonPropertyName("exercisesInCompetition")]
+        public ICollection<ExerciseInCompetition> ExercisesInCompetition { get; set; } = [];
 
         /// <summary>
         /// The collection of group exercise attempts in the competition.
         /// </summary>
-        public ICollection<GroupExerciseAttempt> GroupExerciseAttempts { get; } = [];
+        [JsonPropertyName("groupExerciseAttempts")]
+        public ICollection<GroupExerciseAttempt> GroupExerciseAttempts { get; set; } = [];
 
         /// <summary>
         /// The collection of questions associated with the competition.
         /// </summary>
-        public ICollection<Question> Questions { get; } = [];
+        [JsonPropertyName("questions")]
+        public ICollection<Question> Questions { get; set; } = [];
 
         /// <summary>
         /// The ranking information for the competition.
         /// </summary>
+        [JsonPropertyName("competitionRankings")]
         public ICollection<CompetitionRanking> CompetitionRankings { get; set; } = [];
 
         /// <summary>
         /// Gets the collection of logs associated with the current instance.
         /// </summary>
-        public ICollection<Log> Logs { get; } = [];
+        [JsonPropertyName("logs")]
+        public ICollection<Log> Logs { get; set; } = [];
 
         /// <summary>
         /// Updates the status of the competition to the specified value.
@@ -150,7 +173,11 @@ namespace ProjetoTccBackend.Models
         /// exercises, maximum submission size, competition name, submission penalty, and Duration in minutes.</remarks>
         /// <param name="newData">An instance of <see cref="CompetitionRequest"/> containing the new competition settings,  including start
         /// time, duration, and other configuration parameters.</param>
-        public void ProcessCompetitionData(CompetitionRequest newData, bool isNew, bool forceInscriptionsUpdate)
+        public void ProcessCompetitionData(
+            CompetitionRequest newData,
+            bool isNew,
+            bool forceInscriptionsUpdate
+        )
         {
             DateTime? newEndTime = (isNew) ? null : newData.StartTime.Add(newData.Duration!.Value);
             DateTime? newStopRankingDate =
@@ -165,8 +192,10 @@ namespace ProjetoTccBackend.Models
             this.MaxExercises = (isNew) ? null : newData.MaxExercises;
             this.MaxMembers = newData.MaxMembers;
             this.MaxSubmissionSize = (isNew) ? null : newData.MaxSubmissionSize;
-            this.StartInscriptions = (forceInscriptionsUpdate) ? newData.StartInscriptions : this.StartInscriptions;
-            this.EndInscriptions = (forceInscriptionsUpdate) ?  newData.EndInscriptions : this.EndInscriptions;
+            this.StartInscriptions =
+                (forceInscriptionsUpdate) ? newData.StartInscriptions : this.StartInscriptions;
+            this.EndInscriptions =
+                (forceInscriptionsUpdate) ? newData.EndInscriptions : this.EndInscriptions;
             this.Name = newData.Name;
             this.Description = newData.Description;
             this.SubmissionPenalty = newData.SubmissionPenalty;
