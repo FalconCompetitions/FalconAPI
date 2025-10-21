@@ -124,12 +124,15 @@ namespace ProjetoTccBackend.Services
             Competition? existentCompetition = await this
                 ._competitionRepository.Query()
                 .Include(c => c.Exercices)
+                .ThenInclude(e => e.ExerciseInputs)
+                .Include(c => c.Exercices)
+                .ThenInclude(e => e.ExerciseOutputs)
                 .Include(c => c.Groups)
+                .ThenInclude(g => g.Users)
                 .Include(c => c.CompetitionRankings)
-                .Where(c =>
-                    c.StartInscriptions.Ticks <= currentTime.Ticks
-                    && ((c.EndTime != null) ? c.EndTime!.Value.Ticks : 0) >= currentTime.Ticks
-                )
+                .ThenInclude(c => c.Group)
+                .ThenInclude(g => g.Users)
+                .Where(c => c.StartInscriptions <= currentTime && c.EndTime >= currentTime)
                 .FirstOrDefaultAsync();
 
             return existentCompetition;

@@ -118,6 +118,8 @@ namespace ProjetoTccBackend.Controllers
             {
                 Id = user.Id,
                 Email = user.Email!,
+                RA = user.RA,
+                Group = null,
                 EmailConfirmed = user.EmailConfirmed,
                 Name = user.UserName!,
                 JoinYear = user.JoinYear,

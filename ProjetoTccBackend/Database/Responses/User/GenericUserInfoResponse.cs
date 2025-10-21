@@ -22,7 +22,7 @@ namespace ProjetoTccBackend.Database.Responses.User
         public string Email { get; set; }
 
         [JsonPropertyName("group")]
-        public GroupResponse Group { get; set; }
+        public GroupResponse? Group { get; set; }
 
         [JsonPropertyName("exercisesCreated")]
         public int? ExercisesCreated { get; set; }

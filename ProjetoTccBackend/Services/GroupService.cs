@@ -20,6 +20,7 @@ namespace ProjetoTccBackend.Services
         private readonly IUserService _userService;
         private readonly IUserRepository _userRepository;
         private readonly IGroupRepository _groupRepository;
+        private readonly IGroupInviteService _groupInviteService;
         private readonly ILogger<GroupService> _logger;
         private readonly TccDbContext _dbContext;
 
@@ -27,6 +28,7 @@ namespace ProjetoTccBackend.Services
             IUserService userService,
             IUserRepository userRepository,
             IGroupRepository groupRepository,
+            IGroupInviteService groupInviteService,
             TccDbContext dbContext,
             ILogger<GroupService> logger
         )
@@ -34,6 +36,7 @@ namespace ProjetoTccBackend.Services
             this._userService = userService;
             this._userRepository = userRepository;
             this._groupRepository = groupRepository;
+            this._groupInviteService = groupInviteService;
             this._dbContext = dbContext;
             this._logger = logger;
         }
@@ -52,10 +55,37 @@ namespace ProjetoTccBackend.Services
                 throw new UnauthorizedAccessException("Usuário não autenticado");
             }
 
+            await this._dbContext.SaveChangesAsync();
+
             loggedUser.GroupId = newGroup.Id;
+
             this._userRepository.Update(loggedUser);
 
             await this._dbContext.SaveChangesAsync();
+
+            if (groupRequest.UserRAs != null)
+            {
+                foreach (string ra in groupRequest.UserRAs)
+                {
+                    User? user = await this._userRepository.GetByIdAsync(ra);
+
+                    if (user == null)
+                    {
+                        continue;
+                    }
+
+                    await this._groupInviteService.SendGroupInviteToUser(
+                        new InviteUserToGroupRequest() { GroupId = newGroup.Id, UserId = user.Id }
+                    );
+                }
+            }
+
+            newGroup = await this
+                ._groupRepository.Query()
+                .Include(g => g.Users)
+                .Include(g => g.GroupInvites)
+                .Where(g => g.Id == newGroup.Id)
+                .FirstAsync();
 
             return newGroup;
         }

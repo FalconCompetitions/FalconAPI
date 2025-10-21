@@ -7,6 +7,8 @@ using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Database.Requests.Log;
 using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Database.Responses.Exercise;
+using ProjetoTccBackend.Database.Responses.Group;
+using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Enums.Log;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
@@ -24,7 +26,7 @@ namespace ProjetoTccBackend.Hubs
         private readonly IHttpContextAccessor _httpContextAcessor;
         private readonly IMemoryCache _memoryCache;
         private readonly ExerciseSubmissionQueue _exerciseSubmissionQueue;
-        private readonly Logger<CompetitionHub> _logger;
+        private readonly ILogger<CompetitionHub> _logger;
         private const string CompetitionCacheKey = "currentCompetition";
 
         public CompetitionHub(
@@ -35,7 +37,7 @@ namespace ProjetoTccBackend.Hubs
             IHttpContextAccessor httpContextAcessor,
             IMemoryCache memoryCache,
             ExerciseSubmissionQueue exerciseSubmissionQueue,
-            Logger<CompetitionHub> logger
+            ILogger<CompetitionHub> logger
         )
         {
             this._groupAttemptService = groupAttemptService;
@@ -166,7 +168,7 @@ namespace ProjetoTccBackend.Hubs
 
             await this.Clients.Caller.SendAsync(
                 "OnConnectionResponse",
-                new Competition()
+                new CompetitionResponse()
                 {
                     Id = currentCompetition.Id,
                     Name = currentCompetition.Name,
@@ -176,25 +178,93 @@ namespace ProjetoTccBackend.Hubs
                     StartInscriptions = currentCompetition.StartInscriptions,
                     EndInscriptions = currentCompetition.EndInscriptions,
                     BlockSubmissions = currentCompetition.BlockSubmissions,
-                    Status = currentCompetition.Status,
+                    StopRanking = currentCompetition.StopRanking,
+                    SubmissionPenalty = currentCompetition.SubmissionPenalty,
                     MaxExercises = currentCompetition.MaxExercises,
                     MaxMembers = currentCompetition.MaxMembers,
                     MaxSubmissionSize = currentCompetition.MaxSubmissionSize,
+                    Status = currentCompetition.Status,
                     Duration = currentCompetition.Duration,
-                    StopRanking = currentCompetition.StopRanking,
-                    SubmissionPenalty = currentCompetition.SubmissionPenalty,
-                    Exercices = currentCompetition.Exercices,
-                    Groups = currentCompetition.Groups,
-                    CompetitionRankings = currentCompetition.CompetitionRankings,
+                    CompetitionRankings = currentCompetition
+                        .CompetitionRankings.Select(c => new CompetitionRankingResponse()
+                        {
+                            Id = c.Id,
+                            Group = new GroupResponse()
+                            {
+                                Id = c.Group.Id,
+                                LeaderId = c.Group.LeaderId,
+                                Name = c.Group.Name,
+                                Users = c
+                                    .Group.Users.Select(u => new GenericUserInfoResponse()
+                                    {
+                                        Id = u.Id,
+                                        Email = u.Email,
+                                        Department = null,
+                                        CreatedAt = u.CreatedAt,
+                                        ExercisesCreated = null,
+                                        JoinYear = u.JoinYear,
+                                        LastLoggedAt = u.LastLoggedAt,
+                                        Name = u.Name,
+                                        Ra = u.Name,
+                                        Group = null,
+                                    })
+                                    .ToList(),
+                            },
+                            Penalty = c.Penalty,
+                            Points = c.Points,
+                            RankOrder = c.RankOrder,
+                        })
+                        .ToList(),
+                    Exercises = currentCompetition
+                        .Exercices.Select(e => new ExerciseResponse()
+                        {
+                            Id = e.Id,
+                            Title = e.Title,
+                            AttachedFileId = (int)e.AttachedFileId!,
+                            Description = e.Description,
+                            ExerciseTypeId = e.ExerciseTypeId,
+                            Inputs = e
+                                .ExerciseInputs.Select(i => new ExerciseInputResponse()
+                                {
+                                    Id = i.Id,
+                                    ExerciseId = i.Id,
+                                    Input = i.Input,
+                                })
+                                .ToList(),
+                            Outputs = e
+                                .ExerciseOutputs.Select(o => new ExerciseOutputResponse()
+                                {
+                                    Id = o.Id,
+                                    Output = o.Output,
+                                    ExerciseId = o.ExerciseId,
+                                    ExerciseInputId = o.ExerciseInputId,
+                                })
+                                .ToList(),
+                        })
+                        .ToList(),
                 }
             );
 
             await base.OnConnectedAsync();
         }
 
+        [Authorize]
+        public async Task GetConnectionId()
+        {
+            string connectionId = this.Context.ConnectionId;
+
+            await this.Clients.Caller.SendAsync("ReceiveConnectionId", connectionId);
+        }
+
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var currentCompetition = await this.FetchCurrentCompetitionAsync();
+
+            if (currentCompetition is null)
+            {
+                await base.OnDisconnectedAsync(exception);
+                return;
+            }
 
             ClaimsPrincipal user = this.GetHubContextUser();
             User loggedUser = this._userService.GetHttpContextLoggedUser();

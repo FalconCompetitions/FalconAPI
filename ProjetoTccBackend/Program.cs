@@ -411,7 +411,7 @@ namespace ProjetoTccBackend
                             else
                             {
                                 // Mant�m a l�gica para SignalR
-                                var accessToken = context.Request.Query["token"];
+                                var accessToken = context.Request.Query["access_token"];
                                 var path = context.HttpContext.Request.Path;
                                 if (
                                     !string.IsNullOrEmpty(accessToken)

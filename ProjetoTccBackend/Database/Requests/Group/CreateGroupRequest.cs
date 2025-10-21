@@ -8,5 +8,8 @@ namespace ProjetoTccBackend.Database.Requests.Group
         [Required(ErrorMessage = "Nome é obrigatório")]
         [JsonPropertyName("name")]
         public string Name { get; set; }
+
+        [JsonPropertyName("userRAs")]
+        public ICollection<string>? UserRAs { get; set; }
     }
 }

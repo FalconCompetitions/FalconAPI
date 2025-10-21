@@ -1,4 +1,6 @@
 ﻿using ProjetoTccBackend.Database.Requests.Competition;
+using ProjetoTccBackend.Database.Responses.Exercise;
+using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Enums.Competition;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -79,5 +81,12 @@ namespace ProjetoTccBackend.Database.Responses.Competition
         [Required]
         [JsonPropertyName("exerciseIds")]
         public ICollection<int> ExerciseIds { get; set; }
+
+        [JsonPropertyName("exercises")]
+        public ICollection<ExerciseResponse>? Exercises { get; set; }
+
+
+        [JsonPropertyName("competitionRankings")]
+        public ICollection<CompetitionRankingResponse>? CompetitionRankings { get; set; }
     }
 }

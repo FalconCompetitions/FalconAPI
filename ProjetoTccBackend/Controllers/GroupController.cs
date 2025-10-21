@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Database.Responses.Group;
+using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Exceptions.Group;
 using ProjetoTccBackend.Exceptions.User;
 using ProjetoTccBackend.Models;
@@ -65,6 +66,27 @@ namespace ProjetoTccBackend.Controllers
         public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest request)
         {
             var group = await this._groupService.CreateGroupAsync(request);
+
+            GroupResponse response = new GroupResponse()
+            {
+                Id = group.Id,
+                Name = group.Name,
+                LeaderId = group.LeaderId,
+                Users = group.Users.Select(u => new GenericUserInfoResponse()
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    CreatedAt = u.CreatedAt,
+                    Department = u.Department,
+                    Email = u.Email,
+                    Group = null,
+                    ExercisesCreated = null,
+                    JoinYear = u.JoinYear,
+                    LastLoggedAt = u.LastLoggedAt,
+                    Ra = u.RA
+                }).ToList()
+            };
+
             return Ok(new { group.Id, group.Name });
         }
 
