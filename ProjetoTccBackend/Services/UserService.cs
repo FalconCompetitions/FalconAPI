@@ -200,7 +200,7 @@ public class UserService : IUserService
             .ThenInclude(g => g.Users)
             .FirstAsync();
 
-        if (existentUser.Group.GroupInvites.Count == 0)
+        if (existentUser.Group != null && existentUser.Group.GroupInvites.Count == 0)
         {
             existentUser.Group.GroupInvites = await this
                 ._groupInviteRepository.Query()

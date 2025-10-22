@@ -8,8 +8,7 @@ namespace ProjetoTccBackend.Swagger.Examples
     {
         public UpdateGroupRequest GetExample() => new UpdateGroupRequest()
         {
-            Name = "Novo Nome do Grupo",
-            UserIds = new List<string> { "userId1", "userId2" }
+            Name = "Novo Nome do Grupo"
         };
     }
 }

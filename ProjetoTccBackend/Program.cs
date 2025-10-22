@@ -454,6 +454,18 @@ namespace ProjetoTccBackend
                 );
 
                 options.AddPolicy(
+                    "ApiTestingPolicy",
+                    policy =>
+                    {
+                        policy
+                            .WithOrigins("https://localhost:2000", "http://localhost:2000")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    }
+                );
+
+                options.AddPolicy(
                     "JudgeApiPolicy",
                     policy =>
                     {
@@ -494,8 +506,14 @@ namespace ProjetoTccBackend
 
             app.UseRouting();
 
-            app.UseCors("FrontendAppPolicy");
-            app.UseCors("JudgeApiPolicy");
+            
+            if (app.Environment.IsProduction())
+            {
+                app.UseCors("FrontendAppPolicy");
+                app.UseCors("JudgeApiPolicy");
+                app.UseCors("ApiTestingPolicy");
+            }
+            
 
             ConfigureWebSocketOptions(app);
 

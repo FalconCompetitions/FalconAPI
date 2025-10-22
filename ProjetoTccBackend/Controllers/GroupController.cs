@@ -66,51 +66,58 @@ namespace ProjetoTccBackend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest request)
         {
-            var group = await this._groupService.CreateGroupAsync(request);
-
-            GroupResponse response = new GroupResponse()
+            try
             {
-                Id = group.Id,
-                Name = group.Name,
-                LeaderId = group.LeaderId,
-                Users = group
-                    .Users.Select(u => new GenericUserInfoResponse()
-                    {
-                        Id = u.Id,
-                        Name = u.Name,
-                        CreatedAt = u.CreatedAt,
-                        Department = u.Department,
-                        Email = u.Email,
-                        Group = null,
-                        ExercisesCreated = null,
-                        JoinYear = u.JoinYear,
-                        LastLoggedAt = u.LastLoggedAt,
-                        Ra = u.RA,
-                    })
-                    .ToList(),
-                GroupInvitations = group
-                    .GroupInvites.Select(g => new GroupInvitationResponse()
-                    {
-                        Id = g.Id,
-                        User = new GenericUserInfoResponse()
+                Group group = await this._groupService.CreateGroupAsync(request);
+
+                GroupResponse response = new GroupResponse()
+                {
+                    Id = group.Id,
+                    Name = group.Name,
+                    LeaderId = group.LeaderId,
+                    Users = group
+                        .Users.Select(u => new GenericUserInfoResponse()
                         {
-                            Id = g.User.Id,
-                            CreatedAt = g.User.CreatedAt,
-                            Department = g.User.Department,
-                            Email = g.User.Email,
+                            Id = u.Id,
+                            Name = u.Name,
+                            CreatedAt = u.CreatedAt,
+                            Department = u.Department,
+                            Email = u.Email,
                             Group = null,
                             ExercisesCreated = null,
-                            JoinYear = g.User.JoinYear,
-                            LastLoggedAt = g.User.LastLoggedAt,
-                            Name = g.User.Name,
-                            Ra = g.User.RA,
-                        },
-                        Accepted = false,
-                    })
-                    .ToList(),
-            };
+                            JoinYear = u.JoinYear,
+                            LastLoggedAt = u.LastLoggedAt,
+                            Ra = u.RA,
+                        })
+                        .ToList(),
+                    GroupInvitations = group
+                        .GroupInvites.Select(g => new GroupInvitationResponse()
+                        {
+                            Id = g.Id,
+                            User = new GenericUserInfoResponse()
+                            {
+                                Id = g.User.Id,
+                                CreatedAt = g.User.CreatedAt,
+                                Department = g.User.Department,
+                                Email = g.User.Email,
+                                Group = null,
+                                ExercisesCreated = null,
+                                JoinYear = g.User.JoinYear,
+                                LastLoggedAt = g.User.LastLoggedAt,
+                                Name = g.User.Name,
+                                Ra = g.User.RA,
+                            },
+                            Accepted = false,
+                        })
+                        .ToList(),
+                };
 
-            return CreatedAtAction(nameof(GetGroupById), new { id = response.Id }, response);
+                return CreatedAtAction(nameof(GetGroupById), new { id = response.Id }, response);
+            }
+            catch (UserHasGroupException ex)
+            {
+                return BadRequest(new { ex.Message });
+            }
         }
 
         /// <summary>

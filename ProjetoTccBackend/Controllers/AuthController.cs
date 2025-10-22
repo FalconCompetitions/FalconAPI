@@ -198,46 +198,54 @@ namespace ProjetoTccBackend.Controllers
                 PhoneNumber = user.PhoneNumber,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed,
                 Role = role,
-                Group = new GroupResponse()
-                {
-                    Id = user.Group.Id,
-                    Name = user.Group.Name,
-                    LeaderId = user.Group.LeaderId,
-                    Users = user.Group.Users.Select(u => new GenericUserInfoResponse()
-                    {
-                        Id = u.Id,
-                        Group = null,
-                        CreatedAt = u.CreatedAt,
-                        Department = null,
-                        Email = u.Email,
-                        ExercisesCreated = null,
-                        JoinYear = u.JoinYear,
-                        Name = u.Name,
-                        LastLoggedAt = u.LastLoggedAt,
-                        Ra = u.RA
-                    }).ToList(),
-                },
-                GroupInvitations = user
-                    .Group.GroupInvites.Select(g => new GroupInvitationResponse()
-                    {
-                        Id = g.Id,
-                        User = new GenericUserInfoResponse()
+                Group =
+                    (user.Group == null)
+                        ? null
+                        : new GroupResponse()
                         {
-                            Id = g.User.Id,
-                            CreatedAt = DateTime.UtcNow,
-                            Department = null,
-                            Email = g.User.Email,
-                            ExercisesCreated = null,
-                            Group = null,
-                            JoinYear = g.User.JoinYear,
-                            LastLoggedAt = g.User.LastLoggedAt,
-                            Name = g.User.Name,
-                            Ra = g.User.RA,
+                            Id = user.Group.Id,
+                            Name = user.Group.Name,
+                            LeaderId = user.Group.LeaderId,
+                            Users = user
+                                .Group.Users.Select(u => new GenericUserInfoResponse()
+                                {
+                                    Id = u.Id,
+                                    Group = null,
+                                    CreatedAt = u.CreatedAt,
+                                    Department = null,
+                                    Email = u.Email,
+                                    ExercisesCreated = null,
+                                    JoinYear = u.JoinYear,
+                                    Name = u.Name,
+                                    LastLoggedAt = u.LastLoggedAt,
+                                    Ra = u.RA,
+                                })
+                                .ToList(),
                         },
-                        Group = null,
-                        Accepted = g.Accepted,
-                    })
-                    .ToList(),
+                GroupInvitations =
+                    (user.Group == null)
+                        ? []
+                        : user
+                            .Group.GroupInvites.Select(g => new GroupInvitationResponse()
+                            {
+                                Id = g.Id,
+                                User = new GenericUserInfoResponse()
+                                {
+                                    Id = g.User.Id,
+                                    CreatedAt = DateTime.UtcNow,
+                                    Department = null,
+                                    Email = g.User.Email,
+                                    ExercisesCreated = null,
+                                    Group = null,
+                                    JoinYear = g.User.JoinYear,
+                                    LastLoggedAt = g.User.LastLoggedAt,
+                                    Name = g.User.Name,
+                                    Ra = g.User.RA,
+                                },
+                                Group = null,
+                                Accepted = g.Accepted,
+                            })
+                            .ToList(),
             };
 
             string jwtToken = this._tokenService.GenerateUserToken(user, role);

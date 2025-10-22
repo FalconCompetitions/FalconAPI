@@ -8,6 +8,7 @@ using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Exceptions;
+using ProjetoTccBackend.Exceptions.Group;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
@@ -23,6 +24,7 @@ namespace ProjetoTccBackend.Services
         private readonly IGroupInviteService _groupInviteService;
         private readonly ILogger<GroupService> _logger;
         private readonly TccDbContext _dbContext;
+        private const int MAX_MEMBERS_PER_GROUP = 3;
 
         public GroupService(
             IUserService userService,
@@ -45,6 +47,16 @@ namespace ProjetoTccBackend.Services
         public async Task<Group> CreateGroupAsync(CreateGroupRequest groupRequest)
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            Group? existentGroup = await this
+                ._groupRepository.Query()
+                .Where(g => g.LeaderId == loggedUser.Id)
+                .FirstOrDefaultAsync();
+
+            if (existentGroup != null)
+            {
+                throw new UserHasGroupException();
+            }
 
             Group newGroup = new Group { Name = groupRequest.Name, LeaderId = loggedUser.Id };
 
@@ -206,56 +218,35 @@ namespace ProjetoTccBackend.Services
             IList<string> userRoles
         )
         {
-            var group = this._groupRepository.GetById(groupId);
+            var group = await this._groupRepository.Query()
+                .Include(g => g.Users)
+                .Where(g => g.Id == groupId && g.LeaderId == userId)
+                .FirstOrDefaultAsync();
+
             if (group == null)
                 return null;
-            // Permissão: Admin, Teacher ou membro do grupo
             bool isAdmin = userRoles.Contains("Admin");
-            bool isTeacher = userRoles.Contains("Teacher");
-            bool isMember = group.Users.Any(u => u.Id == userId);
-            if (!(isAdmin || isTeacher || isMember))
+            bool isLeader = group.LeaderId == userId;
+            if (!isAdmin && !isLeader)
                 return null;
+            
             group.Name = request.Name;
             // Atualiza os usuários do grupo
-            List<User> currentUsers = group.Users.ToList();
-            var newUsers = this
-                ._userRepository.GetAll()
-                .Where(u => request.UserIds.Contains(u.Id))
-                .ToList();
 
-            var users = currentUsers.ToList();
-
-            // Remove usuários que não estão mais
-            foreach (var user in currentUsers)
-            {
-                if (!request.UserIds.Contains(user.Id))
-                {
-                    user.GroupId = null;
-                    this._userRepository.Update(user);
-
-                    int indexToRemove = users.IndexOf(user);
-                    users.RemoveAt(indexToRemove);
-                }
-            }
-            // Adiciona novos usuários
-            foreach (var user in newUsers)
-            {
-                if (user.GroupId != group.Id)
-                {
-                    user.GroupId = group.Id;
-                    this._userRepository.Update(user);
-                    users.Add(user);
-                }
-            }
             this._groupRepository.Update(group);
             this._dbContext.SaveChanges();
+
+            group = await this._groupRepository.Query()
+                .Include(g => g.Users)
+                .Where(g => g.Id == groupId)
+                .FirstAsync();
 
             GroupResponse response = new GroupResponse()
             {
                 Id = group.Id,
                 LeaderId = group.LeaderId,
                 Name = group.Name,
-                Users = users
+                Users = group.Users
                     .Select(user => new GenericUserInfoResponse()
                     {
                         Id = user.Id,
