@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoTccBackend.Database.Requests.Group;
+using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Database.Responses.User;
@@ -72,22 +73,44 @@ namespace ProjetoTccBackend.Controllers
                 Id = group.Id,
                 Name = group.Name,
                 LeaderId = group.LeaderId,
-                Users = group.Users.Select(u => new GenericUserInfoResponse()
-                {
-                    Id = u.Id,
-                    Name = u.Name,
-                    CreatedAt = u.CreatedAt,
-                    Department = u.Department,
-                    Email = u.Email,
-                    Group = null,
-                    ExercisesCreated = null,
-                    JoinYear = u.JoinYear,
-                    LastLoggedAt = u.LastLoggedAt,
-                    Ra = u.RA
-                }).ToList()
+                Users = group
+                    .Users.Select(u => new GenericUserInfoResponse()
+                    {
+                        Id = u.Id,
+                        Name = u.Name,
+                        CreatedAt = u.CreatedAt,
+                        Department = u.Department,
+                        Email = u.Email,
+                        Group = null,
+                        ExercisesCreated = null,
+                        JoinYear = u.JoinYear,
+                        LastLoggedAt = u.LastLoggedAt,
+                        Ra = u.RA,
+                    })
+                    .ToList(),
+                GroupInvitations = group
+                    .GroupInvites.Select(g => new GroupInvitationResponse()
+                    {
+                        Id = g.Id,
+                        User = new GenericUserInfoResponse()
+                        {
+                            Id = g.User.Id,
+                            CreatedAt = g.User.CreatedAt,
+                            Department = g.User.Department,
+                            Email = g.User.Email,
+                            Group = null,
+                            ExercisesCreated = null,
+                            JoinYear = g.User.JoinYear,
+                            LastLoggedAt = g.User.LastLoggedAt,
+                            Name = g.User.Name,
+                            Ra = g.User.RA,
+                        },
+                        Accepted = false,
+                    })
+                    .ToList(),
             };
 
-            return Ok(new { group.Id, group.Name });
+            return CreatedAtAction(nameof(GetGroupById), new { id = response.Id }, response);
         }
 
         /// <summary>
@@ -235,10 +258,35 @@ namespace ProjetoTccBackend.Controllers
                     return BadRequest($"O grupo de id {request.GroupId} não existe!");
                 }
 
+                GroupInvitationResponse response = new GroupInvitationResponse()
+                {
+                    Id = groupInvite.Id,
+                    Accepted = groupInvite.Accepted,
+                    Group = new GroupResponse()
+                    {
+                        Id = groupInvite.Group.Id,
+                        LeaderId = groupInvite.Group.LeaderId,
+                        Name = groupInvite.Group.Name,
+                    },
+                    User = new GenericUserInfoResponse()
+                    {
+                        Id = groupInvite.User.Id,
+                        Name = groupInvite.User.Name,
+                        Group = null,
+                        Email = groupInvite.User.Email,
+                        CreatedAt = groupInvite.User.CreatedAt,
+                        Department = null,
+                        ExercisesCreated = null,
+                        JoinYear = groupInvite.User.JoinYear,
+                        LastLoggedAt = groupInvite.User.LastLoggedAt,
+                        Ra = groupInvite.User.RA,
+                    },
+                };
+
                 return CreatedAtAction(
                     nameof(InviteUserToGroup),
-                    new { userId = request.UserId },
-                    groupInvite
+                    new { userId = request.RA },
+                    response
                 );
             }
             catch (UserNotFoundException exc)

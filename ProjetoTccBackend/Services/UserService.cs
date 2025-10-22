@@ -19,6 +19,7 @@ public class UserService : IUserService
     //private IMapper _mapper;
     private UserManager<User> _userManager;
     private readonly IUserRepository _userRepository;
+    private readonly IGroupInviteRepository _groupInviteRepository;
     private SignInManager<User> _signInManager;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ITokenService _tokenService;
@@ -27,6 +28,7 @@ public class UserService : IUserService
     public UserService(
         UserManager<User> userManager,
         IUserRepository userRepository,
+        IGroupInviteRepository groupInviteRepository,
         SignInManager<User> signInManager,
         IHttpContextAccessor httpContextAccessor,
         ITokenService tokenService,
@@ -35,6 +37,7 @@ public class UserService : IUserService
     {
         this._userManager = userManager;
         this._userRepository = userRepository;
+        this._groupInviteRepository = groupInviteRepository;
         this._signInManager = signInManager;
         this._tokenService = tokenService;
 
@@ -185,6 +188,28 @@ public class UserService : IUserService
         await this._userManager.UpdateAsync(existentUser);
 
         string userRole = (await this._userManager.GetRolesAsync(existentUser)).First();
+
+        existentUser = await this
+            ._userRepository.Query()
+            .Where(u => u.Id == existentUser.Id)
+            .AsSplitQuery()
+            .Include(u => u.Group)
+            .ThenInclude(g => g.GroupInvites)
+            .ThenInclude(g => g.User)
+            .Include(u => u.Group)
+            .ThenInclude(g => g.Users)
+            .FirstAsync();
+
+        if (existentUser.Group.GroupInvites.Count == 0)
+        {
+            existentUser.Group.GroupInvites = await this
+                ._groupInviteRepository.Query()
+                .Where(g => g.GroupId == existentUser.Group.Id && g.Accepted == false)
+                .Include(g => g.User)
+                .ToListAsync();
+        }
+
+        this._logger.LogCritical($"group id: {existentUser.GroupInvites.Count}");
 
         return Tuple.Create(existentUser, userRole);
     }

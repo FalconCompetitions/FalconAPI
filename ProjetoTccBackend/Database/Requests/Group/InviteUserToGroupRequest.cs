@@ -10,7 +10,7 @@ namespace ProjetoTccBackend.Database.Requests.Group
         public int GroupId { get; set; }
 
         [Required]
-        [JsonPropertyName("userId")]
-        public string UserId { get; set; }
+        [JsonPropertyName("ra")]
+        public string RA { get; set; }
     }
 }

@@ -48,14 +48,14 @@ namespace ProjetoTccBackend.Services
         {
             User? user = await this
                 ._userRepository.Query()
-                .Where(u => u.Id.Equals(request.UserId))
+                .Where(u => u.RA == request.RA)
                 .Include(u => u.Group)
                 .FirstOrDefaultAsync();
             Group? group = await this._groupRepository.GetByIdAsync(request.GroupId);
 
             if (user is null)
             {
-                throw new UserNotFoundException(request.UserId);
+                throw new UserNotFoundException(request.RA);
             }
 
             if (group is null)
@@ -66,6 +66,16 @@ namespace ProjetoTccBackend.Services
             if (user.Group is not null)
             {
                 throw new UserHasGroupException();
+            }
+
+            GroupInvite? existentInvitation = await this
+                ._groupInviteRepository.Query()
+                .Where(g => g.GroupId == group.Id && g.UserId == user.Id)
+                .FirstOrDefaultAsync();
+
+            if (existentInvitation is not null)
+            {
+                return null;
             }
 
             GroupInvite? invite = new GroupInvite()

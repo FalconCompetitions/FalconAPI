@@ -1,5 +1,6 @@
-﻿using System.Text.Json.Serialization;
-using GroupModel = ProjetoTccBackend.Models.Group;
+﻿using ProjetoTccBackend.Database.Responses.Competition;
+using ProjetoTccBackend.Database.Responses.Group;
+using System.Text.Json.Serialization;
 
 namespace ProjetoTccBackend.Database.Responses.Auth
 {
@@ -33,6 +34,9 @@ namespace ProjetoTccBackend.Database.Responses.Auth
         public string Role { get; set; }
 
         [JsonPropertyName("group")]
-        public GroupModel? Group { get; set; } = null;
+        public GroupResponse? Group { get; set; } = null;
+
+        [JsonPropertyName("groupInvitations")]
+        public ICollection<GroupInvitationResponse> GroupInvitations { get; set; }
     }
 }

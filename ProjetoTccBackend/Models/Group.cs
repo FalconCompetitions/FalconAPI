@@ -29,12 +29,12 @@ namespace ProjetoTccBackend.Models
         /// <summary>  
         /// Lista de usuários associados ao grupo.  
         /// </summary>  
-        public ICollection<User> Users { get; } = [];
+        public virtual ICollection<User> Users { get; set; }
 
         /// <summary>  
         /// Lista de competições associadas ao grupo.  
         /// </summary>  
-        public ICollection<Competition> Competitions { get; } = [];
+        public ICollection<Competition> Competitions { get; set; }
 
         /// <summary>  
         /// Lista de associações entre grupos e competições.  
@@ -56,6 +56,6 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// Gets the collection of group invites associated with the current user.
         /// </summary>
-        public ICollection<GroupInvite> GroupInvites { get; } = [];
+        public ICollection<GroupInvite> GroupInvites { get; set; }
     }
 }

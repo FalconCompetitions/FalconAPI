@@ -75,7 +75,7 @@ namespace ProjetoTccBackend.Services
                     }
 
                     await this._groupInviteService.SendGroupInviteToUser(
-                        new InviteUserToGroupRequest() { GroupId = newGroup.Id, UserId = user.Id }
+                        new InviteUserToGroupRequest() { GroupId = newGroup.Id, RA = user.RA }
                     );
                 }
             }
@@ -84,6 +84,7 @@ namespace ProjetoTccBackend.Services
                 ._groupRepository.Query()
                 .Include(g => g.Users)
                 .Include(g => g.GroupInvites)
+                .ThenInclude(g => g.User)
                 .Where(g => g.Id == newGroup.Id)
                 .FirstAsync();
 

@@ -1,14 +1,17 @@
-﻿using ApiEstoqueASP.Services;
+﻿using System.Security.Claims;
+using ApiEstoqueASP.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
+using ProjetoTccBackend.Database.Requests.Auth;
+using ProjetoTccBackend.Database.Responses.Auth;
+using ProjetoTccBackend.Database.Responses.Competition;
+using ProjetoTccBackend.Database.Responses.Group;
+using ProjetoTccBackend.Database.Responses.User;
+using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Filters;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
-using ProjetoTccBackend.Exceptions;
-using ProjetoTccBackend.Database.Requests.Auth;
-using ProjetoTccBackend.Database.Responses.Auth;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace ProjetoTccBackend.Controllers
 {
@@ -29,7 +32,11 @@ namespace ProjetoTccBackend.Controllers
         /// <param name="tokenService">Serviço de geração de token.</param>
         /// <param name="userService">Serviço de gerenciamento de usuários.</param>
         /// <param name="logger">Logger para registrar informações e erros.</param>
-        public AuthController(ITokenService tokenService, IUserService userService, ILogger<AuthController> logger)
+        public AuthController(
+            ITokenService tokenService,
+            IUserService userService,
+            ILogger<AuthController> logger
+        )
         {
             this._tokenService = tokenService;
             this._userService = userService;
@@ -69,7 +76,7 @@ namespace ProjetoTccBackend.Controllers
         /// </returns>
         /// <remarks>
         /// Sample request:
-        /// 
+        ///
         ///     POST /api/Auth/register
         ///     {
         ///         "ra": "12345",
@@ -80,9 +87,9 @@ namespace ProjetoTccBackend.Controllers
         ///         "role": "User",
         ///         "password": "SecurePassword123"
         ///     }
-        /// 
+        ///
         /// Sample response:
-        /// 
+        ///
         ///     {
         ///         "user": {
         ///             "id": "userId",
@@ -130,13 +137,8 @@ namespace ProjetoTccBackend.Controllers
 
             SetAuthCookie(jwtToken);
 
-            return Ok(new
-            {
-                user = userResponse,
-                token = jwtToken
-            });
+            return Ok(new { user = userResponse, token = jwtToken });
         }
-
 
         /// <summary>
         /// Authenticates a user using their email and password.
@@ -149,15 +151,15 @@ namespace ProjetoTccBackend.Controllers
         /// </returns>
         /// <remarks>
         /// Sample request:
-        /// 
+        ///
         ///     POST /api/Auth/login
         ///     {
         ///         "email": "johndoe@example.com",
         ///         "password": "SecurePassword123"
         ///     }
-        /// 
+        ///
         /// Sample response:
-        /// 
+        ///
         ///     {
         ///         "user": {
         ///             "id": "userId",
@@ -196,20 +198,54 @@ namespace ProjetoTccBackend.Controllers
                 PhoneNumber = user.PhoneNumber,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed,
                 Role = role,
-                Group = user.Group,
+                Group = new GroupResponse()
+                {
+                    Id = user.Group.Id,
+                    Name = user.Group.Name,
+                    LeaderId = user.Group.LeaderId,
+                    Users = user.Group.Users.Select(u => new GenericUserInfoResponse()
+                    {
+                        Id = u.Id,
+                        Group = null,
+                        CreatedAt = u.CreatedAt,
+                        Department = null,
+                        Email = u.Email,
+                        ExercisesCreated = null,
+                        JoinYear = u.JoinYear,
+                        Name = u.Name,
+                        LastLoggedAt = u.LastLoggedAt,
+                        Ra = u.RA
+                    }).ToList(),
+                },
+                GroupInvitations = user
+                    .Group.GroupInvites.Select(g => new GroupInvitationResponse()
+                    {
+                        Id = g.Id,
+                        User = new GenericUserInfoResponse()
+                        {
+                            Id = g.User.Id,
+                            CreatedAt = DateTime.UtcNow,
+                            Department = null,
+                            Email = g.User.Email,
+                            ExercisesCreated = null,
+                            Group = null,
+                            JoinYear = g.User.JoinYear,
+                            LastLoggedAt = g.User.LastLoggedAt,
+                            Name = g.User.Name,
+                            Ra = g.User.RA,
+                        },
+                        Group = null,
+                        Accepted = g.Accepted,
+                    })
+                    .ToList(),
             };
 
             string jwtToken = this._tokenService.GenerateUserToken(user, role);
 
             SetAuthCookie(jwtToken);
 
-            return Ok(new
-            {
-                user = userResponse,
-                token = jwtToken
-            });
+            return Ok(new { user = userResponse, token = jwtToken });
         }
-
 
         /// <summary>
         /// Validates the authentication token of the current user.
@@ -229,7 +265,9 @@ namespace ProjetoTccBackend.Controllers
         [ProducesResponseType(200)]
         public IActionResult ValidateToken()
         {
-            string? token = this.Request.Cookies.FirstOrDefault(x => x.Key == "CompetitionAuthToken").Value;
+            string? token = this
+                .Request.Cookies.FirstOrDefault(x => x.Key == "CompetitionAuthToken")
+                .Value;
 
             if (token is null)
             {
@@ -238,7 +276,6 @@ namespace ProjetoTccBackend.Controllers
 
             return Ok(new { valid = true });
         }
-
 
         /// <summary>
         /// Renews the authentication token for the currently logged in user.
@@ -266,19 +303,16 @@ namespace ProjetoTccBackend.Controllers
                 return Unauthorized(new { valid = false, message = "User not found" });
             }
 
-            var role = this.User.Claims.First(x => x.Subject.NameClaimType == ClaimTypes.Role)!.Value;
+            var role = this
+                .User.Claims.First(x => x.Subject.NameClaimType == ClaimTypes.Role)!
+                .Value;
 
             string jwtToken = this._tokenService.GenerateUserToken(loggedUser, role);
 
             SetAuthCookie(jwtToken);
 
-            return Ok(new
-            {
-                valid = true,
-                token = jwtToken,
-            });
+            return Ok(new { valid = true, token = jwtToken });
         }
-
 
         /// <summary>
         /// Logs out the currently authenticated user.
@@ -301,6 +335,5 @@ namespace ProjetoTccBackend.Controllers
             this.Response.Cookies.Delete("CompetitionAuthToken");
             return Ok();
         }
-
     }
 }
