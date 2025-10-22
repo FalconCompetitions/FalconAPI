@@ -8,9 +8,9 @@ namespace ProjetoTccBackend.Database.Requests.User
         [JsonPropertyName("name")]
         [Required]
         public string Name { get; set; }
-        
+
         [JsonPropertyName("department")]
-        public string Department { get; set; }
+        public string? Department { get; set; }
 
         [Required]
         [EmailAddress]
@@ -21,6 +21,6 @@ namespace ProjetoTccBackend.Database.Requests.User
         public string? PhoneNumber { get; set; }
 
         [JsonPropertyName("joinYear")]
-        public int? JoinYear { get; set; }
+        public int JoinYear { get; set; }
     }
 }
