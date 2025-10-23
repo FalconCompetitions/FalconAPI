@@ -37,7 +37,8 @@ namespace ProjetoTccBackend.Models
         [JsonIgnore]
         public override bool TwoFactorEnabled { get => base.TwoFactorEnabled; set => base.TwoFactorEnabled = value; }
 
-        
+        [JsonIgnore]
+        public override DateTimeOffset? LockoutEnd { get => base.LockoutEnd; set => base.LockoutEnd = value; }
 
         [StringLength(255)]
         public string Name { get; set; }
@@ -57,9 +58,14 @@ namespace ProjetoTccBackend.Models
 
 
         public ICollection<GroupInvite> GroupInvites { get; } = [];
+
+        [JsonIgnore]
         public ICollection<Question> Questions { get; } = [];
+
+        [JsonIgnore]
         public ICollection<Answer> Answers { get; } = [];
 
+        [JsonIgnore]
         public ICollection<Log> Logs = [];
     }
 }

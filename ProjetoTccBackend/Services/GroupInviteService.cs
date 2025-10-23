@@ -37,6 +37,8 @@ namespace ProjetoTccBackend.Services
         {
             List<GroupInvite> groupInvitations = await this
                 ._groupInviteRepository.Query()
+                .Include(g => g.Group)
+                .ThenInclude(g => g.Users)
                 .Where(g => g.UserId == userId && g.Accepted == false)
                 .ToListAsync();
 
@@ -66,6 +68,11 @@ namespace ProjetoTccBackend.Services
             if (user.Group is not null)
             {
                 throw new UserHasGroupException();
+            }
+
+            if(user.Id != group.LeaderId)
+            {
+                throw new UserNotGroupLeaderException();
             }
 
             GroupInvite? existentInvitation = await this
@@ -119,7 +126,9 @@ namespace ProjetoTccBackend.Services
             }
 
             invite.Accepted = true;
+            loggedUser.GroupId = groupId;
             this._groupInviteRepository.Update(invite);
+            this._userRepository.Update(loggedUser);
 
             await this._dbContext.SaveChangesAsync();
 
@@ -127,6 +136,7 @@ namespace ProjetoTccBackend.Services
                 ._groupInviteRepository.Query()
                 .Where(x => x.Id.Equals(invite.Id))
                 .Include(g => g.Group)
+                .ThenInclude(g => g.Users)
                 .FirstAsync();
 
             List<GroupInvite> remainingInvites = await this

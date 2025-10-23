@@ -139,7 +139,11 @@ namespace ProjetoTccBackend.Services
                 throw new UnauthorizedAccessException("Não possui acesso ao grupo requisitado");
             }
 
-            Group? group = this._groupRepository.GetById(id);
+            Group? group = this
+                ._groupRepository.Query()
+                .Include(g => g.Users)
+                .Where(g => g.Id == id)
+                .FirstOrDefault();
 
             return group;
         }
@@ -218,7 +222,8 @@ namespace ProjetoTccBackend.Services
             IList<string> userRoles
         )
         {
-            var group = await this._groupRepository.Query()
+            var group = await this
+                ._groupRepository.Query()
                 .Include(g => g.Users)
                 .Where(g => g.Id == groupId && g.LeaderId == userId)
                 .FirstOrDefaultAsync();
@@ -229,14 +234,15 @@ namespace ProjetoTccBackend.Services
             bool isLeader = group.LeaderId == userId;
             if (!isAdmin && !isLeader)
                 return null;
-            
+
             group.Name = request.Name;
             // Atualiza os usuários do grupo
 
             this._groupRepository.Update(group);
             this._dbContext.SaveChanges();
 
-            group = await this._groupRepository.Query()
+            group = await this
+                ._groupRepository.Query()
                 .Include(g => g.Users)
                 .Where(g => g.Id == groupId)
                 .FirstAsync();
@@ -246,8 +252,8 @@ namespace ProjetoTccBackend.Services
                 Id = group.Id,
                 LeaderId = group.LeaderId,
                 Name = group.Name,
-                Users = group.Users
-                    .Select(user => new GenericUserInfoResponse()
+                Users = group
+                    .Users.Select(user => new GenericUserInfoResponse()
                     {
                         Id = user.Id,
                         Email = user.Email!,

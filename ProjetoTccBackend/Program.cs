@@ -506,14 +506,9 @@ namespace ProjetoTccBackend
 
             app.UseRouting();
 
-            
-            if (app.Environment.IsProduction())
-            {
-                app.UseCors("FrontendAppPolicy");
-                app.UseCors("JudgeApiPolicy");
-                app.UseCors("ApiTestingPolicy");
-            }
-            
+            app.UseCors("FrontendAppPolicy");
+            app.UseCors("JudgeApiPolicy");
+            app.UseCors("ApiTestingPolicy");
 
             ConfigureWebSocketOptions(app);
 

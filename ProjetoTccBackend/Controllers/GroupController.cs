@@ -149,7 +149,30 @@ namespace ProjetoTccBackend.Controllers
                 return NotFound(id);
             }
 
-            return Ok(group);
+            GroupResponse response = new GroupResponse()
+            {
+                Id = group.Id,
+                Name = group.Name,
+                LeaderId = group.LeaderId,
+                Users = group
+                    .Users.Select(u => new GenericUserInfoResponse()
+                    {
+                        Id = u.Id,
+                        Name = u.Name,
+                        CreatedAt = u.CreatedAt,
+                        Department = u.Department,
+                        Email = u.Email,
+                        Group = null,
+                        ExercisesCreated = null,
+                        JoinYear = u.JoinYear,
+                        LastLoggedAt = u.LastLoggedAt,
+                        Ra = u.RA,
+                    })
+                    .ToList(),
+                GroupInvitations = [],
+            };
+
+            return Ok(response);
         }
 
         /// <summary>

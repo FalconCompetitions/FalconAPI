@@ -44,6 +44,24 @@ namespace ProjetoTccBackend.Controllers
         }
 
         /// <summary>
+        /// Deletes the authentication cookie.
+        /// </summary>
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public void DeleteAuthCookie()
+        {
+            CookieOptions cookieOptions = new CookieOptions()
+            {
+                HttpOnly = true,
+                Secure = true,
+                Expires = DateTime.UtcNow.AddDays(-1),
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+            };
+
+            this.Response.Cookies.Append("CompetitionAuthToken", "", cookieOptions);
+        }
+
+        /// <summary>
         /// Sets the authentication cookie for the user.
         /// </summary>
         /// <param name="token">The authentication token to be set in the cookie.</param>
@@ -58,6 +76,7 @@ namespace ProjetoTccBackend.Controllers
             {
                 HttpOnly = true,
                 Secure = true,
+                Expires = DateTime.UtcNow.AddDays(1),
                 SameSite = SameSiteMode.Lax,
                 Path = "/",
             };
@@ -340,7 +359,7 @@ namespace ProjetoTccBackend.Controllers
         {
             await this._userService.LogoutAsync();
 
-            this.Response.Cookies.Delete("CompetitionAuthToken");
+            this.DeleteAuthCookie();
             return Ok();
         }
     }
