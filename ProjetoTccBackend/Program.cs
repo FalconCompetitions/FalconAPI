@@ -21,6 +21,8 @@ using ProjetoTccBackend.Swagger.Extensions;
 using ProjetoTccBackend.Swagger.Filters;
 using ProjetoTccBackend.Workers;
 using ProjetoTccBackend.Workers.Queues;
+using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace ProjetoTccBackend
 {
@@ -439,6 +441,16 @@ namespace ProjetoTccBackend
             });
             */
 
+            builder.Host.UseSerilog(
+                (ctx, lc) =>
+                    lc
+                        .WriteTo.Console(
+                            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}",
+                            theme: AnsiConsoleTheme.Code // ou SystemConsoleTheme.Literate para um visual mais clássico
+                        )
+                        .ReadFrom.Configuration(ctx.Configuration)
+            );
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy(
@@ -504,11 +516,34 @@ namespace ProjetoTccBackend
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseMiddleware<RequestBodyLoggingMiddleware>();
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.MessageTemplate =
+                    "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+                options.GetLevel = (httpContext, elapsed, ex) =>
+                    ex != null || httpContext.Response.StatusCode >= 500
+                        ? Serilog.Events.LogEventLevel.Error
+                        : Serilog.Events.LogEventLevel.Information;
+                options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+                {
+                    diagnosticContext.Set("UserName", httpContext.User.Identity?.Name);
+                    diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+                    diagnosticContext.Set("RequestHeaders", httpContext.Request.Headers.ToString());
+                    diagnosticContext.Set("RequestQuery", httpContext.Request.QueryString.Value);
+                    diagnosticContext.Set(
+                        "RemoteIpAddress",
+                        httpContext.Connection.RemoteIpAddress?.ToString()
+                    );
+                };
+                options.IncludeQueryInRequestPath = true;
+            });
+
             app.UseRouting();
 
-            app.UseCors("FrontendAppPolicy");
-            app.UseCors("JudgeApiPolicy");
-            app.UseCors("ApiTestingPolicy");
+            //app.UseCors("FrontendAppPolicy");
+            //app.UseCors("JudgeApiPolicy");
+            //app.UseCors("ApiTestingPolicy");
 
             ConfigureWebSocketOptions(app);
 

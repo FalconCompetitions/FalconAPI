@@ -15,6 +15,7 @@ namespace ProjetoTccBackend.Services
         private readonly IUserRepository _userRepository;
         private readonly IGroupRepository _groupRepository;
         private readonly IGroupInviteRepository _groupInviteRepository;
+        private readonly ILogger<GroupInviteService> _logger;
         private readonly TccDbContext _dbContext;
 
         public GroupInviteService(
@@ -22,6 +23,7 @@ namespace ProjetoTccBackend.Services
             IUserRepository userRepository,
             IGroupRepository groupRepository,
             IGroupInviteRepository groupInviteRepository,
+            ILogger<GroupInviteService> logger,
             TccDbContext dbContext
         )
         {
@@ -29,6 +31,7 @@ namespace ProjetoTccBackend.Services
             this._userRepository = userRepository;
             this._groupRepository = groupRepository;
             this._groupInviteRepository = groupInviteRepository;
+            this._logger = logger;
             this._dbContext = dbContext;
         }
 
@@ -48,6 +51,8 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc />
         public async Task<GroupInvite?> SendGroupInviteToUser(InviteUserToGroupRequest request)
         {
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
+
             User? user = await this
                 ._userRepository.Query()
                 .Where(u => u.RA == request.RA)
@@ -70,14 +75,14 @@ namespace ProjetoTccBackend.Services
                 throw new UserHasGroupException();
             }
 
-            if(user.Id != group.LeaderId)
+            if (loggedUser.Id != group.LeaderId)
             {
                 throw new UserNotGroupLeaderException();
             }
 
             GroupInvite? existentInvitation = await this
                 ._groupInviteRepository.Query()
-                .Where(g => g.GroupId == group.Id && g.UserId == user.Id)
+                .Where(g => g.GroupId == group.Id && g.UserId == user.Id && g.Accepted == false)
                 .FirstOrDefaultAsync();
 
             if (existentInvitation is not null)
@@ -112,7 +117,9 @@ namespace ProjetoTccBackend.Services
 
             GroupInvite? invite = await this
                 ._groupInviteRepository.Query()
-                .Where(g => g.GroupId.Equals(groupId))
+                .Where(g =>
+                    g.GroupId == groupId && g.UserId == loggedUser.Id && g.Accepted == false
+                )
                 .FirstOrDefaultAsync();
 
             if (invite is null)
@@ -120,7 +127,7 @@ namespace ProjetoTccBackend.Services
                 throw new GroupInvitationException();
             }
 
-            if (!invite.UserId.Equals(loggedUser.Id))
+            if (invite.UserId != loggedUser.Id)
             {
                 return null;
             }
@@ -134,7 +141,7 @@ namespace ProjetoTccBackend.Services
 
             invite = await this
                 ._groupInviteRepository.Query()
-                .Where(x => x.Id.Equals(invite.Id))
+                .Where(x => x.GroupId == loggedUser.GroupId && x.UserId == loggedUser.Id)
                 .Include(g => g.Group)
                 .ThenInclude(g => g.Users)
                 .FirstAsync();
@@ -151,6 +158,89 @@ namespace ProjetoTccBackend.Services
             }
 
             return invite;
+        }
+
+        /// <inheritdoc />
+        public async Task<bool?> RemoveUserFromGroupAsync(int groupId, string userId)
+        {
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            if (groupId != loggedUser.GroupId)
+            {
+                return null;
+            }
+
+            if (loggedUser.Group!.Users.Select(u => u.Id).Contains(userId) == false)
+            {
+                return false;
+            }
+
+            if (loggedUser.Id != userId && loggedUser.Group.LeaderId != loggedUser.Id)
+            {
+                return false;
+            }
+
+            User? selectedUser = await this
+                ._userRepository.Query()
+                .Where(u => u.Id == userId)
+                .FirstOrDefaultAsync();
+
+            if (selectedUser == null)
+            {
+                return null;
+            }
+
+            if (selectedUser.Id == loggedUser.Group.LeaderId)
+            {
+                Group group = await this
+                    ._groupRepository.Query()
+                    .Where(g => g.Id == groupId)
+                    .FirstAsync();
+
+                if (loggedUser.Group.Users.Count == 1)
+                {
+                    selectedUser.GroupId = null;
+                    this._userRepository.Update(selectedUser);
+                    await this._dbContext.SaveChangesAsync();
+
+                    await this
+                        ._groupInviteRepository.Query()
+                        .Where(g => g.GroupId == groupId)
+                        .ExecuteDeleteAsync();
+
+                    this._groupRepository.Remove(group);
+                    await this._dbContext.SaveChangesAsync();
+
+                    return true;
+                }
+
+                User nextGroupLeader = loggedUser
+                    .Group.Users.Where(u => u.Id != selectedUser.Id)
+                    .OrderBy(u => u.Name)
+                    .First();
+
+                group.LeaderId = nextGroupLeader.Id;
+                selectedUser.GroupId = null;
+
+                this._userRepository.Update(selectedUser);
+                this._groupRepository.Update(group);
+
+                await this
+                    ._groupInviteRepository.Query()
+                    .Where(g => g.UserId == selectedUser.Id && g.GroupId == groupId)
+                    .ExecuteDeleteAsync();
+
+                await this._dbContext.SaveChangesAsync();
+
+                return true;
+            }
+
+            selectedUser.GroupId = null;
+
+            this._userRepository.Update(selectedUser);
+            await this._dbContext.SaveChangesAsync();
+
+            return true;
         }
     }
 }

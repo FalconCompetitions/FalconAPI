@@ -329,6 +329,41 @@ namespace ProjetoTccBackend.Controllers
             }
         }
 
+
+
+        /// <summary>
+        /// Removes the specified user from the specified group.
+        /// </summary>
+        /// <remarks>This method requires the caller to have the necessary permissions to remove a user
+        /// from the group.</remarks>
+        /// <param name="groupId">The unique identifier of the group from which the user will be removed.</param>
+        /// <param name="userId">The unique identifier of the user to be removed from the group.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation: <list type="bullet">
+        /// <item><description><see cref="OkResult"/> if the user was successfully removed from the
+        /// group.</description></item> <item><description><see cref="ForbidResult"/> if the operation is not
+        /// permitted.</description></item> <item><description><see cref="BadRequestObjectResult"/> if the operation
+        /// could not be completed due to invalid input or other errors.</description></item> </list></returns>
+        [Authorize(Roles = "Student")]
+        [HttpDelete("{groupId}/exit/{userId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> ExitFromGroup(int groupId, string userId)
+        {
+            bool? res = await this._groupInviteService.RemoveUserFromGroupAsync(groupId, userId);
+
+            if (res == null)
+            {
+                return BadRequest(new { res });
+            }
+
+            if (res == false)
+            {
+                return Forbid();
+            }
+
+            return Ok();
+        }
+
         /// <summary>
         /// Accepts a group invitation for the currently authenticated user.
         /// </summary>

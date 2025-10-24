@@ -133,7 +133,7 @@ namespace ProjetoTccBackend.Services
         public Group? GetGroupById(int id)
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
-
+            
             if (loggedUser.GroupId != id)
             {
                 throw new UnauthorizedAccessException("Não possui acesso ao grupo requisitado");

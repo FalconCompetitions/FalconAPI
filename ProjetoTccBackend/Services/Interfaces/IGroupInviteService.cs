@@ -44,5 +44,26 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <returns>A collection of <see cref="GroupInvite"/> objects representing the user's pending group invitations. 
         /// Returns an empty collection if no pending invitations are found.</returns>
         Task<List<GroupInvite>> GetUserGroupInvites(string userId);
+
+
+        /// <summary>
+        /// Removes a user from a specified group asynchronously.
+        /// </summary>
+        /// <remarks>This method enforces the following rules: <list type="bullet"> <item><description>The
+        /// logged-in user must belong to the specified group.</description></item> <item><description>The logged-in
+        /// user must either be the group leader or the user being removed.</description></item> <item><description>If
+        /// the user being removed is the group leader and the group has other members, leadership is transferred to the
+        /// next user in alphabetical order by name.</description></item> <item><description>If the group leader is
+        /// removed and the group has no other members, the group is deleted along with any associated group
+        /// invites.</description></item> </list></remarks>
+        /// <param name="groupId">The unique identifier of the group from which the user will be removed.</param>
+        /// <param name="userId">The unique identifier of the user to be removed from the group.</param>
+        /// <returns>A <see cref="bool?"/> indicating the result of the operation: <list type="bullet"> <item><description><see
+        /// langword="true"/> if the user was successfully removed from the group.</description></item>
+        /// <item><description><see langword="false"/> if the user could not be removed due to insufficient permissions
+        /// or the user not being part of the group.</description></item> <item><description><see langword="null"/> if
+        /// the group does not match the logged-in user's group or the specified user does not
+        /// exist.</description></item> </list></returns>
+        Task<bool?> RemoveUserFromGroupAsync(int groupId, string userId);
     }
 }

@@ -62,7 +62,12 @@ public class UserService : IUserService
             throw new UnauthorizedAccessException("Usuário não autenticado");
         }
 
-        var loggedUser = this._userRepository.GetById(userId);
+        var loggedUser = this
+            ._userRepository.Query()
+            .Include(u => u.Group)
+            .ThenInclude(g => g.Users)
+            .Where(u => u.Id == userId)
+            .First();
 
         if (loggedUser == null)
         {
