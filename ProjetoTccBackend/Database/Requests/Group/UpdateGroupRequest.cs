@@ -9,5 +9,8 @@ namespace ProjetoTccBackend.Database.Requests.Group
         [Required]
         [JsonPropertyName("name")]
         public string Name { get; set; }
+
+        [JsonPropertyName("membersToRemove")]
+        public ICollection<string> MembersToRemove { get; set; }
     }
 }

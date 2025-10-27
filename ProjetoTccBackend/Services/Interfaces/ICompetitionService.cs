@@ -129,5 +129,17 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// start time, duration, exercise IDs, and other configuration settings.</param>
         /// <returns>The updated <see cref="Competition"/> object if the competition exists; otherwise, <see langword="null"/>.</returns>
         Task<Competition?> UpdateCompetitionAsync(int id, UpdateCompetitionRequest request);
+
+
+        /// <summary>
+        /// Retrieves a collection of competitions that are currently open for subscriptions.
+        /// </summary>
+        /// <remarks>This method queries the underlying competition repository to find competitions with a
+        /// status  of <see cref="CompetitionStatus.OpenInscriptions"/>. The returned collection is read-only and 
+        /// reflects the current state of the repository at the time of the query.</remarks>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a collection of  <see
+        /// cref="Competition"/> objects where the subscription status is open. If no competitions  are open for
+        /// subscriptions, the collection will be empty.</returns>
+        Task<ICollection<Competition>> GetOpenSubscriptionCompetitionsAsync();
     }
 }

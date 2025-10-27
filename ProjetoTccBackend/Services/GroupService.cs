@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Group;
+using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Database.Responses.User;
@@ -133,7 +134,7 @@ namespace ProjetoTccBackend.Services
         public Group? GetGroupById(int id)
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
-            
+
             if (loggedUser.GroupId != id)
             {
                 throw new UnauthorizedAccessException("Não possui acesso ao grupo requisitado");
@@ -236,7 +237,11 @@ namespace ProjetoTccBackend.Services
                 return null;
 
             group.Name = request.Name;
-            // Atualiza os usuários do grupo
+
+            foreach (string id in request.MembersToRemove)
+            {
+                bool? res = await this._groupInviteService.RemoveUserFromGroupAsync(groupId, id);
+            }
 
             this._groupRepository.Update(group);
             this._dbContext.SaveChanges();
@@ -257,7 +262,7 @@ namespace ProjetoTccBackend.Services
                     {
                         Id = user.Id,
                         Email = user.Email!,
-                        JoinYear = (int)user.JoinYear!,
+                        JoinYear = user.JoinYear,
                         Name = user.Name,
                         CreatedAt = user.CreatedAt,
                     })

@@ -317,6 +317,7 @@ public class UserService : IUserService
         user.PhoneNumber = request.PhoneNumber;
         user.JoinYear = request.JoinYear;
         await this._userManager.UpdateAsync(user);
+
         return user;
     }
 

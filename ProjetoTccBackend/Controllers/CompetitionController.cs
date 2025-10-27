@@ -50,7 +50,6 @@ namespace ProjetoTccBackend.Controllers
             return Ok(existentCompetition);
         }
 
-
         /// <summary>
         /// Retrieves a collection of competitions that were created as templates.
         /// </summary>
@@ -65,6 +64,50 @@ namespace ProjetoTccBackend.Controllers
         {
             ICollection<CompetitionResponse> response =
                 await this._competitionService.GetCreatedTemplateCompetitions();
+
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// Retrieves a list of competitions that currently have open inscriptions.
+        /// </summary>
+        /// <remarks>This method returns competitions where the inscription period is currently active.
+        /// The response includes details such as the competition's name, description, duration, and other relevant
+        /// metadata. The list is returned as a collection of competition responses.</remarks>
+        /// <returns>An <see cref="IActionResult"/> containing a list of competitions with open inscriptions. The response is
+        /// serialized as a collection of <see cref="CompetitionResponse"/> objects.</returns>
+        /// <response code="200">Returns the competitions with open subscription</response>
+        [HttpGet("open")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetCompetitionsWithOpenInscriptions()
+        {
+            ICollection<Competition> res =
+                await this._competitionService.GetOpenSubscriptionCompetitionsAsync();
+
+            List<CompetitionResponse> response = res.Select(x => new CompetitionResponse()
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    BlockSubmissions = x.BlockSubmissions,
+                    CompetitionRankings = null,
+                    Description = x.Description,
+                    Duration = x.Duration,
+                    StartInscriptions = x.StartInscriptions,
+                    EndInscriptions = x.EndInscriptions,
+                    StartTime = x.StartTime,
+                    EndTime = x.EndTime,
+                    ExerciseIds = [],
+                    Exercises = [],
+                    MaxExercises = x.MaxExercises,
+                    MaxMembers = x.MaxMembers,
+                    MaxSubmissionSize = x.MaxSubmissionSize,
+                    Status = x.Status,
+                    StopRanking = x.StopRanking,
+                    SubmissionPenalty = x.SubmissionPenalty,
+                })
+                .ToList();
 
             return Ok(response);
         }
@@ -89,6 +132,9 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="400">If the request is invalid or a competition already exists for the same date.</response>
         [Authorize(Roles = "Admin")]
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> CreateNewCompetition([FromBody] CompetitionRequest request)
         {
             Competition? newCompetition = null;

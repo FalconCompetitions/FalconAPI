@@ -126,15 +126,24 @@ namespace ProjetoTccBackend.Workers
         /// Processes the current state of a competition and transitions it to the appropriate next state based on the
         /// current time and its status.
         /// </summary>
-        /// <remarks>This method evaluates the competition's current status and performs the necessary
-        /// state transition: <list type="bullet"> <item> <description>If the competition is in the <see
-        /// cref="CompetitionStatus.Pending"/> state and the current time is within the inscription period, inscriptions
-        /// are opened.</description> </item> <item> <description>If the competition is in the <see
-        /// cref="CompetitionStatus.OpenInscriptions"/> state and the inscription period has ended, inscriptions are
-        /// closed.</description> </item> <item> <description>If the competition is in the <see
-        /// cref="CompetitionStatus.Ongoing"/> state and the competition's end time has passed, the competition is
-        /// ended.</description> </item> </list> No action is taken if the competition's state does not meet the
-        /// conditions for a transition.</remarks>
+        /// <remarks>
+        /// This method evaluates the competition's current status and performs the necessary state transition:
+        /// <list type="bullet">
+        ///   <item>
+        ///     <description>If the competition is in the <see cref="CompetitionStatus.Pending"/> state and the current time is within the inscription period, inscriptions are opened.</description>
+        ///   </item>
+        ///   <item>
+        ///     <description>If the competition is in the <see cref="CompetitionStatus.OpenInscriptions"/> state and the inscription period has ended, inscriptions are closed.</description>
+        ///   </item>
+        ///   <item>
+        ///     <description>If the competition is in the <see cref="CompetitionStatus.ClosedInscriptions"/> state and the competition's start time has passed, the competition is started and transitions to <see cref="CompetitionStatus.Ongoing"/>.</description>
+        ///   </item>
+        ///   <item>
+        ///     <description>If the competition is in the <see cref="CompetitionStatus.Ongoing"/> state and the competition's end time has passed, the competition is ended.</description>
+        ///   </item>
+        /// </list>
+        /// No action is taken if the competition's state does not meet the conditions for a transition.
+        /// </remarks>
         /// <param name="competition">The competition to process. Must not be null.</param>
         /// <param name="competitionService">The service responsible for handling competition state transitions. Must not be null.</param>
         /// <param name="now">The current date and time used to evaluate the competition's state.</param>
@@ -159,6 +168,15 @@ namespace ProjetoTccBackend.Workers
                 if (competition.EndInscriptions < now)
                 {
                     await competitionService.CloseCompetitionInscriptionsAsync(competition);
+                }
+                return;
+            }
+
+            if(competition.Status.Equals(CompetitionStatus.ClosedInscriptions))
+            {
+                if(competition.StartTime < now)
+                {
+                    await competitionService.StartCompetitionAsync(competition);
                 }
                 return;
             }

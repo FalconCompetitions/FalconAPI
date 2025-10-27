@@ -132,7 +132,11 @@ namespace ProjetoTccBackend.Services
                 .Include(c => c.CompetitionRankings)
                 .ThenInclude(c => c.Group)
                 .ThenInclude(g => g.Users)
-                .Where(c => c.StartInscriptions <= currentTime && c.EndTime >= currentTime)
+                .Where(c =>
+                    c.StartInscriptions <= currentTime
+                    && c.EndTime >= currentTime
+                    && c.Status == CompetitionStatus.Ongoing
+                )
                 .FirstOrDefaultAsync();
 
             return existentCompetition;
@@ -235,11 +239,22 @@ namespace ProjetoTccBackend.Services
         {
             List<Competition> validCompetitions = await this
                 ._competitionRepository.Query()
-                .Where(c => c.Status != CompetitionStatus.ModelTemplate)
+                .Where(c => c.Status != CompetitionStatus.Finished)
                 .Select(c => c)
                 .ToListAsync();
 
             return validCompetitions;
+        }
+
+        /// <inheritdoc />
+        public async Task<ICollection<Competition>> GetOpenSubscriptionCompetitionsAsync()
+        {
+            List<Competition> competitions = await this
+                ._competitionRepository.Query()
+                .Where(c => c.Status == CompetitionStatus.OpenInscriptions)
+                .ToListAsync();
+
+            return competitions;
         }
 
         /// <inheritdoc />
@@ -306,7 +321,16 @@ namespace ProjetoTccBackend.Services
 
             await this._dbContext.SaveChangesAsync();
 
-            this._competitionStateService.SignalNewCompetition();
+            if (
+                (
+                    competition.Status == CompetitionStatus.Pending
+                    || competition.Status == CompetitionStatus.Ongoing
+                )
+                && competition.StartTime >= DateTime.UtcNow
+            )
+            {
+                this._competitionStateService.SignalNewCompetition();
+            }
 
             return competition;
         }
