@@ -19,8 +19,8 @@ namespace ProjetoTccBackend.Workers
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ICompetitionStateService _competitionStateService;
-        private readonly TimeSpan _idleTime = TimeSpan.FromMinutes(5);
-        private readonly TimeSpan _operationalTime = TimeSpan.FromMinutes(1);
+        private readonly TimeSpan _idleTime = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan _operationalTime = TimeSpan.FromSeconds(5);
         private const string CompetitionCacheKey = "currentCompetition";
 
         public CompetitionStateWorker(
@@ -82,6 +82,8 @@ namespace ProjetoTccBackend.Workers
                         this._competitionStateService.HasActiveCompetitions;
                     var delay = (hasActiveCompetitions) ? this._operationalTime : this._idleTime;
 
+                    this._logger.LogCritical($"HasActiveCompetitions: {hasActiveCompetitions}");
+
                     if (hasActiveCompetitions)
                     {
                         await this.ProcessCompetitionsAsync();
@@ -130,6 +132,9 @@ namespace ProjetoTccBackend.Workers
         /// This method evaluates the competition's current status and performs the necessary state transition:
         /// <list type="bullet">
         ///   <item>
+        ///     <description>If the competition is already invalid for some reason, closes the competition</description>
+        ///   </item>
+        ///   <item>
         ///     <description>If the competition is in the <see cref="CompetitionStatus.Pending"/> state and the current time is within the inscription period, inscriptions are opened.</description>
         ///   </item>
         ///   <item>
@@ -154,7 +159,13 @@ namespace ProjetoTccBackend.Workers
             DateTime now
         )
         {
-            if (competition.Status.Equals(CompetitionStatus.Pending))
+            if(competition.EndTime <= now)
+            {
+                await competitionService.EndCompetitionAsync(competition);
+                return;
+            }
+
+            if (competition.Status == CompetitionStatus.Pending)
             {
                 if (competition.StartInscriptions < now && competition.EndInscriptions > now)
                 {
@@ -163,7 +174,7 @@ namespace ProjetoTccBackend.Workers
                 return;
             }
 
-            if (competition.Status.Equals(CompetitionStatus.OpenInscriptions))
+            if (competition.Status == CompetitionStatus.OpenInscriptions)
             {
                 if (competition.EndInscriptions < now)
                 {
@@ -172,7 +183,7 @@ namespace ProjetoTccBackend.Workers
                 return;
             }
 
-            if(competition.Status.Equals(CompetitionStatus.ClosedInscriptions))
+            if(competition.Status == CompetitionStatus.ClosedInscriptions)
             {
                 if(competition.StartTime < now)
                 {
@@ -181,7 +192,7 @@ namespace ProjetoTccBackend.Workers
                 return;
             }
 
-            if (competition.Status.Equals(CompetitionStatus.Ongoing))
+            if (competition.Status == CompetitionStatus.Ongoing)
             {
                 if (competition.EndTime < now)
                 {

@@ -27,6 +27,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var userManagerMock = new Mock<UserManager<User>>();
             var signInManagerMock = new Mock<SignInManager<User>>();
             var userRepoMock = new Mock<IUserRepository>();
+            var groupInviteRepoMock = new Mock<IGroupInviteRepository>();
             var iHttpContextAcessorMock = new Mock<IHttpContextAccessor>();
             var tokenServiceMock = new Mock<ITokenService>();
             var loggerMock = new Mock<ILogger<UserService>>();
@@ -36,6 +37,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var service = new UserService(
                 userManagerMock.Object,
                 userRepoMock.Object,
+                groupInviteRepoMock.Object,
                 signInManagerMock.Object,
                 iHttpContextAcessorMock.Object,
                 tokenServiceMock.Object,

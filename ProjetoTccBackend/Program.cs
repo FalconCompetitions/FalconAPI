@@ -273,6 +273,10 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<IExerciseRepository, ExerciseRepository>();
             builder.Services.AddScoped<ICompetitionRepository, CompetitionRepository>();
             builder.Services.AddScoped<
+                IGroupInCompetitionRepository,
+                GroupInCompetitionRepository
+            >();
+            builder.Services.AddScoped<
                 ICompetitionRankingRepository,
                 CompetitionRankingRepository
             >();
@@ -404,7 +408,6 @@ namespace ProjetoTccBackend
                             var cookieName = "CompetitionAuthToken";
 
                             var token = context.Request.Cookies[cookieName];
-                            Console.WriteLine(token);
 
                             if (!string.IsNullOrEmpty(token))
                             {

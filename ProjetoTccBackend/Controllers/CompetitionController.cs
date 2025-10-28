@@ -238,5 +238,55 @@ namespace ProjetoTccBackend.Controllers
 
             return Ok(response);
         }
+
+        [Authorize(Roles = "Student")]
+        [HttpPost("inscribe")]
+        public async Task<IActionResult> InscribeGroupToCompetition(
+            [FromBody] InscribeGroupToCompetitionRequest request
+        )
+        {
+            try
+            {
+                GroupInCompetition response =
+                    await this._competitionService.InscribeGroupInCompetition(request);
+                return Ok(
+                    new InscribeGroupInCompetitionResponse()
+                    {
+                        CompetitionId = response.CompetitionId,
+                        GroupId = response.GroupId,
+                        CreatedOn = response.CreatedOn,
+                    }
+                );
+            }
+            catch (UserIsNotLeaderException)
+            {
+                return BadRequest(new { message = "O usuário não é o líder do grupo." });
+            }
+            catch (NotExistentCompetitionException)
+            {
+                return BadRequest(new { message = "Competição não existente." });
+            }
+            catch (AlreadyInCompetitionException)
+            {
+                return BadRequest(new { message = "O grupo já está inscrito na competição." });
+            }
+            catch (NotValidCompetitionException)
+            {
+                return BadRequest(new { message = "Competição não está válida para inscrição." });
+            }
+            catch (MaxMembersExceededException)
+            {
+                return BadRequest(
+                    new
+                    {
+                        message = "O grupo excedeu o número máximo de membros permitido na competição.",
+                    }
+                );
+            }
+            catch (Exception)
+            {
+                return BadRequest(new { message = "Erro desconhecido" });
+            }
+        }
     }
 }

@@ -25,7 +25,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <returns>The existing <see cref="Competition"/> object.</returns>
         Task<Competition> GetExistentCompetition();
 
-
         /// <summary>
         /// Retrieves a collection of competitions that are marked as template models.
         /// </summary>
@@ -39,9 +38,9 @@ namespace ProjetoTccBackend.Services.Interfaces
 
         /// <summary>
         /// Retrieves the current competition based on the system's current date and time.
-        /// 
+        ///
         /// This method queries the competition repository to find a competition where the current date and time falls within its start and end time.
-        /// 
+        ///
         /// Returns the current competition if found, otherwise returns null.
         /// </summary>
         Task<Competition?> GetCurrentCompetition();
@@ -63,7 +62,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <remarks>Only Admin and Teacher users have access to this method.</remarks>
         Task<Answer> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request);
 
-
         /// <summary>
         /// Opens inscriptions for the specified competition, allowing participants to register.
         /// </summary>
@@ -72,7 +70,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="competition">The competition for which inscriptions will be opened. Cannot be null.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task OpenCompetitionInscriptionsAsync(Competition competition);
-
 
         /// <summary>
         /// Closes the inscriptions period for the specified competition.
@@ -84,7 +81,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task CloseCompetitionInscriptionsAsync(Competition competition);
 
-
         /// <summary>
         /// Starts the specified competition asynchronously.
         /// </summary>
@@ -93,7 +89,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="competition">The <see cref="Competition"/> instance representing the competition to start. Cannot be null.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task StartCompetitionAsync(Competition competition);
-
 
         /// <summary>
         /// Ends the specified competition and performs any necessary finalization tasks.
@@ -105,7 +100,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task EndCompetitionAsync(Competition competition);
 
-
         /// <summary>
         /// Asynchronously retrieves a collection of competitions that are currently open for participation.
         /// </summary>
@@ -116,7 +110,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// cref="Competition"/> objects representing the open competitions. If no competitions are open,  the
         /// collection will be empty.</returns>
         Task<ICollection<Competition>> GetOpenCompetitionsAsync();
-
 
         /// <summary>
         /// Updates an existing competition with the specified data.
@@ -130,16 +123,33 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <returns>The updated <see cref="Competition"/> object if the competition exists; otherwise, <see langword="null"/>.</returns>
         Task<Competition?> UpdateCompetitionAsync(int id, UpdateCompetitionRequest request);
 
-
         /// <summary>
         /// Retrieves a collection of competitions that are currently open for subscriptions.
         /// </summary>
         /// <remarks>This method queries the underlying competition repository to find competitions with a
-        /// status  of <see cref="CompetitionStatus.OpenInscriptions"/>. The returned collection is read-only and 
+        /// status  of <see cref="CompetitionStatus.OpenInscriptions"/>. The returned collection is read-only and
         /// reflects the current state of the repository at the time of the query.</remarks>
         /// <returns>A task that represents the asynchronous operation. The task result contains a collection of  <see
         /// cref="Competition"/> objects where the subscription status is open. If no competitions  are open for
         /// subscriptions, the collection will be empty.</returns>
         Task<ICollection<Competition>> GetOpenSubscriptionCompetitionsAsync();
+
+
+        /// <summary>
+        /// Registers the logged-in user's group in a specified competition.
+        /// </summary>
+        /// <remarks>The logged-in user must be the leader of their group to perform this operation. The
+        /// competition must exist, be open for inscriptions, and the group must not already be registered.
+        /// Additionally, the group's member count must not exceed the competition's maximum allowed members.</remarks>
+        /// <param name="request">The request containing the competition ID to register the group in.</param>
+        /// <returns>A <see cref="GroupInCompetition"/> object representing the group's registration in the competition.</returns>
+        /// <exception cref="UserIsNotLeaderException">Thrown if the logged-in user is not the leader of their group.</exception>
+        /// <exception cref="NotExistentCompetitionException">Thrown if the specified competition does not exist.</exception>
+        /// <exception cref="AlreadyInCompetitionException">Thrown if the group is already registered in the specified competition.</exception>
+        /// <exception cref="NotValidCompetitionException">Thrown if the competition is not currently open for inscriptions.</exception>
+        /// <exception cref="MaxMembersExceededException">Thrown if the group's member count exceeds the competition's maximum allowed members.</exception>
+        Task<GroupInCompetition> InscribeGroupInCompetition(
+            InscribeGroupToCompetitionRequest request
+        );
     }
 }

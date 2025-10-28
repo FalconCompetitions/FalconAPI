@@ -12,7 +12,9 @@ namespace ProjetoTccBackend.Services
 {
     public class CompetitionService : ICompetitionService
     {
+        private readonly IUserService _userService;
         private readonly ICompetitionRepository _competitionRepository;
+        private readonly IGroupInCompetitionRepository _groupInCompetitionRepository;
         private readonly IQuestionRepository _questionRepository;
         private readonly IAnswerRepository _answerRepository;
         private readonly IExerciseInCompetitionRepository _exerciseInCompetitionRepository;
@@ -21,7 +23,9 @@ namespace ProjetoTccBackend.Services
         private readonly ILogger<CompetitionService> _logger;
 
         public CompetitionService(
+            IUserService userService,
             ICompetitionRepository competitionRepository,
+            IGroupInCompetitionRepository groupInCompetitionRepository,
             IQuestionRepository questionRepository,
             IAnswerRepository answerRepository,
             IExerciseInCompetitionRepository exerciseInCompetitionRepository,
@@ -30,7 +34,9 @@ namespace ProjetoTccBackend.Services
             ILogger<CompetitionService> logger
         )
         {
+            this._userService = userService;
             this._competitionRepository = competitionRepository;
+            this._groupInCompetitionRepository = groupInCompetitionRepository;
             this._questionRepository = questionRepository;
             this._answerRepository = answerRepository;
             this._exerciseInCompetitionRepository = exerciseInCompetitionRepository;
@@ -333,6 +339,59 @@ namespace ProjetoTccBackend.Services
             }
 
             return competition;
+        }
+
+        /// <inheritdoc />
+        public async Task<GroupInCompetition> InscribeGroupInCompetition(
+            InscribeGroupToCompetitionRequest request
+        )
+        {
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            if (loggedUser.Id != loggedUser.Group!.LeaderId)
+            {
+                throw new UserIsNotLeaderException();
+            }
+
+            Competition? competition = await this
+                ._competitionRepository.Query()
+                .Include(c => c.GroupInCompetitions)
+                .Where(c => c.Id == request.CompetitionId)
+                .FirstOrDefaultAsync();
+
+            if (competition == null)
+            {
+                throw new NotExistentCompetitionException();
+            }
+
+            if (competition.GroupInCompetitions.Count(g => g.GroupId == request.CompetitionId) > 0)
+            {
+                throw new AlreadyInCompetitionException();
+            }
+
+            DateTime now = DateTime.UtcNow;
+
+            if (competition.StartInscriptions > now || competition.EndInscriptions < now)
+            {
+                throw new NotValidCompetitionException();
+            }
+
+            if(loggedUser.Group.Users.Count > competition.MaxMembers)
+            {
+                throw new MaxMembersExceededException();
+            }
+
+            GroupInCompetition groupInCompetition = new GroupInCompetition()
+            {
+                CompetitionId = competition.Id,
+                GroupId = loggedUser.Group!.Id,
+            };
+
+            await this._groupInCompetitionRepository.AddAsync(groupInCompetition);
+
+            await this._dbContext.SaveChangesAsync();
+
+            return groupInCompetition;
         }
     }
 }
