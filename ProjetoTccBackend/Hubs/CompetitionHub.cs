@@ -340,6 +340,11 @@ namespace ProjetoTccBackend.Hubs
             await Clients.Group("Admins").SendAsync("ReceiveQuestionCreation", question);
         }
 
+        /// <summary>
+        /// Answers a question posed by a group in the competition.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [Authorize(Roles = "Admin,Teacher")]
         public async Task AnswerQuestion(AnswerGroupQuestionRequest request)
         {
@@ -371,7 +376,52 @@ namespace ProjetoTccBackend.Hubs
             await this.Clients.Caller.SendAsync("ReceiveChangeJudgeSubmissionResponse", succeeded);
         }
 
+        /// <summary>
+        /// Blocks a group's submission capabilities in a competition.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [Authorize(Roles = "Admin,Teacher")]
-        public async Task BlockGroupSubmission() { }
+        public async Task BlockGroupSubmission(BlockGroupSubmissionRequest request)
+        {
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            bool succeeded = false;
+
+            try
+            {
+                succeeded = await this._competitionService.BlockGroupInCompetition(request);
+            }
+            catch (Exception exc)
+            {
+                this._logger.LogError(
+                    exc,
+                    "Erro ao bloquear grupo {GroupId} na competição {CompetitionId} pelo usuário {Name}",
+                    request.GroupId,
+                    request.CompetitionId,
+                    loggedUser.Name
+                );
+            }
+
+            if (succeeded == true)
+            {
+                await this._logService.CreateLogAsync(
+                    new CreateLogRequest()
+                    {
+                        UserId = loggedUser.Id,
+                        ActionType = LogType.GroupBlockedInCompetition,
+                        CompetitionId = request.CompetitionId,
+                        GroupId = request.GroupId,
+                        IpAddress = this.GetHubHttpContext().Connection.RemoteIpAddress!.ToString(),
+                    }
+                );
+
+                await this.Clients.Caller.SendAsync("ReceiveBlockGroupSubmissionResponse", true);
+            }
+            else
+            {
+                await this.Clients.Caller.SendAsync("ReceiveBlockGroupSubmissionResponse", false);
+            }
+        }
     }
 }

@@ -134,7 +134,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// subscriptions, the collection will be empty.</returns>
         Task<ICollection<Competition>> GetOpenSubscriptionCompetitionsAsync();
 
-
         /// <summary>
         /// Registers the logged-in user's group in a specified competition.
         /// </summary>
@@ -151,5 +150,12 @@ namespace ProjetoTccBackend.Services.Interfaces
         Task<GroupInCompetition> InscribeGroupInCompetition(
             InscribeGroupToCompetitionRequest request
         );
+
+        /// <summary>
+        /// Blocks a group's submissions in a competition.
+        /// </summary>
+        /// <param name="request">The requested group and competition information.</param>
+        /// <returns>A <see cref="Boolean"/> indicating the success of the operation.</returns>
+        Task<bool> BlockGroupInCompetition(BlockGroupSubmissionRequest request);
     }
 }

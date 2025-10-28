@@ -376,7 +376,7 @@ namespace ProjetoTccBackend.Services
                 throw new NotValidCompetitionException();
             }
 
-            if(loggedUser.Group.Users.Count > competition.MaxMembers)
+            if (loggedUser.Group.Users.Count > competition.MaxMembers)
             {
                 throw new MaxMembersExceededException();
             }
@@ -392,6 +392,12 @@ namespace ProjetoTccBackend.Services
             await this._dbContext.SaveChangesAsync();
 
             return groupInCompetition;
+        }
+
+        /// <inheritdoc />
+        public Task<bool> BlockGroupInCompetition(BlockGroupSubmissionRequest request)
+        {
+            throw new NotImplementedException();
         }
     }
 }

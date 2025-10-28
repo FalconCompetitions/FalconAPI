@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjetoTccBackend.Database;
 
@@ -11,9 +12,11 @@ using ProjetoTccBackend.Database;
 namespace ProjetoTccBackend.Migrations
 {
     [DbContext(typeof(TccDbContext))]
-    partial class TccDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251028202009_AddBlockToGroup")]
+    partial class AddBlockToGroup
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
