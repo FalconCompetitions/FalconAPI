@@ -364,7 +364,11 @@ namespace ProjetoTccBackend.Services
                 throw new NotExistentCompetitionException();
             }
 
-            if (competition.GroupInCompetitions.Count(g => g.GroupId == request.CompetitionId) > 0)
+            if (
+                competition.GroupInCompetitions.Count(g =>
+                    g.CompetitionId == request.CompetitionId && g.GroupId == request.GroupId
+                ) > 0
+            )
             {
                 throw new AlreadyInCompetitionException();
             }

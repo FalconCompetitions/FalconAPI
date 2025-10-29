@@ -189,7 +189,7 @@ namespace ProjetoTccBackend.Services
                             Ra = user.RA,
                             Name = user.UserName!,
                             Email = user.Email!,
-                            JoinYear = (int)user.JoinYear!,
+                            JoinYear = user.JoinYear,
                             CreatedAt = user.CreatedAt,
                             LastLoggedAt = user.LastLoggedAt,
                             Department = user.Department,
