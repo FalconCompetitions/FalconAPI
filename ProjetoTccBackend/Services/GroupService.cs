@@ -76,11 +76,13 @@ namespace ProjetoTccBackend.Services
 
             await this._dbContext.SaveChangesAsync();
 
+            this._logger.LogCritical($"UserRas: {groupRequest.UserRAs?.First()}");
+
             if (groupRequest.UserRAs != null)
             {
                 foreach (string ra in groupRequest.UserRAs)
                 {
-                    User? user = await this._userRepository.GetByIdAsync(ra);
+                    User? user = this._userRepository.GetByRa(ra);
 
                     if (user == null)
                     {
@@ -244,7 +246,14 @@ namespace ProjetoTccBackend.Services
             }
 
             this._groupRepository.Update(group);
-            this._dbContext.SaveChanges();
+            try
+            {
+                this._dbContext.SaveChanges();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new GroupConcurrencySuccessException();
+            }
 
             group = await this
                 ._groupRepository.Query()

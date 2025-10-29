@@ -57,5 +57,11 @@ namespace ProjetoTccBackend.Models
         /// Gets the collection of group invites associated with the current user.
         /// </summary>
         public virtual ICollection<GroupInvite> GroupInvites { get; set; }
+
+        /// <summary>
+        /// Campo de controle de concorrência otimista.
+        /// </summary>
+        [Timestamp]
+        public byte[]? RowVersion { get; set; }
     }
 }

@@ -21,6 +21,6 @@ namespace ProjetoTccBackend.Database.Requests.User
         public string? PhoneNumber { get; set; }
 
         [JsonPropertyName("joinYear")]
-        public int JoinYear { get; set; }
+        public int? JoinYear { get; set; }
     }
 }

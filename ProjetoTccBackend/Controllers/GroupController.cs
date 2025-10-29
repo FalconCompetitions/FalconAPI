@@ -235,15 +235,22 @@ namespace ProjetoTccBackend.Controllers
                 .Claims.Where(c => c.Type.Equals("role"))
                 .Select(c => c.Value)
                 .ToList();
-            var updatedGroup = await this._groupService.UpdateGroupAsync(
-                id,
-                request,
-                loggedUserId,
-                userRoles
-            );
-            if (updatedGroup == null)
-                return Forbid();
-            return Ok(updatedGroup);
+            try
+            {
+                var updatedGroup = await this._groupService.UpdateGroupAsync(
+                    id,
+                    request,
+                    loggedUserId,
+                    userRoles
+                );
+                if (updatedGroup == null)
+                    return Forbid();
+                return Ok(updatedGroup);
+            }
+            catch (GroupConcurrencySuccessException ex)
+            {
+                return Ok(new { success = true, message = ex.Message });
+            }
         }
 
         [HttpGet("invite")]

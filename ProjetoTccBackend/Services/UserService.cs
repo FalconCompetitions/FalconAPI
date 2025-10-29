@@ -213,8 +213,7 @@ public class UserService : IUserService
                 .Include(g => g.User)
                 .ToListAsync();
         }
-
-        this._logger.LogCritical($"group id: {existentUser.GroupInvites.Count}");
+        
 
         return Tuple.Create(existentUser, userRole);
     }

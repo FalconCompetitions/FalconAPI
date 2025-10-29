@@ -190,15 +190,20 @@ namespace ProjetoTccBackend.Services
                 return null;
             }
 
+            // If the user being removed is the leader
             if (selectedUser.Id == loggedUser.Group.LeaderId)
             {
                 Group group = await this
                     ._groupRepository.Query()
+                    .Include(g => g.Users)
                     .Where(g => g.Id == groupId)
                     .FirstAsync();
 
-                if (loggedUser.Group.Users.Count == 1)
+                var otherUsers = group.Users.Where(u => u.Id != selectedUser.Id).OrderBy(u => u.Name).ToList();
+
+                if (otherUsers.Count == 0)
                 {
+                    // No other users, delete group
                     selectedUser.GroupId = null;
                     this._userRepository.Update(selectedUser);
                     await this._dbContext.SaveChangesAsync();
@@ -213,30 +218,30 @@ namespace ProjetoTccBackend.Services
 
                     return true;
                 }
+                else
+                {
+                    // Transfer leadership to next user
+                    User nextGroupLeader = otherUsers.First();
+                    group.LeaderId = nextGroupLeader.Id;
 
-                User nextGroupLeader = loggedUser
-                    .Group.Users.Where(u => u.Id != selectedUser.Id)
-                    .OrderBy(u => u.Name)
-                    .First();
+                    // Remove leader from group
+                    selectedUser.GroupId = null;
+                    this._userRepository.Update(selectedUser);
+                    this._groupRepository.Update(group);
 
-                group.LeaderId = nextGroupLeader.Id;
-                selectedUser.GroupId = null;
+                    await this
+                        ._groupInviteRepository.Query()
+                        .Where(g => g.UserId == selectedUser.Id && g.GroupId == groupId)
+                        .ExecuteDeleteAsync();
 
-                this._userRepository.Update(selectedUser);
-                this._groupRepository.Update(group);
+                    await this._dbContext.SaveChangesAsync();
 
-                await this
-                    ._groupInviteRepository.Query()
-                    .Where(g => g.UserId == selectedUser.Id && g.GroupId == groupId)
-                    .ExecuteDeleteAsync();
-
-                await this._dbContext.SaveChangesAsync();
-
-                return true;
+                    return true;
+                }
             }
 
+            // If not leader, just remove from group
             selectedUser.GroupId = null;
-
             this._userRepository.Update(selectedUser);
             await this._dbContext.SaveChangesAsync();
 
