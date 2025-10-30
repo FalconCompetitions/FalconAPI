@@ -39,6 +39,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="fileId">The unique identifier of the file to retrieve. This parameter cannot be null or empty.</param>
         /// <returns>A <see cref="Tuple{T1, T2, T3}"/> containing the full file path, file name, and file type,  or <see
         /// langword="null"/> if no file is found for the specified <paramref name="fileId"/>.</returns>
-        Task<Tuple<string, string, string>?> GetFileAsync(string fileId);
+        Task<Tuple<string, string, string>?> GetFileAsync(int fileId);
     }
 }

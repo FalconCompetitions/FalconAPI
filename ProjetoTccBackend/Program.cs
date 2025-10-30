@@ -464,7 +464,8 @@ namespace ProjetoTccBackend
                             .WithOrigins("https://localhost:3000")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
-                            .AllowCredentials();
+                            .AllowCredentials()
+                            .WithExposedHeaders("Content-Disposition");
                     }
                 );
 
@@ -544,7 +545,7 @@ namespace ProjetoTccBackend
 
             app.UseRouting();
 
-            //app.UseCors("FrontendAppPolicy");
+            app.UseCors("FrontendAppPolicy");
             //app.UseCors("JudgeApiPolicy");
             //app.UseCors("ApiTestingPolicy");
 

@@ -38,7 +38,8 @@ namespace ProjetoTccBackend.Controllers
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> GetFile(string fileId)
+        [Produces("application/pdf")]
+        public async Task<IActionResult> GetFile(int fileId)
         {
             try
             {

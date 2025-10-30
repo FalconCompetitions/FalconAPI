@@ -29,7 +29,6 @@ namespace ProjetoTccBackend.Services
             this._logger = logger;
             this._privateFilesPath = Path.Combine(
                 Directory.GetCurrentDirectory(),
-                "..",
                 "UserUploads"
             );
         }
@@ -118,7 +117,7 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public async Task<Tuple<string, string, string>?> GetFileAsync(string fileId)
+        public async Task<Tuple<string, string, string>?> GetFileAsync(int fileId)
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
