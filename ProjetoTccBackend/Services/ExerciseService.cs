@@ -173,6 +173,7 @@ namespace ProjetoTccBackend.Services
                 .Take(pageSize)
                 .Include(x => x.ExerciseInputs)
                 .Include(x => x.ExerciseOutputs)
+                .Include(x => x.AttachedFile)
                 .ToListAsync();
 
             return new PagedResult<Exercise>
@@ -212,7 +213,7 @@ namespace ProjetoTccBackend.Services
 
             exercise.Title = request.Title;
             exercise.Description = request.Description;
-            exercise.EstimatedTime = request.EstimatedTime;
+            exercise.EstimatedTime = TimeSpan.FromMinutes(20);
             exercise.ExerciseTypeId = request.ExerciseTypeId;
             exercise.AttachedFileId = newAttachedFile.Id;
 
@@ -330,7 +331,8 @@ namespace ProjetoTccBackend.Services
 
             var updatedExercise = await this
                 ._exerciseRepository.Query()
-                .Where(x => x.Id.Equals(request.Id))
+                .Where(x => x.Id.Equals(id))
+                .Include(x => x.AttachedFile)
                 .Include(x => x.ExerciseInputs)
                 .Include(x => x.ExerciseOutputs)
                 .FirstAsync();

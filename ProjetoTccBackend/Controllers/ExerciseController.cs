@@ -90,6 +90,7 @@ namespace ProjetoTccBackend.Controllers
                     Title = x.Title,
                     Description = x.Description,
                     ExerciseTypeId = x.ExerciseTypeId,
+                    AttachedFileId = x.AttachedFile.Id,
                     Inputs = x
                         .ExerciseInputs.Select(input => new ExerciseInputResponse()
                         {
