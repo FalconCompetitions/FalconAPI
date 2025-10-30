@@ -76,8 +76,6 @@ namespace ProjetoTccBackend.Services
 
             await this._dbContext.SaveChangesAsync();
 
-            this._logger.LogCritical($"UserRas: {groupRequest.UserRAs?.First()}");
-
             if (groupRequest.UserRAs != null)
             {
                 foreach (string ra in groupRequest.UserRAs)
