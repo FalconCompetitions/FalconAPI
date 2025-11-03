@@ -1,5 +1,6 @@
 ﻿using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Competition;
+using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Database.Responses.Exercise;
 using ProjetoTccBackend.Enums.Judge;
 using ProjetoTccBackend.Exceptions.Judge;
@@ -28,7 +29,7 @@ namespace ProjetoTccBackend.Services
 
         
         /// <inheritdoc />
-        public async Task<ExerciseSubmissionResponse> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptRequest request)
+        public async Task<(ExerciseSubmissionResponse submission, CompetitionRankingResponse ranking)> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptRequest request)
         {
             var loggedUser = this._userService.GetHttpContextLoggedUser();
 
@@ -63,7 +64,7 @@ namespace ProjetoTccBackend.Services
                 TimeSpan duration = DateTime.Now.Subtract(time);
 
 
-                GroupExerciseAttempt attempt = new GroupExerciseAttempt()
+                Models.GroupExerciseAttempt attempt = new Models.GroupExerciseAttempt()
                 {
                     Accepted = exerciseResponse.Accepted,
                     Code = request.Code,
@@ -78,11 +79,11 @@ namespace ProjetoTccBackend.Services
 
                 this._groupExerciseAttemptRepository.Add(attempt);
 
-                await this._competitionRankingService.UpdateRanking(currentCompetition, loggedUser.Group, attempt);
+                var rankingResponse = await this._competitionRankingService.UpdateRanking(currentCompetition, loggedUser.Group!, attempt);
 
                 exerciseResponse.Id = attempt.Id;
 
-                return exerciseResponse;
+                return (exerciseResponse, rankingResponse);
             }
             catch (Exception ex)
             {

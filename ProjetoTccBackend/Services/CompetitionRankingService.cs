@@ -1,4 +1,7 @@
 ﻿using ProjetoTccBackend.Database;
+using ProjetoTccBackend.Database.Responses.Competition;
+using ProjetoTccBackend.Database.Responses.Group;
+using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
@@ -19,9 +22,9 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public async Task UpdateRanking(Competition competition, Group group, GroupExerciseAttempt exerciseAttempt)
+        public async Task<CompetitionRankingResponse> UpdateRanking(Competition competition, Models.Group group, Models.GroupExerciseAttempt exerciseAttempt)
         {
-            List<GroupExerciseAttempt> attempts = this._groupExerciseAttemptRepository.Find(
+            List<Models.GroupExerciseAttempt> attempts = this._groupExerciseAttemptRepository.Find(
                 e => 
                     e.GroupId.Equals(group.Id)
                     && e.CompetitionId.Equals(competition.Id)
@@ -38,6 +41,8 @@ namespace ProjetoTccBackend.Services
 
             int groupRankingIndex = rankings.FindIndex(x => x.GroupId.Equals(group.Id));
 
+            CompetitionRanking updatedRanking;
+
             if (groupRankingIndex == -1)
             {
                 CompetitionRanking newRanking = new CompetitionRanking()
@@ -51,6 +56,7 @@ namespace ProjetoTccBackend.Services
                 this._competitionRankingRepository.Add(newRanking);
 
                 rankings.Add(newRanking);
+                updatedRanking = newRanking;
             }
             else
             {
@@ -60,6 +66,7 @@ namespace ProjetoTccBackend.Services
                 ranking.Penalty = totalPenalty;
 
                 this._competitionRankingRepository.Update(ranking);
+                updatedRanking = ranking;
             }
 
             rankings.Sort((x, y) =>
@@ -82,6 +89,47 @@ namespace ProjetoTccBackend.Services
             this._competitionRankingRepository.UpdateRange(rankings);
 
             await this._dbContext.SaveChangesAsync();
+
+            // Build the response with exercise attempts
+            // Group attempts by exercise to get the count per exercise
+            var exerciseAttemptsGrouped = attempts
+                .GroupBy(a => a.ExerciseId)
+                .Select(g => new Database.Responses.Competition.GroupExerciseAttempt()
+                {
+                    GroupId = group.Id,
+                    ExerciseId = g.Key,
+                    Attempts = g.Count()
+                }).ToList();
+
+            var response = new CompetitionRankingResponse()
+            {
+                Id = updatedRanking.Id,
+                Points = updatedRanking.Points,
+                Penalty = updatedRanking.Penalty,
+                RankOrder = updatedRanking.RankOrder,
+                Group = new GroupResponse()
+                {
+                    Id = group.Id,
+                    LeaderId = group.LeaderId,
+                    Name = group.Name,
+                    Users = group.Users.Select(u => new GenericUserInfoResponse()
+                    {
+                        Id = u.Id,
+                        Email = u.Email!,
+                        Department = null,
+                        CreatedAt = u.CreatedAt,
+                        ExercisesCreated = null,
+                        JoinYear = u.JoinYear,
+                        LastLoggedAt = u.LastLoggedAt,
+                        Name = u.Name,
+                        Ra = u.Name, // Using Name as Ra for now
+                        Group = null,
+                    }).ToList(),
+                },
+                ExerciseAttempts = exerciseAttemptsGrouped,
+            };
+
+            return response;
         }
     }
 }

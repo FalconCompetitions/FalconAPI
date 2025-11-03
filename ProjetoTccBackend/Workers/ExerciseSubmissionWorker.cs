@@ -168,7 +168,8 @@ namespace ProjetoTccBackend.Workers
         /// </summary>
         /// <remarks>This method retrieves the current competition context, processes the exercise
         /// submission using the group attempt service, and sends the resulting response to multiple client groups,
-        /// including administrators, teachers, and the submitting client.</remarks>
+        /// including administrators, teachers, and the submitting client. Additionally, it broadcasts the updated
+        /// ranking to all connected clients in the Students, Teachers, and Admins groups.</remarks>
         /// <param name="serviceScope">The <see cref="IServiceScope"/> used to resolve scoped services for the operation.</param>
         /// <param name="queueItem">The <see cref="ExerciseSubmissionQueueItem"/> containing the details of the exercise submission, including
         /// the request data and the connection ID of the submitting client.</param>
@@ -179,23 +180,44 @@ namespace ProjetoTccBackend.Workers
         )
         {
             var currentCompetition = await this.FetchCurrentCompetitionAsync(serviceScope);
+            
+            if (currentCompetition is null)
+            {
+                this._logger.LogWarning("No active competition found for exercise submission processing");
+                return;
+            }
+
             var groupAttemptService =
                 serviceScope.ServiceProvider.GetRequiredService<IGroupAttemptService>();
 
-            ExerciseSubmissionResponse response = await groupAttemptService.SubmitExerciseAttempt(
+            var (submissionResponse, rankingResponse) = await groupAttemptService.SubmitExerciseAttempt(
                 currentCompetition,
                 queueItem.Request
             );
 
+            // Send submission response to admins and teachers
             await this
                 ._hubContext.Clients.Group("Admins")
-                .SendAsync("ReceiveExerciseAttempt", response);
+                .SendAsync("ReceiveExerciseAttempt", submissionResponse);
             await this
                 ._hubContext.Clients.Group("Teachers")
-                .SendAsync("ReceiveExerciseAttempt", response);
+                .SendAsync("ReceiveExerciseAttempt", submissionResponse);
+            
+            // Send submission response to the submitting client
             await this
                 ._hubContext.Clients.Client(queueItem.ConnectionId)
-                .SendAsync("ReceiveExerciseAttemptResponse", response);
+                .SendAsync("ReceiveExerciseAttemptResponse", submissionResponse);
+
+            // Broadcast updated ranking to all participants
+            await this
+                ._hubContext.Clients.Group("Students")
+                .SendAsync("ReceiveRankingUpdate", rankingResponse);
+            await this
+                ._hubContext.Clients.Group("Teachers")
+                .SendAsync("ReceiveRankingUpdate", rankingResponse);
+            await this
+                ._hubContext.Clients.Group("Admins")
+                .SendAsync("ReceiveRankingUpdate", rankingResponse);
         }
     }
 }

@@ -2,6 +2,7 @@
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Database.Responses.Exercise;
+using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Enums.Judge;
 
 namespace ProjetoTccBackend.Services.Interfaces
@@ -13,10 +14,10 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <param name="currentCompetition">The current competition</param>
         /// <param name="request">The group exercise attempt request</param>
-        /// <returns>The exercise submission response from the judge API</returns>
+        /// <returns>A tuple containing the exercise submission response and the updated competition ranking</returns>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user is not authorized to submit an exercise attempt</exception>
         /// <exception cref="JudgeException">Thrown when the judge API returns an error</exception>
-        Task<ExerciseSubmissionResponse> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptRequest request);
+        Task<(ExerciseSubmissionResponse submission, CompetitionRankingResponse ranking)> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptRequest request);
 
 
 

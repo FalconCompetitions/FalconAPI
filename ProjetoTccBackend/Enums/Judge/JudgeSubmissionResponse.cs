@@ -43,6 +43,6 @@
         /// <summary>
         /// The submission violated security constraints.
         /// </summary>
-        SecurityError = 7
+        SecurityError = 7,
     }
 }

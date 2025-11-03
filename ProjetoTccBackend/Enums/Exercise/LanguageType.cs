@@ -43,6 +43,6 @@
         /// <summary>
         /// PHP language.
         /// </summary>
-        PHP = 7
+        PHP = 7,
     }
 }
