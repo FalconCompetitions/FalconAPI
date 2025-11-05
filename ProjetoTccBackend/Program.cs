@@ -329,6 +329,7 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IGroupInviteService, GroupInviteService>();
             builder.Services.AddScoped<IGroupService, GroupService>();
+            builder.Services.AddScoped<IGroupInCompetitionService, GroupInCompetitionService>();
             builder.Services.AddScoped<ILogService, LogService>(); // Adicionado para Log
             builder.Services.AddScoped<ICompetitionRankingService, CompetitionRankingService>();
             builder.Services.AddScoped<IExerciseService, ExerciseService>();

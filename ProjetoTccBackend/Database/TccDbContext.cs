@@ -216,15 +216,15 @@ namespace ProjetoTccBackend.Database
                 .WithOne(a => a.Question)
                 .HasForeignKey<Question>(q => q.AnswerId)
                 .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired(required: true);
+                .IsRequired(required: false);
 
             var groupExerciseAttemptRequestConverter = new ValueConverter<
-                GroupExerciseAttemptRequest,
+                GroupExerciseAttemptWorkerRequest,
                 string
             >(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
                 v =>
-                    JsonSerializer.Deserialize<GroupExerciseAttemptRequest>(
+                    JsonSerializer.Deserialize<GroupExerciseAttemptWorkerRequest>(
                         v,
                         (JsonSerializerOptions)null
                     )

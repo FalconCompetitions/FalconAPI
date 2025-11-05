@@ -180,19 +180,58 @@ namespace ProjetoTccBackend.Services
             throw new NotImplementedException();
         }
 
+        private string RandomRes()
+        {
+            Random rnd = new Random();
+            int res = rnd.Next(1, 16);
+
+            if (res <= 8)
+            {
+                return JudgeSubmissionResponseEnum.Accepted.ToString();
+            }
+            else if (res == 9)
+            {
+                return JudgeSubmissionResponseEnum.CompilationError.ToString();
+            }
+            else if (res == 10)
+            {
+                return JudgeSubmissionResponseEnum.MemoryLimitExceeded.ToString();
+            }
+            else if (res == 11)
+            {
+                return JudgeSubmissionResponseEnum.PresentationError.ToString();
+            }
+            else if (res == 12)
+            {
+                return JudgeSubmissionResponseEnum.SecurityError.ToString();
+            }
+            else if (res == 13)
+            {
+                return JudgeSubmissionResponseEnum.TimeLimitExceeded.ToString();
+            }
+            else if (res == 14)
+            {
+                return JudgeSubmissionResponseEnum.WrongAnswer.ToString();
+            }
+            else
+            {
+                return JudgeSubmissionResponseEnum.RuntimeError.ToString();
+            }
+        }
+
         /// <inheritdoc/>
         public async Task<JudgeSubmissionResponseEnum> SendGroupExerciseAttempt(
-            GroupExerciseAttemptRequest request
+            GroupExerciseAttemptWorkerRequest request
         )
         {
-            string? currentToken = await this.FetchJudgeToken();
+            //string? currentToken = await this.FetchJudgeToken();
 
-            if (currentToken is null)
-            {
-                throw new JudgeSubmissionException("Erro em recurso externo");
-            }
+            //if (currentToken is null)
+            //{
+            //    throw new JudgeSubmissionException("Erro em recurso externo");
+            //}
 
-            this._httpClient.DefaultRequestHeaders.Add("Authorization", $"bearer {currentToken}");
+            //this._httpClient.DefaultRequestHeaders.Add("Authorization", $"bearer {currentToken}");
 
             Exercise? exercise = this._exerciseRepository.GetById(request.ExerciseId);
 
@@ -201,13 +240,14 @@ namespace ProjetoTccBackend.Services
                 throw new ExerciseNotFoundException();
             }
 
+            /*
             JudgeSubmissionRequest judgeRequest = new JudgeSubmissionRequest()
             {
                 ProblemId = exercise.JudgeUuid!,
                 Content = request.Code,
                 LanguageType = request.LanguageType.ToString(),
             };
-
+            
             HttpResponseMessage response =
                 await this._httpClient.PostAsJsonAsync<JudgeSubmissionRequest>(
                     "/v0/submissions",
@@ -243,7 +283,11 @@ namespace ProjetoTccBackend.Services
                 return JudgeSubmissionResponseEnum.RuntimeError;
             }
 
-            switch (judgeSubmissionResponse.Status)
+            string status = judgeSubmissionResponse.Status;
+            */
+            string randomStatus = this.RandomRes();
+
+            switch (randomStatus)
             {
                 case "ACCEPTED":
                     return JudgeSubmissionResponseEnum.Accepted;

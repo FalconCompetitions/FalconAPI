@@ -42,6 +42,6 @@ namespace ProjetoTccBackend.Database.Responses.Competition
         /// Collection of exercise attempts made by the group in the competition.
         /// </summary>
         [JsonPropertyName("exerciseAttempts")]
-        public ICollection<GroupExerciseAttempt> ExerciseAttempts { get; set; }
+        public ICollection<GroupExerciseAttemptResponse> ExerciseAttempts { get; set; }
     }
 }

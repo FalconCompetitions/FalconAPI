@@ -17,7 +17,7 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <returns>A tuple containing the exercise submission response and the updated competition ranking</returns>
         /// <exception cref="UnauthorizedAccessException">Thrown when the user is not authorized to submit an exercise attempt</exception>
         /// <exception cref="JudgeException">Thrown when the judge API returns an error</exception>
-        Task<(ExerciseSubmissionResponse submission, CompetitionRankingResponse ranking)> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptRequest request);
+        Task<(ExerciseSubmissionResponse submission, CompetitionRankingResponse ranking)> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptWorkerRequest request);
 
 
 

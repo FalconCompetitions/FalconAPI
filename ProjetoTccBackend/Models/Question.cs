@@ -24,8 +24,8 @@ namespace ProjetoTccBackend.Models
         /// </summary>
         public Competition Competition { get; }
 
-        public int? AnswerId { get; set; }
-        public Answer? Answer { get; set; }
+        public int? AnswerId { get; set; } = null;
+        public Answer? Answer { get; set; } = null;
 
         /// <summary>  
         /// Identifier of the exercise associated with the question, if any.  

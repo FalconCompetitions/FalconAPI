@@ -15,29 +15,24 @@ namespace ProjetoTccBackend.Services
         private readonly TccDbContext _dbContext;
         private readonly IJudgeService _judgeService;
         private readonly IUserService _userService;
+        private readonly IGroupRepository _groupRepository;
         private readonly ICompetitionRankingService _competitionRankingService;
         private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
 
-        public GroupAttemptService(TccDbContext dbContext, IJudgeService judgeService, IUserService userService, ICompetitionRankingService competitionRankingService, IGroupExerciseAttemptRepository groupExerciseAttemptRepository)
+        public GroupAttemptService(TccDbContext dbContext, IJudgeService judgeService, IUserService userService, IGroupRepository groupRepository, ICompetitionRankingService competitionRankingService, IGroupExerciseAttemptRepository groupExerciseAttemptRepository)
         {
             this._dbContext = dbContext;
             this._judgeService = judgeService;
             this._userService = userService;
+            this._groupRepository = groupRepository;
             this._competitionRankingService = competitionRankingService;
             this._groupExerciseAttemptRepository = groupExerciseAttemptRepository;
         }
 
         
         /// <inheritdoc />
-        public async Task<(ExerciseSubmissionResponse submission, CompetitionRankingResponse ranking)> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptRequest request)
+        public async Task<(ExerciseSubmissionResponse submission, CompetitionRankingResponse ranking)> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptWorkerRequest request)
         {
-            var loggedUser = this._userService.GetHttpContextLoggedUser();
-
-            if (loggedUser is null || loggedUser.GroupId is null)
-            {
-                throw new UnauthorizedAccessException("Usuário não possui permissão para essa ação");
-            }
-
             try
             {
                 var response = await this._judgeService.SendGroupExerciseAttempt(request);
@@ -47,12 +42,12 @@ namespace ProjetoTccBackend.Services
                     ExerciseId = request.ExerciseId,
                     Accepted = response.Equals(JudgeSubmissionResponse.Accepted),
                     JudgeResponse = response,
-                    GroupId = loggedUser.GroupId.Value,
+                    GroupId = request.GroupId,
                 };
 
                 var lastGroupAttempt = this._groupExerciseAttemptRepository
                     .GetLastGroupCompetitionAttempt(
-                        (int)loggedUser.GroupId!,
+                        request.GroupId,
                         currentCompetition.Id
                     );
 
@@ -64,13 +59,13 @@ namespace ProjetoTccBackend.Services
                 TimeSpan duration = DateTime.Now.Subtract(time);
 
 
-                Models.GroupExerciseAttempt attempt = new Models.GroupExerciseAttempt()
+                GroupExerciseAttempt attempt = new GroupExerciseAttempt()
                 {
                     Accepted = exerciseResponse.Accepted,
                     Code = request.Code,
                     ExerciseId = request.ExerciseId,
                     CompetitionId = currentCompetition.Id,
-                    GroupId = (int)loggedUser.GroupId!,
+                    GroupId = request.GroupId,
                     JudgeResponse = response,
                     Language = request.LanguageType,
                     SubmissionTime = DateTime.Now,
@@ -79,7 +74,14 @@ namespace ProjetoTccBackend.Services
 
                 this._groupExerciseAttemptRepository.Add(attempt);
 
-                var rankingResponse = await this._competitionRankingService.UpdateRanking(currentCompetition, loggedUser.Group!, attempt);
+                Group? group = this._groupRepository.GetByIdWithUsers(request.GroupId);
+
+                if (group is null)
+                {
+                    throw new JudgeException($"Group with ID {request.GroupId} not found");
+                }
+
+                var rankingResponse = await this._competitionRankingService.UpdateRanking(currentCompetition, group, attempt);
 
                 exerciseResponse.Id = attempt.Id;
 

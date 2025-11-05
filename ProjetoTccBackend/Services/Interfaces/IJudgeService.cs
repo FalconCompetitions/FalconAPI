@@ -45,7 +45,7 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <param name="request">The group exercise attempt request.</param>
         /// <returns>The result of the submission as a JudgeSubmissionResponseEnum.</returns>
-        Task<JudgeSubmissionResponseEnum> SendGroupExerciseAttempt(GroupExerciseAttemptRequest request);
+        Task<JudgeSubmissionResponseEnum> SendGroupExerciseAttempt(GroupExerciseAttemptWorkerRequest request);
 
         /// <summary>
         /// Updates the specified exercise in the judge service asynchronously.

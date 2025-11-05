@@ -94,7 +94,7 @@ namespace ProjetoTccBackend.Services
             // Group attempts by exercise to get the count per exercise
             var exerciseAttemptsGrouped = attempts
                 .GroupBy(a => a.ExerciseId)
-                .Select(g => new Database.Responses.Competition.GroupExerciseAttempt()
+                .Select(g => new Database.Responses.Competition.GroupExerciseAttemptResponse()
                 {
                     GroupId = group.Id,
                     ExerciseId = g.Key,

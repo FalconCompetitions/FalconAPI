@@ -106,61 +106,67 @@ namespace ProjetoTccBackend.Workers
         {
             this._logger.LogInformation("ExerciseSubmissionWorkerInitialized...");
 
-            int queueSize = this._queue.GetQueueSize();
-
-            if (queueSize == 0)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                return;
-            }
+                int queueSize = this._queue.GetQueueSize();
 
-            int workerCount = Environment.ProcessorCount;
-            workerCount = (queueSize < workerCount) ? queueSize : workerCount;
+                if (queueSize == 0)
+                {
+                    await Task.Delay(1000, cancellationToken);
+                    continue;
+                }
 
-            workerCount = (workerCount > MAX_WORKER_COUNT) ? MAX_WORKER_COUNT : workerCount;
+                int workerCount = Environment.ProcessorCount;
+                workerCount = (queueSize < workerCount) ? queueSize : workerCount;
 
-            List<Task> tasks = new List<Task>();
+                workerCount = (workerCount > MAX_WORKER_COUNT) ? MAX_WORKER_COUNT : workerCount;
 
-            for (int i = 0; i < workerCount; i++)
-            {
-                tasks.Add(
-                    Task.Run(
-                        async () =>
-                        {
-                            while (!cancellationToken.IsCancellationRequested)
+                List<Task> tasks = new List<Task>();
+
+                for (int i = 0; i < workerCount; i++)
+                {
+                    tasks.Add(
+                        Task.Run(
+                            async () =>
                             {
-                                var queueItem = await this._queue.DequeueAsync(cancellationToken);
-
-                                if (queueItem is null)
                                 {
-                                    this._logger.LogCritical(
-                                        $"null item received from queue submission."
+                                    var queueItem = await this._queue.DequeueAsync(
+                                        cancellationToken
                                     );
-                                    continue;
-                                }
 
-                                using (var scope = this._serviceProvider.CreateScope())
-                                {
-                                    try
-                                    {
-                                        await this.ProcessExerciseAttempt(scope, queueItem);
-                                    }
-                                    catch (Exception ex)
+                                    if (queueItem is null)
                                     {
                                         this._logger.LogCritical(
-                                            eventId: (int)LoggerEvent.ExerciseSubmissionQueue,
-                                            exception: ex,
-                                            message: $"The processing of ExerciseId: {queueItem.Request.ExerciseId}, from: {queueItem.ConnectionId} failed"
+                                            $"null item received from queue submission."
                                         );
+                                        return;
+                                    }
+
+                                    using (var scope = this._serviceProvider.CreateScope())
+                                    {
+                                        try
+                                        {
+                                            await this.ProcessExerciseAttempt(scope, queueItem);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            this._logger.LogCritical(
+                                                eventId: (int)LoggerEvent.ExerciseSubmissionQueue,
+                                                exception: ex,
+                                                message: $"The processing of ExerciseId: {queueItem.Request.ExerciseId}, from: {queueItem.ConnectionId} failed"
+                                            );
+                                        }
                                     }
                                 }
-                            }
-                        },
-                        cancellationToken
-                    )
-                );
-            }
+                            },
+                            cancellationToken
+                        )
+                    );
+                }
 
-            await Task.WhenAll(tasks);
+                await Task.WhenAll(tasks);
+                await Task.Delay(2000, cancellationToken);
+            }
         }
 
         /// <summary>
@@ -180,20 +186,23 @@ namespace ProjetoTccBackend.Workers
         )
         {
             var currentCompetition = await this.FetchCurrentCompetitionAsync(serviceScope);
-            
+
             if (currentCompetition is null)
             {
-                this._logger.LogWarning("No active competition found for exercise submission processing");
+                this._logger.LogWarning(
+                    "No active competition found for exercise submission processing"
+                );
                 return;
             }
 
             var groupAttemptService =
                 serviceScope.ServiceProvider.GetRequiredService<IGroupAttemptService>();
 
-            var (submissionResponse, rankingResponse) = await groupAttemptService.SubmitExerciseAttempt(
-                currentCompetition,
-                queueItem.Request
-            );
+            var (submissionResponse, rankingResponse) =
+                await groupAttemptService.SubmitExerciseAttempt(
+                    currentCompetition,
+                    queueItem.Request
+                );
 
             // Send submission response to admins and teachers
             await this
@@ -202,7 +211,7 @@ namespace ProjetoTccBackend.Workers
             await this
                 ._hubContext.Clients.Group("Teachers")
                 .SendAsync("ReceiveExerciseAttempt", submissionResponse);
-            
+
             // Send submission response to the submitting client
             await this
                 ._hubContext.Clients.Client(queueItem.ConnectionId)

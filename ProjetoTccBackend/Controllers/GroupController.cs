@@ -24,21 +24,26 @@ namespace ProjetoTccBackend.Controllers
         private readonly IGroupService _groupService;
         private readonly IGroupInviteService _groupInviteService;
         private readonly IUserService _userService;
+        private readonly IGroupInCompetitionService _groupInCompetitionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GroupController"/> class.
         /// </summary>
         /// <param name="groupService">The service responsible for group operations.</param>
         /// <param name="groupInviteService">The service responsible for group invitation</param>
+        /// <param name="userService">The service responsible for user operations.</param>
+        /// <param name="groupInCompetitionService">The service responsible for group-in-competition operations.</param>
         public GroupController(
             IGroupService groupService,
             IGroupInviteService groupInviteService,
-            IUserService userService
+            IUserService userService,
+            IGroupInCompetitionService groupInCompetitionService
         )
         {
             this._groupService = groupService;
             this._groupInviteService = groupInviteService;
             this._userService = userService;
+            this._groupInCompetitionService = groupInCompetitionService;
         }
 
         /// <summary>
@@ -408,6 +413,39 @@ namespace ProjetoTccBackend.Controllers
             {
                 return BadRequest(new { ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Retrieves the current valid competition registration for a group.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint returns the competition registration that is currently active for the specified group.
+        /// A registration is considered valid if the current date and time fall within the competition's start and end times.
+        /// The group must not be blocked from participating in the competition.
+        /// Accessible to users with the roles "Admin", "Teacher", or "Student".
+        /// </remarks>
+        /// <param name="groupId">The unique identifier of the group.</param>
+        /// <returns>
+        /// An <see cref="IActionResult"/> containing the current valid competition registration if found,
+        /// or <see cref="NotFoundResult"/> if no valid registration exists.
+        /// </returns>
+        /// <response code="200">Returns the current valid competition registration for the group.</response>
+        /// <response code="404">If no valid competition registration is found for the group.</response>
+        [Authorize(Roles = "Admin,Teacher,Student")]
+        [HttpGet("{groupId}/current-competition")]
+        [ProducesResponseType(typeof(GroupInCompetitionResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCurrentValidCompetitionByGroupId(int groupId)
+        {
+            var groupInCompetition = await this._groupInCompetitionService
+                .GetCurrentValidCompetitionByGroupIdAsync(groupId);
+
+            if (groupInCompetition is null)
+            {
+                return NotFound(new { message = $"Nenhuma competição ativa encontrada para o grupo de id {groupId}" });
+            }
+
+            return Ok(groupInCompetition);
         }
     }
 }

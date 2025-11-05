@@ -5,7 +5,7 @@ namespace ProjetoTccBackend.Database.Responses.Competition
     /// <summary>
     /// Information about a group's exercise attempts in a competition.
     /// </summary>
-    public class GroupExerciseAttempt
+    public class GroupExerciseAttemptResponse
     {
         /// <summary>
         /// Identifier of the group.

@@ -9,7 +9,7 @@ namespace ProjetoTccBackend.Repositories.Interfaces
         /// </summary>
         /// <param name="groupId">The ID of the group for which to retrieve the last attempt.</param>
         /// <param name="competitionId">The ID of the competition for which to retrieve the last attempt.</param>
-        /// <returns>The most recent GroupExerciseAttempt for the specified group, or null if no attempts exist.</returns>
+        /// <returns>The most recent GroupExerciseAttemptResponse for the specified group, or null if no attempts exist.</returns>
         GroupExerciseAttempt? GetLastGroupCompetitionAttempt(int groupId, int competitionId);
     }
 }

@@ -15,6 +15,7 @@ namespace ProjetoTccBackend.Services
         private readonly IUserService _userService;
         private readonly ICompetitionRepository _competitionRepository;
         private readonly IGroupInCompetitionRepository _groupInCompetitionRepository;
+        private readonly ICompetitionRankingRepository _competitionRankingRepository;
         private readonly IQuestionRepository _questionRepository;
         private readonly IAnswerRepository _answerRepository;
         private readonly IExerciseInCompetitionRepository _exerciseInCompetitionRepository;
@@ -26,6 +27,7 @@ namespace ProjetoTccBackend.Services
             IUserService userService,
             ICompetitionRepository competitionRepository,
             IGroupInCompetitionRepository groupInCompetitionRepository,
+            ICompetitionRankingRepository competitionRankingRepository,
             IQuestionRepository questionRepository,
             IAnswerRepository answerRepository,
             IExerciseInCompetitionRepository exerciseInCompetitionRepository,
@@ -37,6 +39,7 @@ namespace ProjetoTccBackend.Services
             this._userService = userService;
             this._competitionRepository = competitionRepository;
             this._groupInCompetitionRepository = groupInCompetitionRepository;
+            this._competitionRankingRepository = competitionRankingRepository;
             this._questionRepository = questionRepository;
             this._answerRepository = answerRepository;
             this._exerciseInCompetitionRepository = exerciseInCompetitionRepository;
@@ -129,6 +132,7 @@ namespace ProjetoTccBackend.Services
 
             Competition? existentCompetition = await this
                 ._competitionRepository.Query()
+                .AsSplitQuery()
                 .Include(c => c.Exercices)
                 .ThenInclude(e => e.ExerciseInputs)
                 .Include(c => c.Exercices)
@@ -138,6 +142,7 @@ namespace ProjetoTccBackend.Services
                 .Include(c => c.CompetitionRankings)
                 .ThenInclude(c => c.Group)
                 .ThenInclude(g => g.Users)
+                .Include(c => c.GroupInCompetitions)
                 .Where(c =>
                     c.StartInscriptions <= currentTime
                     && c.EndTime >= currentTime
@@ -154,7 +159,7 @@ namespace ProjetoTccBackend.Services
             CreateGroupQuestionRequest request
         )
         {
-            Competition? competition = await this.GetExistentCompetition();
+            Competition? competition = await this.GetCurrentCompetition();
 
             if (competition is null)
             {
@@ -173,6 +178,14 @@ namespace ProjetoTccBackend.Services
             this._questionRepository.Add(question);
 
             await this._dbContext.SaveChangesAsync();
+
+            question = await this
+                ._questionRepository.Query()
+                .Where(q => q.Id == question.Id)
+                .Include(q => q.User)
+                .Include(q => q.Answer)
+                .ThenInclude(a => a.User)
+                .FirstAsync();
 
             return question;
         }
@@ -392,6 +405,20 @@ namespace ProjetoTccBackend.Services
             };
 
             await this._groupInCompetitionRepository.AddAsync(groupInCompetition);
+
+            int rankingCount = await this
+                ._competitionRankingRepository.Query()
+                .Where(c => c.CompetitionId == competition.Id)
+                .CountAsync();
+
+            CompetitionRanking competitionRanking = new CompetitionRanking()
+            {
+                CompetitionId = competition.Id,
+                GroupId = loggedUser.Group.Id,
+                RankOrder = rankingCount + 1,
+                Points = 0,
+                Penalty = 0,
+            };
 
             await this._dbContext.SaveChangesAsync();
 

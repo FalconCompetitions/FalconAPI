@@ -71,6 +71,12 @@ namespace ProjetoTccBackend.Database.Responses.Competition
         [JsonPropertyName("status")]
         public CompetitionStatus Status { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the logged-in group is inscribed in the competition.
+        /// </summary>
+        [JsonPropertyName("isLoggedGroupInscribed")]
+        public bool? IsLoggedGroupInscribed { get; set; }
+
 
         /// <summary>
         /// Gets or sets the maximum allowed size, in kb, for a submission.

@@ -27,10 +27,12 @@ namespace ProjetoTccBackend.Hubs
         private readonly IMemoryCache _memoryCache;
         private readonly ExerciseSubmissionQueue _exerciseSubmissionQueue;
         private readonly ILogger<CompetitionHub> _logger;
+        private readonly IGroupInCompetitionService _groupInCompetitionService;
         private const string CompetitionCacheKey = "currentCompetition";
 
         public CompetitionHub(
             IGroupAttemptService groupAttemptService,
+            IGroupInCompetitionService groupInCompetitionService,
             ICompetitionService competitionService,
             IUserService userService,
             ILogService logService,
@@ -41,6 +43,7 @@ namespace ProjetoTccBackend.Hubs
         )
         {
             this._groupAttemptService = groupAttemptService;
+            this._groupInCompetitionService = groupInCompetitionService;
             this._competitionService = competitionService;
             this._userService = userService;
             this._logService = logService;
@@ -113,7 +116,8 @@ namespace ProjetoTccBackend.Hubs
         /// <returns></returns>
         public override async Task OnConnectedAsync()
         {
-            var currentCompetition = await this.FetchCurrentCompetitionAsync();
+            //var currentCompetition = await this.FetchCurrentCompetitionAsync();
+            var currentCompetition = await this._competitionService.GetCurrentCompetition();
 
             if (currentCompetition is null)
             {
@@ -185,6 +189,11 @@ namespace ProjetoTccBackend.Hubs
                     MaxSubmissionSize = currentCompetition.MaxSubmissionSize,
                     Status = currentCompetition.Status,
                     Duration = currentCompetition.Duration,
+                    IsLoggedGroupInscribed =
+                        loggedUser.GroupId is not null
+                        && currentCompetition.GroupInCompetitions.Any(gic =>
+                            gic.GroupId == loggedUser.GroupId
+                        ),
                     CompetitionRankings = currentCompetition
                         .CompetitionRankings.Select(c => new CompetitionRankingResponse()
                         {
@@ -293,7 +302,8 @@ namespace ProjetoTccBackend.Hubs
         /// Submits an exercise attempt for processing in the current competition.
         /// </summary>
         /// <remarks>This method enqueues the exercise attempt for asynchronous processing. If there is no
-        /// active competition,  a null response is sent back to the caller.</remarks>
+        /// active competition, a null response is sent back to the caller. If the group is blocked from the competition,
+        /// an error message is sent back.</remarks>
         /// <param name="request">The exercise attempt details, including the group and exercise data.</param>
         /// <returns></returns>
         [Authorize(Roles = "Student")]
@@ -307,7 +317,45 @@ namespace ProjetoTccBackend.Hubs
                 return;
             }
 
-            var queueItem = new ExerciseSubmissionQueueItem(request, this.Context.ConnectionId);
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            if (loggedUser.GroupId is null)
+            {
+                await Clients.Caller.SendAsync(
+                    "ReceiveExerciseAttemptError",
+                    new { message = "Usuário não pertence a nenhum grupo" }
+                );
+                return;
+            }
+
+            // Check if the group is blocked in the competition
+            bool isBlocked = await this._groupInCompetitionService.IsGroupBlockedInCompetitionAsync(
+                loggedUser.GroupId.Value,
+                currentCompetition.Id
+            );
+
+            if (isBlocked)
+            {
+                await Clients.Caller.SendAsync(
+                    "ReceiveExerciseAttemptError",
+                    new
+                    {
+                        message = "Seu grupo está bloqueado de enviar submissões nesta competição",
+                    }
+                );
+                return;
+            }
+
+            var queueItem = new ExerciseSubmissionQueueItem(
+                new GroupExerciseAttemptWorkerRequest()
+                {
+                    GroupId = loggedUser.GroupId.Value,
+                    ExerciseId = request.ExerciseId,
+                    Code = request.Code,
+                    LanguageType = request.LanguageType,
+                },
+                this.Context.ConnectionId
+            );
 
             await _exerciseSubmissionQueue.EnqueueAsync(queueItem);
         }
@@ -335,9 +383,48 @@ namespace ProjetoTccBackend.Hubs
                 request
             );
 
-            await Clients.Caller.SendAsync("ReceiveQuestionCreationResponse", question);
-            await Clients.Group("Teachers").SendAsync("ReceiveQuestionCreation", question);
-            await Clients.Group("Admins").SendAsync("ReceiveQuestionCreation", question);
+            QuestionResponse response = new QuestionResponse()
+            {
+                Id = question.Id,
+                CompetitionId = question.CompetitionId,
+                Content = question.Content,
+                QuestionType = question.QuestionType,
+                User = new GenericUserInfoResponse()
+                {
+                    Id = question.User.Id,
+                    Name = question.User.Name,
+                    Email = question.User.Email,
+                    CreatedAt = question.User.CreatedAt,
+                    LastLoggedAt = question.User.LastLoggedAt,
+                    Ra = question.User.RA,
+                    JoinYear = question.User.JoinYear,
+                    Department = null,
+                    ExercisesCreated = null,
+                },
+                Answer = question.Answer is not null
+                    ? new AnswerResponse()
+                    {
+                        Id = question.Answer.Id,
+                        Content = question.Answer.Content,
+                        User = new GenericUserInfoResponse()
+                        {
+                            Id = question.Answer.User.Id,
+                            Name = question.Answer.User.Name,
+                            Email = question.Answer.User.Email,
+                            CreatedAt = question.Answer.User.CreatedAt,
+                            LastLoggedAt = question.Answer.User.LastLoggedAt,
+                            Ra = question.Answer.User.RA,
+                            JoinYear = question.Answer.User.JoinYear,
+                            Department = question.Answer.User.Department,
+                            ExercisesCreated = null,
+                        },
+                    }
+                    : null,
+            };
+
+            await Clients.Caller.SendAsync("ReceiveQuestionCreationResponse", response);
+            await Clients.Group("Teachers").SendAsync("ReceiveQuestionCreation", response);
+            await Clients.Group("Admins").SendAsync("ReceiveQuestionCreation", response);
         }
 
         /// <summary>
