@@ -81,6 +81,14 @@ namespace ProjetoTccBackend.Hubs
             return competition;
         }
 
+        /// <summary>
+        /// Invalidates the cached competition data, forcing a fresh fetch from the database on the next request.
+        /// </summary>
+        private void InvalidateCompetitionCache()
+        {
+            this._memoryCache.Remove(CompetitionCacheKey);
+        }
+
         private HttpContext GetHubHttpContext()
         {
             var httpContext = this._httpContextAcessor.HttpContext;
@@ -401,11 +409,19 @@ namespace ProjetoTccBackend.Hubs
                     Department = null,
                     ExercisesCreated = null,
                 },
+                Group = question.User.Group != null ? new GroupResponse()
+                {
+                    Id = question.User.Group.Id,
+                    Name = question.User.Group.Name,
+                    LeaderId = question.User.Group.LeaderId,
+                    Users = new List<GenericUserInfoResponse>()
+                } : null,
                 Answer = question.Answer is not null
                     ? new AnswerResponse()
                     {
                         Id = question.Answer.Id,
                         Content = question.Answer.Content,
+                        QuestionId = question.Id,
                         User = new GenericUserInfoResponse()
                         {
                             Id = question.Answer.User.Id,
@@ -445,7 +461,7 @@ namespace ProjetoTccBackend.Hubs
 
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
-            Answer answer = await this._competitionService.AnswerGroupQuestion(loggedUser, request);
+            AnswerResponse answer = await this._competitionService.AnswerGroupQuestion(loggedUser, request);
 
             await Clients.Caller.SendAsync("ReceiveQuestionAnswerResponse", answer);
             await Clients.Group("Teachers").SendAsync("ReceiveQuestionAnswer", answer);
@@ -492,6 +508,9 @@ namespace ProjetoTccBackend.Hubs
 
             if (succeeded == true)
             {
+                // Invalidate cache to reflect the updated blocked status
+                this.InvalidateCompetitionCache();
+
                 await this._logService.CreateLogAsync(
                     new CreateLogRequest()
                     {
@@ -509,6 +528,222 @@ namespace ProjetoTccBackend.Hubs
             {
                 await this.Clients.Caller.SendAsync("ReceiveBlockGroupSubmissionResponse", false);
             }
+        }
+
+        /// <summary>
+        /// Retrieves all questions for the current competition.
+        /// </summary>
+        /// <returns></returns>
+        [Authorize]
+        public async Task GetAllCompetitionQuestions()
+        {
+            var competition = await this.FetchCurrentCompetitionAsync();
+
+            if (competition is null)
+            {
+                await this.Clients.Caller.SendAsync("ReceiveAllQuestions", new List<QuestionResponse>());
+                return;
+            }
+
+            var questions = await this._competitionService.GetAllCompetitionQuestionsAsync(competition.Id);
+
+            var questionResponses = questions.Select(q => new QuestionResponse()
+            {
+                Id = q.Id,
+                CompetitionId = q.CompetitionId,
+                Content = q.Content,
+                QuestionType = q.QuestionType,
+                User = new GenericUserInfoResponse()
+                {
+                    Id = q.User.Id,
+                    Name = q.User.Name,
+                    Email = q.User.Email!,
+                    CreatedAt = q.User.CreatedAt,
+                    LastLoggedAt = q.User.LastLoggedAt,
+                    Ra = q.User.RA,
+                    JoinYear = q.User.JoinYear,
+                    Department = null,
+                    ExercisesCreated = null,
+                },
+                Group = q.User.Group != null ? new GroupResponse()
+                {
+                    Id = q.User.Group.Id,
+                    Name = q.User.Group.Name,
+                    LeaderId = q.User.Group.LeaderId,
+                    Users = new List<GenericUserInfoResponse>()
+                } : null,
+                Answer = q.Answer is not null
+                    ? new AnswerResponse()
+                    {
+                        Id = q.Answer.Id,
+                        Content = q.Answer.Content,
+                        QuestionId = q.Id,
+                        User = new GenericUserInfoResponse()
+                        {
+                            Id = q.Answer.User.Id,
+                            Name = q.Answer.User.Name,
+                            Email = q.Answer.User.Email!,
+                            CreatedAt = q.Answer.User.CreatedAt,
+                            LastLoggedAt = q.Answer.User.LastLoggedAt,
+                            Ra = q.Answer.User.RA,
+                            JoinYear = q.Answer.User.JoinYear,
+                            Department = q.Answer.User.Department,
+                            ExercisesCreated = null,
+                        },
+                    }
+                    : null,
+            }).ToList();
+
+            await this.Clients.Caller.SendAsync("ReceiveAllQuestions", questionResponses);
+        }
+
+        /// <summary>
+        /// Retrieves the complete ranking for the current competition.
+        /// </summary>
+        /// <returns></returns>
+        [Authorize]
+        public async Task GetCompetitionRanking()
+        {
+            var competition = await this.FetchCurrentCompetitionAsync();
+
+            if (competition is null)
+            {
+                await this.Clients.Caller.SendAsync("ReceiveFullRanking", new List<CompetitionRankingResponse>());
+                return;
+            }
+
+            var ranking = await this._competitionService.GetCompetitionRankingAsync(competition.Id);
+
+            await this.Clients.Caller.SendAsync("ReceiveFullRanking", ranking);
+        }
+
+        /// <summary>
+        /// Retrieves logs for the current competition with enriched data.
+        /// </summary>
+        /// <returns></returns>
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task GetCompetitionLogs()
+        {
+            var competition = await this.FetchCurrentCompetitionAsync();
+
+            if (competition is null)
+            {
+                await this.Clients.Caller.SendAsync("ReceiveCompetitionLogs", new List<object>());
+                return;
+            }
+
+            var pagedLogs = await this._logService.GetLogsByCompetitionAsync(competition.Id, 1, 1000);
+
+            await this.Clients.Caller.SendAsync("ReceiveCompetitionLogs", pagedLogs.Items);
+        }
+
+        /// <summary>
+        /// Retrieves all groups participating in the current competition.
+        /// </summary>
+        /// <returns></returns>
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task GetCompetitionGroups()
+        {
+            var competition = await this.FetchCurrentCompetitionAsync();
+
+            if (competition is null)
+            {
+                await this.Clients.Caller.SendAsync("ReceiveCompetitionGroups", new List<object>());
+                return;
+            }
+
+            var groups = await this._groupInCompetitionService.GetGroupsByCompetitionAsync(competition.Id);
+
+            await this.Clients.Caller.SendAsync("ReceiveCompetitionGroups", groups);
+        }
+
+        /// <summary>
+        /// Unblocks a group's submission capabilities in a competition.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task UnblockGroupSubmission(UnblockGroupSubmissionRequest request)
+        {
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            bool succeeded = await this._groupInCompetitionService.UnblockGroupInCompetitionAsync(request.GroupId, request.CompetitionId);
+
+            if (succeeded)
+            {
+                // Invalidate cache to reflect the updated unblocked status
+                this.InvalidateCompetitionCache();
+
+                await this._logService.CreateLogAsync(
+                    new CreateLogRequest()
+                    {
+                        UserId = loggedUser.Id,
+                        ActionType = LogType.GroupUnblockedInCompetition,
+                        CompetitionId = request.CompetitionId,
+                        GroupId = request.GroupId,
+                        IpAddress = this.GetHubHttpContext().Connection.RemoteIpAddress!.ToString(),
+                    }
+                );
+
+                await this.Clients.Caller.SendAsync("ReceiveUnblockGroupSubmissionResponse", true);
+            }
+            else
+            {
+                await this.Clients.Caller.SendAsync("ReceiveUnblockGroupSubmissionResponse", false);
+            }
+        }
+
+        /// <summary>
+        /// Gets all submissions for the current competition for manual review.
+        /// </summary>
+        /// <returns></returns>
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task GetCompetitionSubmissions()
+        {
+            Competition? competition = await this._competitionService.GetCurrentCompetition();
+
+            if (competition == null)
+            {
+                await this.Clients.Caller.SendAsync("ReceiveCompetitionSubmissions", new List<SubmissionForReviewResponse>());
+                return;
+            }
+
+            var submissions = await this._competitionService.GetCompetitionSubmissionsAsync(competition.Id);
+
+            // Map to response DTOs
+            var submissionsResponse = submissions.Select(s => new SubmissionForReviewResponse()
+            {
+                Id = s.Id,
+                ExerciseId = s.ExerciseId,
+                ExerciseName = s.Exercise?.Title,
+                GroupId = s.GroupId,
+                Group = s.Group != null ? new Database.Responses.Group.GroupResponse()
+                {
+                    Id = s.Group.Id,
+                    Name = s.Group.Name,
+                    LeaderId = s.Group.LeaderId,
+                    Users = s.Group.Users.Select(u => new Database.Responses.User.GenericUserInfoResponse()
+                    {
+                        Id = u.Id,
+                        Email = u.Email!,
+                        Department = null,
+                        CreatedAt = u.CreatedAt,
+                        ExercisesCreated = null,
+                        JoinYear = u.JoinYear,
+                        LastLoggedAt = u.LastLoggedAt,
+                        Name = u.Name,
+                        Ra = u.RA,
+                        Group = null,
+                    }).ToList(),
+                } : null,
+                SubmissionTime = s.SubmissionTime,
+                Language = s.Language,
+                Accepted = s.Accepted,
+                JudgeResponse = s.JudgeResponse,
+                Code = s.Code,
+            }).ToList();
+
+            await this.Clients.Caller.SendAsync("ReceiveCompetitionSubmissions", submissionsResponse);
         }
     }
 }

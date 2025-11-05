@@ -22,5 +22,20 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="competitionId">The ID of the competition to check.</param>
         /// <returns>True if the group is blocked, false otherwise.</returns>
         Task<bool> IsGroupBlockedInCompetitionAsync(int groupId, int competitionId);
+
+        /// <summary>
+        /// Retrieves all groups registered in a specific competition.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition.</param>
+        /// <returns>A collection of GroupInCompetitionResponse objects.</returns>
+        Task<ICollection<GroupInCompetitionResponse>> GetGroupsByCompetitionAsync(int competitionId);
+
+        /// <summary>
+        /// Unblocks a group in a specific competition, allowing them to submit exercises again.
+        /// </summary>
+        /// <param name="groupId">The ID of the group to unblock.</param>
+        /// <param name="competitionId">The ID of the competition.</param>
+        /// <returns>True if the group was successfully unblocked, false otherwise.</returns>
+        Task<bool> UnblockGroupInCompetitionAsync(int groupId, int competitionId);
     }
 }

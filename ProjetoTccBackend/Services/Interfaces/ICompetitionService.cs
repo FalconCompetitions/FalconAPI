@@ -58,9 +58,9 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <param name="loggedUser">The user who is answering the question.</param>
         /// <param name="request">The request containing details of the answer to be submitted.</param>
-        /// <returns>The <see cref="Answer"/> object representing the answer to the question.</returns>
+        /// <returns>The <see cref="AnswerResponse"/> object representing the answer to the question.</returns>
         /// <remarks>Only Admin and Teacher users have access to this method.</remarks>
-        Task<Answer> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request);
+        Task<AnswerResponse> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request);
 
         /// <summary>
         /// Opens inscriptions for the specified competition, allowing participants to register.
@@ -157,5 +157,26 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="request">The requested group and competition information.</param>
         /// <returns>A <see cref="Boolean"/> indicating the success of the operation.</returns>
         Task<bool> BlockGroupInCompetition(BlockGroupSubmissionRequest request);
+
+        /// <summary>
+        /// Retrieves all questions for a specific competition.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition.</param>
+        /// <returns>A collection of <see cref="Question"/> objects for the competition.</returns>
+        Task<ICollection<Question>> GetAllCompetitionQuestionsAsync(int competitionId);
+
+        /// <summary>
+        /// Retrieves the complete ranking for a specific competition, including exercise attempts.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition.</param>
+        /// <returns>A collection of <see cref="CompetitionRankingResponse"/> objects with full ranking data.</returns>
+        Task<ICollection<CompetitionRankingResponse>> GetCompetitionRankingAsync(int competitionId);
+
+        /// <summary>
+        /// Retrieves all exercise submissions for a specific competition.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition.</param>
+        /// <returns>A collection of <see cref="GroupExerciseAttempt"/> objects representing all submissions.</returns>
+        Task<ICollection<GroupExerciseAttempt>> GetCompetitionSubmissionsAsync(int competitionId);
     }
 }

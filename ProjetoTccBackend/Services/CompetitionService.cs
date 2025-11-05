@@ -2,6 +2,7 @@
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Database.Responses.Competition;
+using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Enums.Competition;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
@@ -183,15 +184,16 @@ namespace ProjetoTccBackend.Services
                 ._questionRepository.Query()
                 .Where(q => q.Id == question.Id)
                 .Include(q => q.User)
+                    .ThenInclude(u => u.Group!)
                 .Include(q => q.Answer)
-                .ThenInclude(a => a.User)
+                    .ThenInclude(a => a!.User)
                 .FirstAsync();
 
             return question;
         }
 
         /// <inheritdoc />
-        public async Task<Answer> AnswerGroupQuestion(
+        public async Task<AnswerResponse> AnswerGroupQuestion(
             User loggedUser,
             AnswerGroupQuestionRequest request
         )
@@ -203,16 +205,35 @@ namespace ProjetoTccBackend.Services
                 throw new Exception("Questão não encontrada");
             }
 
+            // Create and save the answer first to generate its ID
             Answer answer = new Answer() { UserId = loggedUser.Id, Content = request.Answer };
-
             this._answerRepository.Add(answer);
-            questionToAnswer.AnswerId = answer.Id;
-
-            this._questionRepository.Update(questionToAnswer);
-
             await this._dbContext.SaveChangesAsync();
 
-            return answer;
+            // Now we can safely set the AnswerId foreign key
+            questionToAnswer.AnswerId = answer.Id;
+            this._questionRepository.Update(questionToAnswer);
+            await this._dbContext.SaveChangesAsync();
+
+            // Return AnswerResponse DTO instead of Answer model
+            return new AnswerResponse()
+            {
+                Id = answer.Id,
+                Content = answer.Content,
+                QuestionId = questionToAnswer.Id,
+                User = new GenericUserInfoResponse()
+                {
+                    Id = loggedUser.Id,
+                    Name = loggedUser.Name,
+                    Email = loggedUser.Email!,
+                    CreatedAt = loggedUser.CreatedAt,
+                    LastLoggedAt = loggedUser.LastLoggedAt,
+                    Ra = loggedUser.RA,
+                    JoinYear = loggedUser.JoinYear,
+                    Department = loggedUser.Department,
+                    ExercisesCreated = null,
+                }
+            };
         }
 
         /// <inheritdoc />
@@ -426,9 +447,120 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public Task<bool> BlockGroupInCompetition(BlockGroupSubmissionRequest request)
+        /// <summary>
+        /// Blocks a group from submitting exercises in a specific competition.
+        /// </summary>
+        /// <param name="request">The request containing group and competition IDs.</param>
+        /// <returns>True if the group was successfully blocked, false otherwise.</returns>
+        public async Task<bool> BlockGroupInCompetition(BlockGroupSubmissionRequest request)
         {
-            throw new NotImplementedException();
+            var groupInCompetition = await this._dbContext.GroupsInCompetitions
+                .FirstOrDefaultAsync(gic => gic.GroupId == request.GroupId && gic.CompetitionId == request.CompetitionId);
+
+            if (groupInCompetition == null)
+            {
+                return false;
+            }
+
+            groupInCompetition.Blocked = true;
+            await this._dbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        /// <inheritdoc />
+        public async Task<ICollection<Question>> GetAllCompetitionQuestionsAsync(int competitionId)
+        {
+            var questions = await this._questionRepository
+                .Query()
+                .Include(q => q.User)
+                    .ThenInclude(u => u.Group!)
+                .Include(q => q.Answer)
+                    .ThenInclude(a => a!.User)
+                .Where(q => q.CompetitionId == competitionId)
+                .OrderBy(q => q.Id)
+                .ToListAsync();
+
+            return questions;
+        }
+
+        /// <inheritdoc />
+        public async Task<ICollection<CompetitionRankingResponse>> GetCompetitionRankingAsync(int competitionId)
+        {
+            var rankings = await this._competitionRankingRepository
+                .Query()
+                .Include(r => r.Group)
+                    .ThenInclude(g => g.Users)
+                .Where(r => r.CompetitionId == competitionId)
+                .OrderBy(r => r.RankOrder)
+                .ToListAsync();
+
+            // Get all attempts for the competition to calculate exercise attempts
+            var allAttempts = await this._dbContext.GroupExerciseAttempts
+                .Where(a => a.CompetitionId == competitionId)
+                .ToListAsync();
+
+            var rankingResponses = rankings.Select(r =>
+            {
+                // Get attempts for this group
+                var groupAttempts = allAttempts
+                    .Where(a => a.GroupId == r.GroupId)
+                    .GroupBy(a => a.ExerciseId)
+                    .Select(g => new Database.Responses.Competition.GroupExerciseAttemptResponse()
+                    {
+                        GroupId = r.GroupId,
+                        ExerciseId = g.Key,
+                        Attempts = g.Count()
+                    }).ToList();
+
+                return new CompetitionRankingResponse()
+                {
+                    Id = r.Id,
+                    Group = new Database.Responses.Group.GroupResponse()
+                    {
+                        Id = r.Group.Id,
+                        LeaderId = r.Group.LeaderId,
+                        Name = r.Group.Name,
+                        Users = r.Group.Users.Select(u => new Database.Responses.User.GenericUserInfoResponse()
+                        {
+                            Id = u.Id,
+                            Email = u.Email!,
+                            Department = null,
+                            CreatedAt = u.CreatedAt,
+                            ExercisesCreated = null,
+                            JoinYear = u.JoinYear,
+                            LastLoggedAt = u.LastLoggedAt,
+                            Name = u.Name,
+                            Ra = u.RA,
+                            Group = null,
+                        }).ToList(),
+                    },
+                    Penalty = r.Penalty,
+                    Points = r.Points,
+                    RankOrder = r.RankOrder,
+                    ExerciseAttempts = groupAttempts,
+                };
+            }).ToList();
+
+            return rankingResponses;
+        }
+
+        /// <summary>
+        /// Retrieves all exercise submissions for a specific competition, including group and exercise details.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition.</param>
+        /// <returns>A collection of <see cref="GroupExerciseAttempt"/> objects ordered by submission time (most recent first).</returns>
+        public async Task<ICollection<GroupExerciseAttempt>> GetCompetitionSubmissionsAsync(int competitionId)
+        {
+            var submissions = await this._dbContext.GroupExerciseAttempts
+                .Include(a => a.Group)
+                    .ThenInclude(g => g.Users)
+                .Include(a => a.Exercise)
+                .Where(a => a.CompetitionId == competitionId)
+                .OrderByDescending(a => a.SubmissionTime)
+                .ToListAsync();
+
+            return submissions;
         }
     }
 }

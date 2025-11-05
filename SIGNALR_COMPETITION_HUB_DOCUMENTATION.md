@@ -112,7 +112,65 @@ interface ExerciseOutputResponse {
 
 ## Métodos do Hub
 
-### 1. GetConnectionId
+### 1. GetAllCompetitionQuestions
+
+**Descrição**: Busca todas as perguntas da competição atual. Útil para carregar perguntas ao acessar a página de Questions.
+
+**Autorização**: Requer autenticação (qualquer role)
+
+**Método de Invocação**: `GetAllCompetitionQuestions`
+
+**Parâmetros**: Nenhum
+
+**Evento de Retorno**: `ReceiveAllQuestions`
+
+**Payload de Resposta**:
+```typescript
+QuestionResponse[] // Array de todas as perguntas da competição
+```
+
+**Exemplo de uso (TypeScript)**:
+```typescript
+connection.invoke('GetAllCompetitionQuestions');
+
+connection.on('ReceiveAllQuestions', (questions: QuestionResponse[]) => {
+  console.log('All questions:', questions);
+  // Update state with all questions
+});
+```
+
+---
+
+### 2. GetCompetitionRanking
+
+**Descrição**: Busca o ranking completo da competição atual com informações detalhadas de tentativas por exercício.
+
+**Autorização**: Requer autenticação (qualquer role)
+
+**Método de Invocação**: `GetCompetitionRanking`
+
+**Parâmetros**: Nenhum
+
+**Evento de Retorno**: `ReceiveFullRanking`
+
+**Payload de Resposta**:
+```typescript
+CompetitionRankingResponse[] // Array com ranking completo incluindo exerciseAttempts
+```
+
+**Exemplo de uso (TypeScript)**:
+```typescript
+connection.invoke('GetCompetitionRanking');
+
+connection.on('ReceiveFullRanking', (ranking: CompetitionRankingResponse[]) => {
+  console.log('Full ranking:', ranking);
+  // Update state with full ranking data
+});
+```
+
+---
+
+### 3. GetConnectionId
 
 **Descrição**: Retorna o ID da conexão SignalR atual.
 
@@ -140,7 +198,7 @@ connection.on('ReceiveConnectionId', (connectionId: string) => {
 
 ---
 
-### 2. Ping
+### 4. Ping
 
 **Descrição**: Verifica se a conexão está ativa (health check).
 
@@ -170,7 +228,7 @@ connection.on('Pong', (response: { message: string }) => {
 
 ---
 
-### 3. SendExerciseAttempt
+### 5. SendExerciseAttempt
 
 **Descrição**: Envia uma tentativa de resolução de exercício para processamento assíncrono. O exercício é enfileirado e processado por um worker em background.
 

@@ -32,6 +32,21 @@
         /// <summary>
         /// Group blocked in competition action.
         /// </summary>
-        GroupBlockedInCompetition = 5
+        GroupBlockedInCompetition = 5,
+
+        /// <summary>
+        /// Group unblocked in competition action.
+        /// </summary>
+        GroupUnblockedInCompetition = 6,
+
+        /// <summary>
+        /// Question sent action.
+        /// </summary>
+        QuestionSent = 7,
+
+        /// <summary>
+        /// Answer given action.
+        /// </summary>
+        AnswerGiven = 8
     }
 }
