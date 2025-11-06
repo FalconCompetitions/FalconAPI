@@ -178,5 +178,19 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="competitionId">The ID of the competition.</param>
         /// <returns>A collection of <see cref="GroupExerciseAttempt"/> objects representing all submissions.</returns>
         Task<ICollection<GroupExerciseAttempt>> GetCompetitionSubmissionsAsync(int competitionId);
+
+        /// <summary>
+        /// Updates competition settings. Time values are received in seconds and converted to TimeSpan internally.
+        /// </summary>
+        /// <param name="request">The request containing competition settings. All time values are in seconds.</param>
+        /// <returns>True if the update was successful, false otherwise.</returns>
+        Task<bool> UpdateCompetitionSettingsAsync(UpdateCompetitionSettingsRequest request);
+
+        /// <summary>
+        /// Stops a competition immediately by setting its EndTime to now and status to Finished.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition to stop.</param>
+        /// <returns>True if the competition was stopped successfully, false otherwise.</returns>
+        Task<bool> StopCompetitionAsync(int competitionId);
     }
 }

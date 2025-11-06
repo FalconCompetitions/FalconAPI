@@ -745,5 +745,105 @@ namespace ProjetoTccBackend.Hubs
 
             await this.Clients.Caller.SendAsync("ReceiveCompetitionSubmissions", submissionsResponse);
         }
+
+        /// <summary>
+        /// Updates competition settings. Receives time values in seconds from frontend.
+        /// </summary>
+        /// <param name="request">The request containing competition settings with time values in seconds.</param>
+        /// <returns></returns>
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task UpdateCompetitionSettings(UpdateCompetitionSettingsRequest request)
+        {
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            bool succeeded = await this._competitionService.UpdateCompetitionSettingsAsync(request);
+
+            if (succeeded)
+            {
+                // Invalidate cache to reflect updated settings
+                this.InvalidateCompetitionCache();
+
+                await this._logService.CreateLogAsync(
+                    new CreateLogRequest()
+                    {
+                        UserId = loggedUser.Id,
+                        ActionType = LogType.CompetitionUpdated,
+                        CompetitionId = request.CompetitionId,
+                        GroupId = null,
+                        IpAddress = this.GetHubHttpContext().Connection.RemoteIpAddress!.ToString(),
+                    }
+                );
+
+                await this.Clients.Caller.SendAsync(
+                    "ReceiveUpdateCompetitionSettingsResponse",
+                    new UpdateCompetitionSettingsResponse()
+                    {
+                        Success = true,
+                        Message = "Configurações atualizadas com sucesso"
+                    }
+                );
+            }
+            else
+            {
+                await this.Clients.Caller.SendAsync(
+                    "ReceiveUpdateCompetitionSettingsResponse",
+                    new UpdateCompetitionSettingsResponse()
+                    {
+                        Success = false,
+                        Message = "Erro ao atualizar configurações"
+                    }
+                );
+            }
+        }
+
+        /// <summary>
+        /// Stops a competition immediately.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition to stop.</param>
+        /// <returns></returns>
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task StopCompetition(int competitionId)
+        {
+            User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            bool succeeded = await this._competitionService.StopCompetitionAsync(competitionId);
+
+            if (succeeded)
+            {
+                // Invalidate cache as competition is now finished
+                this.InvalidateCompetitionCache();
+
+                await this._logService.CreateLogAsync(
+                    new CreateLogRequest()
+                    {
+                        UserId = loggedUser.Id,
+                        ActionType = LogType.CompetitionFinished,
+                        CompetitionId = competitionId,
+                        GroupId = null,
+                        IpAddress = this.GetHubHttpContext().Connection.RemoteIpAddress!.ToString(),
+                    }
+                );
+
+                await this.Clients.Caller.SendAsync(
+                    "ReceiveStopCompetitionResponse",
+                    new StopCompetitionResponse()
+                    {
+                        Success = true,
+                        Message = "Competição finalizada com sucesso"
+                    }
+                );
+            }
+            else
+            {
+                await this.Clients.Caller.SendAsync(
+                    "ReceiveStopCompetitionResponse",
+                    new StopCompetitionResponse()
+                    {
+                        Success = false,
+                        Message = "Erro ao finalizar competição"
+                    }
+                );
+            }
+        }
     }
 }

@@ -47,6 +47,16 @@
         /// <summary>
         /// Answer given action.
         /// </summary>
-        AnswerGiven = 8
+        AnswerGiven = 8,
+
+        /// <summary>
+        /// Competition settings updated action.
+        /// </summary>
+        CompetitionUpdated = 9,
+
+        /// <summary>
+        /// Competition manually finished action.
+        /// </summary>
+        CompetitionFinished = 10
     }
 }

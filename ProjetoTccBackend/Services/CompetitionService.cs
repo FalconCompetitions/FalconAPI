@@ -562,5 +562,97 @@ namespace ProjetoTccBackend.Services
 
             return submissions;
         }
+
+        /// <inheritdoc />
+        public async Task<bool> UpdateCompetitionSettingsAsync(UpdateCompetitionSettingsRequest request)
+        {
+            try
+            {
+                var competition = await this._competitionRepository
+                    .Query()
+                    .FirstOrDefaultAsync(c => c.Id == request.CompetitionId);
+
+                if (competition is null)
+                {
+                    this._logger.LogWarning("Competition with ID {CompetitionId} not found", request.CompetitionId);
+                    return false;
+                }
+
+                // Check if competition is finished
+                if (competition.Status == CompetitionStatus.Finished)
+                {
+                    this._logger.LogWarning("Cannot update settings for finished competition {CompetitionId}", request.CompetitionId);
+                    return false;
+                }
+
+                // Convert seconds to TimeSpan
+                competition.Duration = TimeSpan.FromSeconds(request.Duration);
+                competition.SubmissionPenalty = TimeSpan.FromSeconds(request.SubmissionPenalty);
+                competition.MaxSubmissionSize = request.MaxSubmissionSize;
+
+                // Calculate EndTime based on StartTime + Duration
+                competition.EndTime = competition.StartTime.Add(competition.Duration);
+
+                // Calculate BlockSubmissions and StopRanking based on EndTime
+                if (competition.EndTime.HasValue)
+                {
+                    competition.BlockSubmissions = competition.EndTime.Value.AddSeconds(-request.StopSubmissionsBeforeEnd);
+                    competition.StopRanking = competition.EndTime.Value.AddSeconds(-request.StopRankingBeforeEnd);
+                }
+
+                this._competitionRepository.Update(competition);
+                await this._dbContext.SaveChangesAsync();
+
+                this._logger.LogInformation("Competition {CompetitionId} settings updated successfully", request.CompetitionId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Error updating competition {CompetitionId} settings", request.CompetitionId);
+                return false;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> StopCompetitionAsync(int competitionId)
+        {
+            try
+            {
+                var competition = await this._competitionRepository
+                    .Query()
+                    .FirstOrDefaultAsync(c => c.Id == competitionId);
+
+                if (competition is null)
+                {
+                    this._logger.LogWarning("Competition with ID {CompetitionId} not found", competitionId);
+                    return false;
+                }
+
+                // Check if competition is already finished
+                if (competition.Status == CompetitionStatus.Finished)
+                {
+                    this._logger.LogWarning("Competition {CompetitionId} is already finished", competitionId);
+                    return false;
+                }
+
+                // Set EndTime to now and update status
+                var now = DateTime.UtcNow;
+                competition.EndTime = now;
+                competition.BlockSubmissions = now;
+                competition.StopRanking = now;
+                competition.Status = CompetitionStatus.Finished;
+
+                this._competitionRepository.Update(competition);
+                await this._dbContext.SaveChangesAsync();
+
+                this._logger.LogInformation("Competition {CompetitionId} stopped successfully", competitionId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Error stopping competition {CompetitionId}", competitionId);
+                return false;
+            }
+        }
     }
 }
