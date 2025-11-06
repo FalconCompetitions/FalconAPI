@@ -24,5 +24,11 @@ namespace ProjetoTccBackend.Database.Responses.Competition
         /// </summary>
         [JsonPropertyName("attempts")]
         public int Attempts { get; set; }
+
+        /// <summary>
+        /// Indicates whether the exercise was accepted (solved correctly).
+        /// </summary>
+        [JsonPropertyName("accepted")]
+        public bool Accepted { get; set; }
     }
 }

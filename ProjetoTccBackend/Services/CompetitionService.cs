@@ -516,6 +516,7 @@ namespace ProjetoTccBackend.Services
                             GroupId = r.GroupId,
                             ExerciseId = g.Key,
                             Attempts = g.Count(),
+                            Accepted = g.Any(a => a.Accepted), // Check if any attempt was accepted
                         })
                         .ToList();
 
