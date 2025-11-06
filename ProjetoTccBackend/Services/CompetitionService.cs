@@ -184,9 +184,9 @@ namespace ProjetoTccBackend.Services
                 ._questionRepository.Query()
                 .Where(q => q.Id == question.Id)
                 .Include(q => q.User)
-                    .ThenInclude(u => u.Group!)
+                .ThenInclude(u => u.Group!)
                 .Include(q => q.Answer)
-                    .ThenInclude(a => a!.User)
+                .ThenInclude(a => a!.User)
                 .FirstAsync();
 
             return question;
@@ -232,7 +232,7 @@ namespace ProjetoTccBackend.Services
                     JoinYear = loggedUser.JoinYear,
                     Department = loggedUser.Department,
                     ExercisesCreated = null,
-                }
+                },
             };
         }
 
@@ -440,6 +440,7 @@ namespace ProjetoTccBackend.Services
                 Points = 0,
                 Penalty = 0,
             };
+            await this._competitionRankingRepository.AddAsync(competitionRanking);
 
             await this._dbContext.SaveChangesAsync();
 
@@ -454,8 +455,9 @@ namespace ProjetoTccBackend.Services
         /// <returns>True if the group was successfully blocked, false otherwise.</returns>
         public async Task<bool> BlockGroupInCompetition(BlockGroupSubmissionRequest request)
         {
-            var groupInCompetition = await this._dbContext.GroupsInCompetitions
-                .FirstOrDefaultAsync(gic => gic.GroupId == request.GroupId && gic.CompetitionId == request.CompetitionId);
+            var groupInCompetition = await this._dbContext.GroupsInCompetitions.FirstOrDefaultAsync(
+                gic => gic.GroupId == request.GroupId && gic.CompetitionId == request.CompetitionId
+            );
 
             if (groupInCompetition == null)
             {
@@ -471,12 +473,12 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc />
         public async Task<ICollection<Question>> GetAllCompetitionQuestionsAsync(int competitionId)
         {
-            var questions = await this._questionRepository
-                .Query()
+            var questions = await this
+                ._questionRepository.Query()
                 .Include(q => q.User)
-                    .ThenInclude(u => u.Group!)
+                .ThenInclude(u => u.Group!)
                 .Include(q => q.Answer)
-                    .ThenInclude(a => a!.User)
+                .ThenInclude(a => a!.User)
                 .Where(q => q.CompetitionId == competitionId)
                 .OrderBy(q => q.Id)
                 .ToListAsync();
@@ -485,62 +487,69 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public async Task<ICollection<CompetitionRankingResponse>> GetCompetitionRankingAsync(int competitionId)
+        public async Task<ICollection<CompetitionRankingResponse>> GetCompetitionRankingAsync(
+            int competitionId
+        )
         {
-            var rankings = await this._competitionRankingRepository
-                .Query()
+            var rankings = await this
+                ._competitionRankingRepository.Query()
                 .Include(r => r.Group)
-                    .ThenInclude(g => g.Users)
+                .ThenInclude(g => g.Users)
                 .Where(r => r.CompetitionId == competitionId)
                 .OrderBy(r => r.RankOrder)
                 .ToListAsync();
 
             // Get all attempts for the competition to calculate exercise attempts
-            var allAttempts = await this._dbContext.GroupExerciseAttempts
-                .Where(a => a.CompetitionId == competitionId)
+            var allAttempts = await this
+                ._dbContext.GroupExerciseAttempts.Where(a => a.CompetitionId == competitionId)
                 .ToListAsync();
 
-            var rankingResponses = rankings.Select(r =>
-            {
-                // Get attempts for this group
-                var groupAttempts = allAttempts
-                    .Where(a => a.GroupId == r.GroupId)
-                    .GroupBy(a => a.ExerciseId)
-                    .Select(g => new Database.Responses.Competition.GroupExerciseAttemptResponse()
-                    {
-                        GroupId = r.GroupId,
-                        ExerciseId = g.Key,
-                        Attempts = g.Count()
-                    }).ToList();
-
-                return new CompetitionRankingResponse()
+            var rankingResponses = rankings
+                .Select(r =>
                 {
-                    Id = r.Id,
-                    Group = new Database.Responses.Group.GroupResponse()
-                    {
-                        Id = r.Group.Id,
-                        LeaderId = r.Group.LeaderId,
-                        Name = r.Group.Name,
-                        Users = r.Group.Users.Select(u => new Database.Responses.User.GenericUserInfoResponse()
+                    // Get attempts for this group
+                    var groupAttempts = allAttempts
+                        .Where(a => a.GroupId == r.GroupId)
+                        .GroupBy(a => a.ExerciseId)
+                        .Select(g => new GroupExerciseAttemptResponse()
                         {
-                            Id = u.Id,
-                            Email = u.Email!,
-                            Department = null,
-                            CreatedAt = u.CreatedAt,
-                            ExercisesCreated = null,
-                            JoinYear = u.JoinYear,
-                            LastLoggedAt = u.LastLoggedAt,
-                            Name = u.Name,
-                            Ra = u.RA,
-                            Group = null,
-                        }).ToList(),
-                    },
-                    Penalty = r.Penalty,
-                    Points = r.Points,
-                    RankOrder = r.RankOrder,
-                    ExerciseAttempts = groupAttempts,
-                };
-            }).ToList();
+                            GroupId = r.GroupId,
+                            ExerciseId = g.Key,
+                            Attempts = g.Count(),
+                        })
+                        .ToList();
+
+                    return new CompetitionRankingResponse()
+                    {
+                        Id = r.Id,
+                        Group = new Database.Responses.Group.GroupResponse()
+                        {
+                            Id = r.Group.Id,
+                            LeaderId = r.Group.LeaderId,
+                            Name = r.Group.Name,
+                            Users = r
+                                .Group.Users.Select(u => new GenericUserInfoResponse()
+                                {
+                                    Id = u.Id,
+                                    Email = u.Email!,
+                                    Department = null,
+                                    CreatedAt = u.CreatedAt,
+                                    ExercisesCreated = null,
+                                    JoinYear = u.JoinYear,
+                                    LastLoggedAt = u.LastLoggedAt,
+                                    Name = u.Name,
+                                    Ra = u.RA,
+                                    Group = null,
+                                })
+                                .ToList(),
+                        },
+                        Penalty = r.Penalty,
+                        Points = r.Points,
+                        RankOrder = r.RankOrder,
+                        ExerciseAttempts = groupAttempts,
+                    };
+                })
+                .ToList();
 
             return rankingResponses;
         }
@@ -550,11 +559,13 @@ namespace ProjetoTccBackend.Services
         /// </summary>
         /// <param name="competitionId">The ID of the competition.</param>
         /// <returns>A collection of <see cref="GroupExerciseAttempt"/> objects ordered by submission time (most recent first).</returns>
-        public async Task<ICollection<GroupExerciseAttempt>> GetCompetitionSubmissionsAsync(int competitionId)
+        public async Task<ICollection<GroupExerciseAttempt>> GetCompetitionSubmissionsAsync(
+            int competitionId
+        )
         {
-            var submissions = await this._dbContext.GroupExerciseAttempts
-                .Include(a => a.Group)
-                    .ThenInclude(g => g.Users)
+            var submissions = await this
+                ._dbContext.GroupExerciseAttempts.Include(a => a.Group)
+                .ThenInclude(g => g.Users)
                 .Include(a => a.Exercise)
                 .Where(a => a.CompetitionId == competitionId)
                 .OrderByDescending(a => a.SubmissionTime)
@@ -564,24 +575,32 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> UpdateCompetitionSettingsAsync(UpdateCompetitionSettingsRequest request)
+        public async Task<bool> UpdateCompetitionSettingsAsync(
+            UpdateCompetitionSettingsRequest request
+        )
         {
             try
             {
-                var competition = await this._competitionRepository
-                    .Query()
+                var competition = await this
+                    ._competitionRepository.Query()
                     .FirstOrDefaultAsync(c => c.Id == request.CompetitionId);
 
                 if (competition is null)
                 {
-                    this._logger.LogWarning("Competition with ID {CompetitionId} not found", request.CompetitionId);
+                    this._logger.LogWarning(
+                        "Competition with ID {CompetitionId} not found",
+                        request.CompetitionId
+                    );
                     return false;
                 }
 
                 // Check if competition is finished
                 if (competition.Status == CompetitionStatus.Finished)
                 {
-                    this._logger.LogWarning("Cannot update settings for finished competition {CompetitionId}", request.CompetitionId);
+                    this._logger.LogWarning(
+                        "Cannot update settings for finished competition {CompetitionId}",
+                        request.CompetitionId
+                    );
                     return false;
                 }
 
@@ -596,19 +615,30 @@ namespace ProjetoTccBackend.Services
                 // Calculate BlockSubmissions and StopRanking based on EndTime
                 if (competition.EndTime.HasValue)
                 {
-                    competition.BlockSubmissions = competition.EndTime.Value.AddSeconds(-request.StopSubmissionsBeforeEnd);
-                    competition.StopRanking = competition.EndTime.Value.AddSeconds(-request.StopRankingBeforeEnd);
+                    competition.BlockSubmissions = competition.EndTime.Value.AddSeconds(
+                        -request.StopSubmissionsBeforeEnd
+                    );
+                    competition.StopRanking = competition.EndTime.Value.AddSeconds(
+                        -request.StopRankingBeforeEnd
+                    );
                 }
 
                 this._competitionRepository.Update(competition);
                 await this._dbContext.SaveChangesAsync();
 
-                this._logger.LogInformation("Competition {CompetitionId} settings updated successfully", request.CompetitionId);
+                this._logger.LogInformation(
+                    "Competition {CompetitionId} settings updated successfully",
+                    request.CompetitionId
+                );
                 return true;
             }
             catch (Exception ex)
             {
-                this._logger.LogError(ex, "Error updating competition {CompetitionId} settings", request.CompetitionId);
+                this._logger.LogError(
+                    ex,
+                    "Error updating competition {CompetitionId} settings",
+                    request.CompetitionId
+                );
                 return false;
             }
         }
@@ -618,20 +648,26 @@ namespace ProjetoTccBackend.Services
         {
             try
             {
-                var competition = await this._competitionRepository
-                    .Query()
+                var competition = await this
+                    ._competitionRepository.Query()
                     .FirstOrDefaultAsync(c => c.Id == competitionId);
 
                 if (competition is null)
                 {
-                    this._logger.LogWarning("Competition with ID {CompetitionId} not found", competitionId);
+                    this._logger.LogWarning(
+                        "Competition with ID {CompetitionId} not found",
+                        competitionId
+                    );
                     return false;
                 }
 
                 // Check if competition is already finished
                 if (competition.Status == CompetitionStatus.Finished)
                 {
-                    this._logger.LogWarning("Competition {CompetitionId} is already finished", competitionId);
+                    this._logger.LogWarning(
+                        "Competition {CompetitionId} is already finished",
+                        competitionId
+                    );
                     return false;
                 }
 
@@ -645,12 +681,19 @@ namespace ProjetoTccBackend.Services
                 this._competitionRepository.Update(competition);
                 await this._dbContext.SaveChangesAsync();
 
-                this._logger.LogInformation("Competition {CompetitionId} stopped successfully", competitionId);
+                this._logger.LogInformation(
+                    "Competition {CompetitionId} stopped successfully",
+                    competitionId
+                );
                 return true;
             }
             catch (Exception ex)
             {
-                this._logger.LogError(ex, "Error stopping competition {CompetitionId}", competitionId);
+                this._logger.LogError(
+                    ex,
+                    "Error stopping competition {CompetitionId}",
+                    competitionId
+                );
                 return false;
             }
         }

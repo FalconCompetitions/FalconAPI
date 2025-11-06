@@ -222,7 +222,7 @@ namespace ProjetoTccBackend
             var options = new WebSocketOptions()
             {
                 KeepAliveInterval = TimeSpan.FromMinutes(2),
-                AllowedOrigins = { "http://localhost:3000" },
+                AllowedOrigins = { "http://localhost:3000", "https://localhost:3000" },
             };
 
             app.UseWebSockets(options);
