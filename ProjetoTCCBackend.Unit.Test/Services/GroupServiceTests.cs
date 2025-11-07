@@ -22,7 +22,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
     {
         private readonly Mock<IUserService> _userServiceMock;
         private readonly Mock<IUserRepository> _userRepositoryMock;
-        private Mock<IGroupRepository> _groupRepositoryMock;
+        private readonly Mock<IGroupRepository> _groupRepositoryMock;
         private Mock<IGroupInviteService> _groupInviteServiceMock;
         private Mock<ILogger<GroupService>> _loggerMock;
         private TccDbContext? _dbContext;
