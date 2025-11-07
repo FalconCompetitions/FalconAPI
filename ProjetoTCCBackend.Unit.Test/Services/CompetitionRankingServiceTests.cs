@@ -183,7 +183,15 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         {
             var competition = new Competition { Id = 1, SubmissionPenalty = TimeSpan.FromMinutes(10) };
             var group = new Group { Id = 1, Name = "Test", LeaderId = "u1", Users = new List<User> { new User { Id = "u1", Email = "t@t.com", Name = "T", JoinYear = 2024 } } };
-            var exerciseAttempt = new GroupExerciseAttempt { Code = "", Id = 3, GroupId = 1, CompetitionId = 1, ExerciseId = 1, Accepted = false };
+            var exerciseAttempt = new GroupExerciseAttempt
+            {
+                Code = "",
+                Id = 3,
+                GroupId = 1,
+                CompetitionId = 1,
+                ExerciseId = 1,
+                Accepted = false
+            };
             var attempts = new List<GroupExerciseAttempt>
             {
                 new GroupExerciseAttempt { Code = "", Id = 1, GroupId = 1, CompetitionId = 1, ExerciseId = 1, Accepted = false },
