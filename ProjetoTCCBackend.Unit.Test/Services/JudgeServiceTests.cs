@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Database.Requests.Exercise;
+using ProjetoTccBackend.Enums.Exercise;
 using ProjetoTccBackend.Enums.Judge;
 using ProjetoTccBackend.Exceptions.Judge;
 using ProjetoTccBackend.Models;
@@ -168,6 +169,14 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             Assert.ThrowsAsync<NotImplementedException>(() => service.GetExercisesAsync());
         }
 
+        /// <summary>
+        /// Tests that the <c>SendGroupExerciseAttempt</c> method throws an <see cref="ExerciseNotFoundException"/>
+        /// when the specified exercise is not found in the repository.
+        /// </summary>
+        /// <remarks>
+        /// This test arranges a <see cref="GroupExerciseAttemptWorkerRequest"/> with a non-existent exercise ID,
+        /// sets up the exercise repository mock to return <c>null</c> for that ID, and asserts that the exception is thrown.
+        /// </remarks>
         [Fact]
         public async Task SendGroupExerciseAttempt_ThrowsException_WhenExerciseNotFound()
         {
@@ -176,7 +185,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             {
                 ExerciseId = 999,
                 Code = "print('test')",
-                LanguageType = ProjetoTccBackend.Enums.Exercise.LanguageType.Python,
+                LanguageType = LanguageType.Python,
             };
 
             _exerciseRepoMock.Setup(r => r.GetById(999)).Returns((Exercise?)null);
@@ -188,6 +197,14 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             );
         }
 
+        /// <summary>
+        /// Tests that the <c>SendGroupExerciseAttempt</c> method returns a valid <see cref="JudgeSubmissionResponse"/>
+        /// when the specified exercise exists in the repository.
+        /// </summary>
+        /// <remarks>
+        /// This test sets up a mock exercise and request, configures the repository mock to return the exercise,
+        /// and asserts that the service returns a response of the expected type.
+        /// </remarks>
         [Fact]
         public async Task SendGroupExerciseAttempt_ReturnsValidResponse_WhenExerciseExists()
         {
@@ -204,7 +221,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             {
                 ExerciseId = 1,
                 Code = "print('test')",
-                LanguageType = ProjetoTccBackend.Enums.Exercise.LanguageType.Python,
+                LanguageType = LanguageType.Python,
             };
 
             _exerciseRepoMock.Setup(r => r.GetById(1)).Returns(exercise);
@@ -233,7 +250,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             {
                 ExerciseId = 1,
                 Code = "print('test')",
-                LanguageType = ProjetoTccBackend.Enums.Exercise.LanguageType.Python,
+                LanguageType = LanguageType.Python,
             };
 
             _exerciseRepoMock.Setup(r => r.GetById(1)).Returns(exercise);
