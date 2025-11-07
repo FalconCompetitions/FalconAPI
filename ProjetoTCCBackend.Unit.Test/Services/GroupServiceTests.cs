@@ -67,7 +67,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 UserRAs = null
             };
 
-            // Simula o grupo após ser salvo no banco com ID gerado
+            // Simulates the group after being saved to the database with generated ID
             var savedGroup = new Group
             {
                 Id = 1,
@@ -77,10 +77,10 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 GroupInvites = new List<GroupInvite>()
             };
 
-            // Primeira chamada: verificar se usuário já tem grupo (retorna vazio)
+            // First call: check if user already has a group (returns empty)
             var emptyGroupsQuery = new List<Group>().AsQueryable().BuildMock();
             
-            // Segunda chamada: buscar o grupo recém-criado
+            // Second call: fetch the newly created group
             var groupQueryWithNew = new List<Group> { savedGroup }.AsQueryable().BuildMock();
 
             _groupRepositoryMock.SetupSequence(r => r.Query())
@@ -89,7 +89,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
 
-            // Mock do Add para setar o ID do grupo
+            // Mock the Add to set the group ID
             _groupRepositoryMock
                 .Setup(r => r.Add(It.IsAny<Group>()))
                 .Callback<Group>(g => g.Id = 1);
