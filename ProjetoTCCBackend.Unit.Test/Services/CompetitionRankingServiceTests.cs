@@ -83,12 +83,62 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         [Fact]
         public async Task UpdateRanking_UpdatesExistingRanking()
         {
-            var competition = new Competition { Id = 1, SubmissionPenalty = TimeSpan.FromMinutes(5) };
-            var group = new Group { Id = 1, Name = "Test", LeaderId = "u1", Users = new List<User> { new User { Id = "u1", Email = "t@t.com", Name = "T", JoinYear = 2024 } } };
-            var exerciseAttempt = new GroupExerciseAttempt { Code = "", Id = 2, GroupId = 1, CompetitionId = 1, ExerciseId = 1, Accepted = true };
-            var attempts = new List<GroupExerciseAttempt> { new GroupExerciseAttempt { Code = "", Id = 1, GroupId = 1, CompetitionId = 1, ExerciseId = 1, Accepted = false }, exerciseAttempt }.AsQueryable();
-            var existingRanking = new CompetitionRanking { Id = 1, CompetitionId = 1, GroupId = 1, Points = 0, Penalty = 5, RankOrder = 1 };
-            var rankings = new List<CompetitionRanking> { existingRanking }.AsQueryable();
+            var competition = new Competition
+            {
+                Id = 1,
+                SubmissionPenalty = TimeSpan.FromMinutes(5)
+            };
+            var group = new Group
+            {
+                Id = 1,
+                Name = "Test",
+                LeaderId = "u1",
+                Users = new List<User>
+                {
+                    new User
+                    {
+                        Id = "u1",
+                        Email = "t@t.com",
+                        Name = "T",
+                        JoinYear = 2024
+                    }
+                }
+            };
+            var exerciseAttempt = new GroupExerciseAttempt
+            {
+                Code = "",
+                Id = 2,
+                GroupId = 1,
+                CompetitionId = 1,
+                ExerciseId = 1,
+                Accepted = true
+            };
+            var attempts = new List<GroupExerciseAttempt>
+            {
+                new GroupExerciseAttempt
+                {
+                    Code = "",
+                    Id = 1,
+                    GroupId = 1,
+                    CompetitionId = 1,
+                    ExerciseId = 1,
+                    Accepted = false
+                },
+                exerciseAttempt
+            }.AsQueryable();
+            var existingRanking = new CompetitionRanking
+            {
+                Id = 1,
+                CompetitionId = 1,
+                GroupId = 1,
+                Points = 0,
+                Penalty = 5,
+                RankOrder = 1
+            };
+            var rankings = new List<CompetitionRanking>
+            {
+                existingRanking
+            }.AsQueryable();
 
             _groupExerciseAttemptRepositoryMock.Setup(r => r.Find(It.IsAny<System.Linq.Expressions.Expression<Func<GroupExerciseAttempt, bool>>>())).Returns(attempts);
             _competitionRankingRepositoryMock.Setup(r => r.Find(It.IsAny<System.Linq.Expressions.Expression<Func<CompetitionRanking, bool>>>())).Returns(rankings);
