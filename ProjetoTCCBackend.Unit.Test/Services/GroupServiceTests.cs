@@ -569,7 +569,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             {
                 Id = 1,
                 Name = "Old Name",
-                LeaderId = userId, // Admin é o líder para passar na primeira consulta
+                LeaderId = userId, // Admin is the leader to pass the first query
                 Users = new List<User>()
             };
 
