@@ -21,7 +21,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
     public class GroupServiceTests
     {
         private readonly Mock<IUserService> _userServiceMock;
-        private Mock<IUserRepository> _userRepositoryMock;
+        private readonly Mock<IUserRepository> _userRepositoryMock;
         private Mock<IGroupRepository> _groupRepositoryMock;
         private Mock<IGroupInviteService> _groupInviteServiceMock;
         private Mock<ILogger<GroupService>> _loggerMock;
