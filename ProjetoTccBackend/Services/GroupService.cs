@@ -143,6 +143,8 @@ namespace ProjetoTccBackend.Services
             Group? group = this
                 ._groupRepository.Query()
                 .Include(g => g.Users)
+                .Include(g => g.GroupInvites)
+                .ThenInclude(g => g.User)
                 .Where(g => g.Id == id)
                 .FirstOrDefault();
 

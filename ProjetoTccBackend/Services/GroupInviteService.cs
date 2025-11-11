@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Group;
+using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Exceptions.Group;
 using ProjetoTccBackend.Exceptions.User;
 using ProjetoTccBackend.Models;
@@ -51,6 +52,8 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc />
         public async Task<GroupInvite?> SendGroupInviteToUser(InviteUserToGroupRequest request)
         {
+            const int MAX_GROUP_MEMBERS = 3;
+            
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
             User? user = await this
@@ -58,7 +61,12 @@ namespace ProjetoTccBackend.Services
                 .Where(u => u.RA == request.RA)
                 .Include(u => u.Group)
                 .FirstOrDefaultAsync();
-            Group? group = await this._groupRepository.GetByIdAsync(request.GroupId);
+            Group? group = await this
+                ._groupRepository.Query()
+                .Include(g => g.Users)
+                .Include(g => g.GroupInvites.Where(inv => !inv.Accepted))
+                .Where(g => g.Id == request.GroupId)
+                .FirstOrDefaultAsync();
 
             if (user is null)
             {
@@ -78,6 +86,14 @@ namespace ProjetoTccBackend.Services
             if (loggedUser.Id != group.LeaderId)
             {
                 throw new UserNotGroupLeaderException();
+            }
+
+            int currentMembersCount = group.Users.Count;
+            int pendingInvitesCount = group.GroupInvites.Count(inv => !inv.Accepted);
+            
+            if (currentMembersCount + pendingInvitesCount >= MAX_GROUP_MEMBERS)
+            {
+                throw new MaxMembersExceededException($"O grupo já possui {currentMembersCount} membros e {pendingInvitesCount} convites pendentes. Limite máximo: {MAX_GROUP_MEMBERS}");
             }
 
             GroupInvite? existentInvitation = await this

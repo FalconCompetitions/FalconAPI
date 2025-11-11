@@ -7,6 +7,7 @@ using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Database.Responses.User;
+using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Exceptions.Group;
 using ProjetoTccBackend.Exceptions.User;
 using ProjetoTccBackend.Models;
@@ -67,7 +68,7 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="400">If the request is invalid.</response>
         [Authorize(Roles = "Admin,Teacher,Student")]
         [HttpPost()]
-        [ProducesResponseType(typeof(Group), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Group), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest request)
         {
@@ -174,7 +175,27 @@ namespace ProjetoTccBackend.Controllers
                         Ra = u.RA,
                     })
                     .ToList(),
-                GroupInvitations = [],
+                GroupInvitations = group
+                    .GroupInvites.Select(g => new GroupInvitationResponse()
+                    {
+                        Id = g.Id,
+                        User = new GenericUserInfoResponse()
+                        {
+                            Id = g.User.Id,
+                            CreatedAt = g.User.CreatedAt,
+                            Department = g.User.Department,
+                            Email = g.User.Email,
+                            Group = null,
+                            ExercisesCreated = null,
+                            JoinYear = g.User.JoinYear,
+                            LastLoggedAt = g.User.LastLoggedAt,
+                            Name = g.User.Name,
+                            Ra = g.User.RA,
+                        },
+                        Accepted = g.Accepted,
+                        Group = null,
+                    })
+                    .ToList(),
             };
 
             return Ok(response);
@@ -336,6 +357,10 @@ namespace ProjetoTccBackend.Controllers
                 return BadRequest(new { exc.Message });
             }
             catch (UserHasGroupException exc)
+            {
+                return BadRequest(new { exc.Message });
+            }
+            catch (MaxMembersExceededException exc)
             {
                 return BadRequest(new { exc.Message });
             }
