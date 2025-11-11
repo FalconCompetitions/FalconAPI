@@ -27,7 +27,7 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// Gets or sets the size of the item in bytes.
         /// </summary>
-        public required long size { get; set; }
+        public required long Size { get; set; }
 
         /// <summary>
         /// Gets or sets the file path associated with the operation.

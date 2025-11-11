@@ -64,7 +64,7 @@ namespace ProjetoTccBackend.Services
             {
                 FilePath = filePath,
                 Name = originalName,
-                size = file.Length,
+                Size = file.Length,
                 Type = file.ContentType,
             };
 

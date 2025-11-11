@@ -40,7 +40,7 @@ namespace ProjetoTccBackend.Models
         /// </summary>
         /// <remarks>The <see cref="AttachedFile"/> property provides access to the file associated with
         /// the entity.  If no file is attached, this property may return <see langword="null"/>.</remarks>
-        public AttachedFile? AttachedFile { get; } = null;
+        public AttachedFile? AttachedFile { get; set; } = null;
 
         /// <summary>
         /// Estimated time to solve the exercise.

@@ -141,7 +141,6 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 
         [Fact]
         public async Task SendGroupExerciseAttempt_ThrowsException_WhenExerciseNotFound()
-        public async Task SendGroupExerciseAttempt_ThrowsException_WhenExerciseNotFound()
         {
             // Arrange
             var request = new GroupExerciseAttemptWorkerRequest { ExerciseId = 999, Code = "test code" };
