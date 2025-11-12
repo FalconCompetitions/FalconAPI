@@ -19,8 +19,8 @@ namespace ProjetoTccBackend.Workers
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ICompetitionStateService _competitionStateService;
-        private readonly TimeSpan _idleTime = TimeSpan.FromSeconds(10);
-        private readonly TimeSpan _operationalTime = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _idleTime = TimeSpan.FromMinutes(30);
+        private readonly TimeSpan _operationalTime = TimeSpan.FromSeconds(10);
         private const string CompetitionCacheKey = "currentCompetition";
 
         public CompetitionStateWorker(
