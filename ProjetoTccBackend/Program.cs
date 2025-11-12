@@ -503,14 +503,13 @@ namespace ProjetoTccBackend
 
             var app = builder.Build();
 
-            ExecuteMigrations(app);
-
             CreateRoles(app.Services.CreateScope().ServiceProvider!).GetAwaiter().GetResult();
             CreateAdminUser(app.Services.CreateScope().ServiceProvider!).GetAwaiter().GetResult();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
+                ExecuteMigrations(app);
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {
