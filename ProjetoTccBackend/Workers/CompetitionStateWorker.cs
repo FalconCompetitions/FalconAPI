@@ -19,21 +19,28 @@ namespace ProjetoTccBackend.Workers
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ICompetitionStateService _competitionStateService;
-        private readonly TimeSpan _idleTime = TimeSpan.FromMinutes(30);
-        private readonly TimeSpan _operationalTime = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan _idleTime;
+        private readonly TimeSpan _operationalTime;
         private const string CompetitionCacheKey = "currentCompetition";
 
         public CompetitionStateWorker(
+            IConfiguration configuration,
             ILogger<CompetitionStateWorker> logger,
             IMemoryCache memoryCache,
             IServiceScopeFactory scopeFactory,
             ICompetitionStateService competitionStateService
         )
         {
+            int idleSeconds = configuration.GetValue<int>("CompetitionWorker:IdleSeconds");
+            int operationalSeconds = configuration.GetValue<int>(
+                "CompetitionWorker:OperationalSeconds"
+            );
             this._logger = logger;
             this._memoryCache = memoryCache;
             this._scopeFactory = scopeFactory;
             this._competitionStateService = competitionStateService;
+            this._idleTime = TimeSpan.FromSeconds(idleSeconds);
+            this._operationalTime = TimeSpan.FromSeconds(operationalSeconds);
         }
 
         /// <summary>
