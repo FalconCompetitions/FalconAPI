@@ -36,11 +36,8 @@ namespace ProjetoTccBackend.Database
         {
             if (_configuration != null)
             {
-                optionsBuilder.UseMySql(
-                    _configuration.GetConnectionString("DefaultConnection"),
-                    ServerVersion.AutoDetect(
-                        _configuration.GetConnectionString("DefaultConnection")
-                    )
+                optionsBuilder.UseSqlServer(
+                    _configuration.GetConnectionString("DefaultConnection")
                 );
             }
         }
@@ -64,7 +61,7 @@ namespace ProjetoTccBackend.Database
                 .HasMany<Group>(e => e.Groups)
                 .WithMany(u => u.Competitions)
                 .UsingEntity<GroupInCompetition>(e =>
-                    e.Property(p => p.CreatedOn).HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    e.Property(p => p.CreatedOn).HasDefaultValueSql("GETDATE()")
                 );
 
             // CompetitionRanking - Competition

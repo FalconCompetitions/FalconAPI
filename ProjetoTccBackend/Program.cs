@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.SqlServer;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Filters;
@@ -239,11 +240,8 @@ namespace ProjetoTccBackend
             //builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
             builder.Services.AddDbContext<TccDbContext>(options =>
             {
-                options.UseMySql(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    ServerVersion.AutoDetect(
-                        builder.Configuration.GetConnectionString("DefaultConnection")
-                    )
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("DefaultConnection")
                 );
             });
             builder

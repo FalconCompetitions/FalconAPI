@@ -12,8 +12,8 @@ using ProjetoTccBackend.Database;
 namespace ProjetoTccBackend.Migrations
 {
     [DbContext(typeof(TccDbContext))]
-    [Migration("20250707003211_fixUniqueGroupRankingInCompetition")]
-    partial class fixUniqueGroupRankingInCompetition
+    [Migration("20251111235814_InitialMsSQLMigration")]
+    partial class InitialMsSQLMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,32 +21,33 @@ namespace ProjetoTccBackend.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.12")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("NormalizedName")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("RoleNameIndex");
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
                 });
@@ -57,17 +58,17 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RoleId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -82,17 +83,17 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -104,17 +105,17 @@ namespace ProjetoTccBackend.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ProviderKey")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ProviderDisplayName")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("LoginProvider", "ProviderKey");
 
@@ -126,10 +127,10 @@ namespace ProjetoTccBackend.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("RoleId")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("UserId", "RoleId");
 
@@ -141,20 +142,74 @@ namespace ProjetoTccBackend.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Value")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.Answer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Answers");
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.AttachedFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AttachedFiles");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.Competition", b =>
@@ -163,25 +218,65 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("BlockSubmissions")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTime?>("BlockSubmissions")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("Relational:JsonPropertyName", "blockSubmissions");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("Relational:JsonPropertyName", "description");
 
                     b.Property<TimeSpan>("Duration")
-                        .HasColumnType("time(6)");
+                        .HasColumnType("time")
+                        .HasAnnotation("Relational:JsonPropertyName", "duration");
 
-                    b.Property<DateTime>("EndTime")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTime>("EndInscriptions")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("Relational:JsonPropertyName", "endInscriptions");
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("Relational:JsonPropertyName", "endTime");
+
+                    b.Property<int?>("MaxExercises")
+                        .HasColumnType("int")
+                        .HasAnnotation("Relational:JsonPropertyName", "maxExercises");
+
+                    b.Property<int>("MaxMembers")
+                        .HasColumnType("int")
+                        .HasAnnotation("Relational:JsonPropertyName", "maxMembers");
+
+                    b.Property<int?>("MaxSubmissionSize")
+                        .HasColumnType("int")
+                        .HasAnnotation("Relational:JsonPropertyName", "maxSubmissionSize");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("Relational:JsonPropertyName", "name");
+
+                    b.Property<DateTime>("StartInscriptions")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("Relational:JsonPropertyName", "startInscriptions");
 
                     b.Property<DateTime>("StartTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("Relational:JsonPropertyName", "startTime");
 
-                    b.Property<DateTime>("StopRanking")
-                        .HasColumnType("datetime(6)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
+                        .HasAnnotation("Relational:JsonPropertyName", "status");
+
+                    b.Property<DateTime?>("StopRanking")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("Relational:JsonPropertyName", "stopRanking");
 
                     b.Property<TimeSpan>("SubmissionPenalty")
-                        .HasColumnType("time(6)");
+                        .HasColumnType("time")
+                        .HasAnnotation("Relational:JsonPropertyName", "submissionPenalty");
 
                     b.HasKey("Id");
 
@@ -194,7 +289,7 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CompetitionId")
                         .HasColumnType("int");
@@ -202,7 +297,10 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<int>("GroupId")
                         .HasColumnType("int");
 
-                    b.Property<float>("Points")
+                    b.Property<double>("Penalty")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Points")
                         .HasColumnType("float");
 
                     b.Property<int>("RankOrder")
@@ -215,6 +313,8 @@ namespace ProjetoTccBackend.Migrations
                     b.HasIndex("GroupId");
 
                     b.ToTable("CompetitionRankings");
+
+                    b.HasAnnotation("Relational:JsonPropertyName", "competitionRankings");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.Exercise", b =>
@@ -223,28 +323,37 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AttachedFileId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<TimeSpan>("EstimatedTime")
-                        .HasColumnType("time(6)");
+                        .HasColumnType("time");
+
+                    b.Property<int>("ExerciseTypeId")
+                        .HasColumnType("int");
 
                     b.Property<string>("JudgeUuid")
                         .HasMaxLength(36)
-                        .HasColumnType("varchar(36)");
+                        .HasColumnType("nvarchar(36)");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AttachedFileId");
+
+                    b.HasIndex("ExerciseTypeId");
 
                     b.ToTable("Exercises");
                 });
@@ -262,6 +371,8 @@ namespace ProjetoTccBackend.Migrations
                     b.HasIndex("ExerciseId");
 
                     b.ToTable("ExercisesInCompetitions");
+
+                    b.HasAnnotation("Relational:JsonPropertyName", "exercisesInCompetition");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseInput", b =>
@@ -270,19 +381,19 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ExerciseId")
                         .HasColumnType("int");
 
                     b.Property<string>("Input")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("JudgeUuid")
                         .IsRequired()
                         .HasMaxLength(36)
-                        .HasColumnType("varchar(36)");
+                        .HasColumnType("nvarchar(36)");
 
                     b.HasKey("Id");
 
@@ -297,7 +408,7 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ExerciseId")
                         .HasColumnType("int");
@@ -307,11 +418,11 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<string>("JudgeUuid")
                         .HasMaxLength(36)
-                        .HasColumnType("varchar(36)");
+                        .HasColumnType("nvarchar(36)");
 
                     b.Property<string>("Output")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -323,17 +434,63 @@ namespace ProjetoTccBackend.Migrations
                     b.ToTable("ExerciseOutputs");
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseSubmissionQueueItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConnectionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Request")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExerciseSubmissionQueueItems");
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExerciseTypes");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Group", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("LeaderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.HasKey("Id");
 
@@ -346,14 +503,14 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Accepted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("CompetitionId")
                         .HasColumnType("int");
@@ -371,10 +528,10 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("SubmissionTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<TimeSpan>("Time")
-                        .HasColumnType("time(6)");
+                        .HasColumnType("time");
 
                     b.HasKey("Id");
 
@@ -385,6 +542,8 @@ namespace ProjetoTccBackend.Migrations
                     b.HasIndex("GroupId");
 
                     b.ToTable("GroupExerciseAttempts");
+
+                    b.HasAnnotation("Relational:JsonPropertyName", "groupExerciseAttempts");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.GroupInCompetition", b =>
@@ -395,16 +554,90 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<int>("GroupId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("Blocked")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("CreatedOn")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.HasKey("CompetitionId", "GroupId");
 
                     b.HasIndex("GroupId");
 
                     b.ToTable("GroupsInCompetitions");
+
+                    b.HasAnnotation("Relational:JsonPropertyName", "groupInCompetitions");
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.GroupInvite", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Accepted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("GroupInvites");
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.Log", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActionTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ActionType")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CompetitionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompetitionId");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Logs");
+
+                    b.HasAnnotation("Relational:JsonPropertyName", "logs");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.Question", b =>
@@ -413,14 +646,17 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AnswerId")
+                        .HasColumnType("int");
 
                     b.Property<int>("CompetitionId")
                         .HasColumnType("int");
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("ExerciseId")
                         .HasColumnType("int");
@@ -428,44 +664,51 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<int>("QuestionType")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TargetQuestionId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AnswerId")
+                        .IsUnique()
+                        .HasFilter("[AnswerId] IS NOT NULL");
 
                     b.HasIndex("CompetitionId");
 
                     b.HasIndex("ExerciseId");
 
-                    b.HasIndex("TargetQuestionId");
-
                     b.HasIndex("UserId");
 
                     b.ToTable("Questions");
+
+                    b.HasAnnotation("Relational:JsonPropertyName", "questions");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.User", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Department")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<int?>("GroupId")
                         .HasColumnType("int");
@@ -473,42 +716,51 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<int?>("JoinYear")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("LastLoggedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("PasswordHash")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("RA")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<string>("SecurityStamp")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
@@ -519,7 +771,8 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -575,6 +828,17 @@ namespace ProjetoTccBackend.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.Answer", b =>
+                {
+                    b.HasOne("ProjetoTccBackend.Models.User", "User")
+                        .WithMany("Answers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.CompetitionRanking", b =>
                 {
                     b.HasOne("ProjetoTccBackend.Models.Competition", "Competition")
@@ -592,6 +856,24 @@ namespace ProjetoTccBackend.Migrations
                     b.Navigation("Competition");
 
                     b.Navigation("Group");
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.Exercise", b =>
+                {
+                    b.HasOne("ProjetoTccBackend.Models.AttachedFile", "AttachedFile")
+                        .WithMany("Exercises")
+                        .HasForeignKey("AttachedFileId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ProjetoTccBackend.Models.ExerciseType", "ExerciseType")
+                        .WithMany("Exercises")
+                        .HasForeignKey("ExerciseTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AttachedFile");
+
+                    b.Navigation("ExerciseType");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseInCompetition", b =>
@@ -689,8 +971,56 @@ namespace ProjetoTccBackend.Migrations
                     b.Navigation("Group");
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.GroupInvite", b =>
+                {
+                    b.HasOne("ProjetoTccBackend.Models.Group", "Group")
+                        .WithMany("GroupInvites")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjetoTccBackend.Models.User", "User")
+                        .WithMany("GroupInvites")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.Log", b =>
+                {
+                    b.HasOne("ProjetoTccBackend.Models.Competition", "Competition")
+                        .WithMany("Logs")
+                        .HasForeignKey("CompetitionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ProjetoTccBackend.Models.Group", "Group")
+                        .WithMany("Logs")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ProjetoTccBackend.Models.User", "User")
+                        .WithMany("Logs")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Competition");
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Question", b =>
                 {
+                    b.HasOne("ProjetoTccBackend.Models.Answer", "Answer")
+                        .WithOne("Question")
+                        .HasForeignKey("ProjetoTccBackend.Models.Question", "AnswerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("ProjetoTccBackend.Models.Competition", "Competition")
                         .WithMany("Questions")
                         .HasForeignKey("CompetitionId")
@@ -702,21 +1032,17 @@ namespace ProjetoTccBackend.Migrations
                         .HasForeignKey("ExerciseId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("ProjetoTccBackend.Models.Question", "TargetQuestion")
-                        .WithMany()
-                        .HasForeignKey("TargetQuestionId");
-
                     b.HasOne("ProjetoTccBackend.Models.User", "User")
                         .WithMany("Questions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Answer");
+
                     b.Navigation("Competition");
 
                     b.Navigation("Exercise");
-
-                    b.Navigation("TargetQuestion");
 
                     b.Navigation("User");
                 });
@@ -731,6 +1057,17 @@ namespace ProjetoTccBackend.Migrations
                     b.Navigation("Group");
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.Answer", b =>
+                {
+                    b.Navigation("Question")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProjetoTccBackend.Models.AttachedFile", b =>
+                {
+                    b.Navigation("Exercises");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Competition", b =>
                 {
                     b.Navigation("CompetitionRankings");
@@ -740,6 +1077,8 @@ namespace ProjetoTccBackend.Migrations
                     b.Navigation("GroupExerciseAttempts");
 
                     b.Navigation("GroupInCompetitions");
+
+                    b.Navigation("Logs");
 
                     b.Navigation("Questions");
                 });
@@ -763,6 +1102,11 @@ namespace ProjetoTccBackend.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjetoTccBackend.Models.ExerciseType", b =>
+                {
+                    b.Navigation("Exercises");
+                });
+
             modelBuilder.Entity("ProjetoTccBackend.Models.Group", b =>
                 {
                     b.Navigation("CompetitionRankings");
@@ -771,11 +1115,21 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Navigation("GroupInCompetitions");
 
+                    b.Navigation("GroupInvites");
+
+                    b.Navigation("Logs");
+
                     b.Navigation("Users");
                 });
 
             modelBuilder.Entity("ProjetoTccBackend.Models.User", b =>
                 {
+                    b.Navigation("Answers");
+
+                    b.Navigation("GroupInvites");
+
+                    b.Navigation("Logs");
+
                     b.Navigation("Questions");
                 });
 #pragma warning restore 612, 618
