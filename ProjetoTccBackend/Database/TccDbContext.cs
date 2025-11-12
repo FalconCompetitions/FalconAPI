@@ -46,6 +46,28 @@ namespace ProjetoTccBackend.Database
         {
             base.OnModelCreating(builder);
 
+            // Configurar todas as chaves estrangeiras para User.Id com nvarchar(450)
+            // para compatibilidade com SQL Server Identity
+            builder.Entity<Group>()
+                .Property(g => g.LeaderId)
+                .HasMaxLength(450);
+
+            builder.Entity<GroupInvite>()
+                .Property(gi => gi.UserId)
+                .HasMaxLength(450);
+
+            builder.Entity<Question>()
+                .Property(q => q.UserId)
+                .HasMaxLength(450);
+
+            builder.Entity<Answer>()
+                .Property(a => a.UserId)
+                .HasMaxLength(450);
+
+            builder.Entity<Log>()
+                .Property(l => l.UserId)
+                .HasMaxLength(450);
+
             // Group - Users
             builder
                 .Entity<Group>()
@@ -107,12 +129,13 @@ namespace ProjetoTccBackend.Database
                 .IsRequired(required: true);
 
             // Exercise - ExerciseOutputs[]
+            // NoAction para evitar ciclo de cascade (ExerciseInput já faz cascade de Exercise)
             builder
                 .Entity<Exercise>()
                 .HasMany(e => e.ExerciseOutputs)
                 .WithOne(e => e.Exercise)
                 .HasForeignKey(e => e.ExerciseId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired(required: true);
 
             builder
@@ -152,7 +175,7 @@ namespace ProjetoTccBackend.Database
                 .HasMany(u => u.Questions)
                 .WithOne(q => q.User)
                 .HasForeignKey(s => s.UserId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired(required: true);
 
             builder
@@ -160,7 +183,7 @@ namespace ProjetoTccBackend.Database
                 .HasMany(u => u.Answers)
                 .WithOne(a => a.User)
                 .HasForeignKey(a => a.UserId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired(required: true);
 
             builder
@@ -212,7 +235,7 @@ namespace ProjetoTccBackend.Database
                 .HasOne(q => q.Answer)
                 .WithOne(a => a.Question)
                 .HasForeignKey<Question>(q => q.AnswerId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired(required: false);
 
             var groupExerciseAttemptRequestConverter = new ValueConverter<

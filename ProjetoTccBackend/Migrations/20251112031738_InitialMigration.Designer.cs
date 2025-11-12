@@ -12,8 +12,8 @@ using ProjetoTccBackend.Database;
 namespace ProjetoTccBackend.Migrations
 {
     [DbContext(typeof(TccDbContext))]
-    [Migration("20251111235814_InitialMsSQLMigration")]
-    partial class InitialMsSQLMigration
+    [Migration("20251112031738_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -172,6 +172,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -481,7 +482,8 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<string>("LeaderId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -587,8 +589,8 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -625,6 +627,7 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("UserId")
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -666,6 +669,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -833,7 +837,7 @@ namespace ProjetoTccBackend.Migrations
                     b.HasOne("ProjetoTccBackend.Models.User", "User")
                         .WithMany("Answers")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -911,7 +915,7 @@ namespace ProjetoTccBackend.Migrations
                     b.HasOne("ProjetoTccBackend.Models.Exercise", "Exercise")
                         .WithMany("ExerciseOutputs")
                         .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("ProjetoTccBackend.Models.ExerciseInput", "ExerciseInput")
@@ -1019,7 +1023,7 @@ namespace ProjetoTccBackend.Migrations
                     b.HasOne("ProjetoTccBackend.Models.Answer", "Answer")
                         .WithOne("Question")
                         .HasForeignKey("ProjetoTccBackend.Models.Question", "AnswerId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ProjetoTccBackend.Models.Competition", "Competition")
                         .WithMany("Questions")
@@ -1035,7 +1039,7 @@ namespace ProjetoTccBackend.Migrations
                     b.HasOne("ProjetoTccBackend.Models.User", "User")
                         .WithMany("Questions")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Answer");
