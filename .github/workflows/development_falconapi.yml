@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - FalconAPI
+name: Build, test and deploy ASP.Net Core app to Azure Web App - FalconAPI
 
 on:
   push:
@@ -22,18 +22,25 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.x'
+      
+      - name: Restore dependencies
+        run: dotnet restore
 
       - name: Build with dotnet
         run: dotnet build --configuration Release
+      
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      - name: Run unit tests only (ProjetoTCCBackend.Unit.Test)
+        run: dotnet test ProjetoTCCBackend.Unit.Test --configuration Release
+
+      - name: Publish ProjetoTCCBackend only
+        run: dotnet publish ProjetoTCCBackend/ProjetoTCCBackend.csproj -c Release -o "${{env.DOTNET_ROOT}}/app"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          path: ${{env.DOTNET_ROOT}}/app
 
   deploy:
     runs-on: ubuntu-latest
@@ -62,4 +69,5 @@ jobs:
           app-name: 'FalconAPI'
           slot-name: 'Production'
           package: .
+          clean: true
           
