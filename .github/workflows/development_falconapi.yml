@@ -30,12 +30,11 @@ jobs:
         run: dotnet build --configuration Release
       
 
-      - name: Run unit tests only (ProjetoTCCBackend.Unit.Test)
-        run: dotnet test ProjetoTCCBackend.Unit.Test --configuration Release
+      - name: Run unit tests only (ProjetoTccBackend.Unit.Test)
+        run: dotnet test ProjetoTccBackend.Unit.Test --configuration Release
 
-      - name: Publish ProjetoTCCBackend only
-        run: dotnet publish ProjetoTCCBackend/ProjetoTCCBackend.csproj -c Release -o "${{env.DOTNET_ROOT}}/app"
-
+      - name: Publish ProjetoTccBackend only
+        run: dotnet publish ProjetoTccBackend/ProjetoTccBackend.csproj -c Release -o "${{env.DOTNET_ROOT}}/app"
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
