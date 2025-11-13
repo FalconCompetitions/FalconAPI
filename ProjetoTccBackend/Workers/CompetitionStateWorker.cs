@@ -71,32 +71,61 @@ namespace ProjetoTccBackend.Workers
         /// enters a loop that periodically processes active competitions. The loop continues until the <paramref
         /// name="stoppingToken"/> is triggered. The delay between iterations is determined by whether there are active
         /// competitions.</remarks>
+        /// <remarks> If an error occurs during processing, it is logged, and the worker waits for a minute before
+        /// retrying. The worker also handles graceful shutdown when the cancellation token is triggered.</remarks>
         /// <param name="stoppingToken">A <see cref="CancellationToken"/> that is triggered when the worker process should stop.</param>
         /// <returns></returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             this._logger.LogInformation("Competition State Worker Initialized...");
-
-            await this.CheckInitialStateAsync();
+            try
+            {
+                await this.CheckInitialStateAsync();
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Error initializing Competition State Worker");
+            }
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                var now = DateTime.UtcNow;
-
-                using (var scope = this._scopeFactory.CreateScope())
+                try
                 {
-                    bool hasActiveCompetitions =
-                        this._competitionStateService.HasActiveCompetitions;
-                    var delay = (hasActiveCompetitions) ? this._operationalTime : this._idleTime;
-
-                    this._logger.LogCritical($"HasActiveCompetitions: {hasActiveCompetitions}");
-
-                    if (hasActiveCompetitions)
+                    using (var scope = this._scopeFactory.CreateScope())
                     {
-                        await this.ProcessCompetitionsAsync();
-                    }
+                        bool hasActiveCompetitions =
+                            this._competitionStateService.HasActiveCompetitions;
+                        var delay =
+                            (hasActiveCompetitions) ? this._operationalTime : this._idleTime;
 
-                    await Task.Delay(delay, stoppingToken);
+                        if (delay.TotalSeconds < 1)
+                        {
+                            this._logger.LogWarning(
+                                "Competition State Worker delay is set to less than 1 second. Adjusting to 1 second."
+                            );
+                            delay = TimeSpan.FromSeconds(10);
+                        }
+
+                        this._logger.LogCritical($"HasActiveCompetitions: {hasActiveCompetitions}");
+
+                        if (hasActiveCompetitions)
+                        {
+                            await this.ProcessCompetitionsAsync();
+                        }
+
+                        await Task.Delay(delay, stoppingToken);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Graceful shutdown
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError(ex, "Error in Competition State Worker loop");
+
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
                 }
             }
         }
@@ -166,7 +195,7 @@ namespace ProjetoTccBackend.Workers
             DateTime now
         )
         {
-            if(competition.EndTime <= now)
+            if (competition.EndTime <= now)
             {
                 await competitionService.EndCompetitionAsync(competition);
                 return;
@@ -190,9 +219,9 @@ namespace ProjetoTccBackend.Workers
                 return;
             }
 
-            if(competition.Status == CompetitionStatus.ClosedInscriptions)
+            if (competition.Status == CompetitionStatus.ClosedInscriptions)
             {
-                if(competition.StartTime < now)
+                if (competition.StartTime < now)
                 {
                     await competitionService.StartCompetitionAsync(competition);
                 }
