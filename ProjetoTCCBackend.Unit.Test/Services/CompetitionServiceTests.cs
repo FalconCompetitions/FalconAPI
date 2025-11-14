@@ -83,7 +83,10 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             };
 
             var emptyCompetitions = new List<Competition>().AsQueryable();
-            _competitionRepositoryMock.Setup(r => r.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Competition, bool>>>()))
+            _competitionRepositoryMock
+                .Setup(r =>
+                    r.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Competition, bool>>>())
+                )
                 .Returns(emptyCompetitions);
 
             var service = CreateService();
@@ -127,14 +130,17 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             };
 
             var competitions = new List<Competition> { existingCompetition }.AsQueryable();
-            _competitionRepositoryMock.Setup(r => r.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Competition, bool>>>()))
+            _competitionRepositoryMock
+                .Setup(r =>
+                    r.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Competition, bool>>>())
+                )
                 .Returns(competitions);
 
             var service = CreateService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ExistentCompetitionException>(
-                () => service.CreateCompetition(request)
+            await Assert.ThrowsAsync<ExistentCompetitionException>(() =>
+                service.CreateCompetition(request)
             );
         }
 
@@ -157,7 +163,9 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 GroupInCompetitions = new List<GroupInCompetition>(),
             };
 
-            var competitions = new List<Competition> { competition }.AsQueryable().BuildMock();
+            var competitions = new List<Competition> { competition }
+                .AsQueryable()
+                .BuildMock();
             _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
 
             var service = CreateService();
@@ -257,10 +265,27 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             // Arrange
             var competitions = new List<Competition>
             {
-                new Competition { Id = 1, Name = "Ongoing", Status = CompetitionStatus.Ongoing },
-                new Competition { Id = 2, Name = "Pending", Status = CompetitionStatus.Pending },
-                new Competition { Id = 3, Name = "Finished", Status = CompetitionStatus.Finished },
-            }.AsQueryable().BuildMock();
+                new Competition
+                {
+                    Id = 1,
+                    Name = "Ongoing",
+                    Status = CompetitionStatus.Ongoing,
+                },
+                new Competition
+                {
+                    Id = 2,
+                    Name = "Pending",
+                    Status = CompetitionStatus.Pending,
+                },
+                new Competition
+                {
+                    Id = 3,
+                    Name = "Finished",
+                    Status = CompetitionStatus.Finished,
+                },
+            }
+                .AsQueryable()
+                .BuildMock();
 
             _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
 
@@ -290,19 +315,15 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 },
             };
 
-            var request = new InscribeGroupToCompetitionRequest
-            {
-                CompetitionId = 1,
-                GroupId = 1,
-            };
+            var request = new InscribeGroupToCompetitionRequest { CompetitionId = 1, GroupId = 1 };
 
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
 
             var service = CreateService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<UserIsNotLeaderException>(
-                () => service.InscribeGroupInCompetition(request)
+            await Assert.ThrowsAsync<UserIsNotLeaderException>(() =>
+                service.InscribeGroupInCompetition(request)
             );
         }
 
@@ -335,8 +356,8 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var service = CreateService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<NotExistentCompetitionException>(
-                () => service.InscribeGroupInCompetition(request)
+            await Assert.ThrowsAsync<NotExistentCompetitionException>(() =>
+                service.InscribeGroupInCompetition(request)
             );
         }
 
@@ -369,21 +390,19 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 },
             };
 
-            var competitions = new List<Competition> { competition }.AsQueryable().BuildMock();
+            var competitions = new List<Competition> { competition }
+                .AsQueryable()
+                .BuildMock();
             _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
 
-            var request = new InscribeGroupToCompetitionRequest
-            {
-                CompetitionId = 1,
-                GroupId = 1,
-            };
+            var request = new InscribeGroupToCompetitionRequest { CompetitionId = 1, GroupId = 1 };
 
             var service = CreateService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<AlreadyInCompetitionException>(
-                () => service.InscribeGroupInCompetition(request)
+            await Assert.ThrowsAsync<AlreadyInCompetitionException>(() =>
+                service.InscribeGroupInCompetition(request)
             );
         }
 
@@ -421,21 +440,19 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 GroupInCompetitions = new List<GroupInCompetition>(),
             };
 
-            var competitions = new List<Competition> { competition }.AsQueryable().BuildMock();
+            var competitions = new List<Competition> { competition }
+                .AsQueryable()
+                .BuildMock();
             _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
 
-            var request = new InscribeGroupToCompetitionRequest
-            {
-                CompetitionId = 1,
-                GroupId = 1,
-            };
+            var request = new InscribeGroupToCompetitionRequest { CompetitionId = 1, GroupId = 1 };
 
             var service = CreateService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<MaxMembersExceededException>(
-                () => service.InscribeGroupInCompetition(request)
+            await Assert.ThrowsAsync<MaxMembersExceededException>(() =>
+                service.InscribeGroupInCompetition(request)
             );
         }
 
@@ -467,11 +484,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 _loggerMock.Object
             );
 
-            var request = new BlockGroupSubmissionRequest
-            {
-                GroupId = 1,
-                CompetitionId = 1,
-            };
+            var request = new BlockGroupSubmissionRequest { GroupId = 1, CompetitionId = 1 };
 
             // Act
             var result = await service.BlockGroupInCompetition(request);
@@ -486,11 +499,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         {
             // Arrange
             var service = CreateService();
-            var request = new BlockGroupSubmissionRequest
-            {
-                GroupId = 999,
-                CompetitionId = 999,
-            };
+            var request = new BlockGroupSubmissionRequest { GroupId = 999, CompetitionId = 999 };
 
             // Act
             var result = await service.BlockGroupInCompetition(request);
@@ -511,7 +520,9 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 EndTime = DateTime.UtcNow.AddHours(1),
             };
 
-            var competitions = new List<Competition> { competition }.AsQueryable().BuildMock();
+            var competitions = new List<Competition> { competition }
+                .AsQueryable()
+                .BuildMock();
             _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
 
             var service = CreateService();
@@ -553,7 +564,9 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Status = CompetitionStatus.Finished,
             };
 
-            var competitions = new List<Competition> { competition }.AsQueryable().BuildMock();
+            var competitions = new List<Competition> { competition }
+                .AsQueryable()
+                .BuildMock();
             _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
 
             var service = CreateService();

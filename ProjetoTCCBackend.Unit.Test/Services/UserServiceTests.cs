@@ -15,7 +15,6 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 {
     public class UserServiceTests
     {
-        
         // TODO
         [Fact]
         public async Task GetUserByIdAsync_ReturnsUser()

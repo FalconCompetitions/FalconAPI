@@ -17,7 +17,6 @@ using ProjetoTccBackend.Services;
 using ProjetoTccBackend.Services.Interfaces;
 using Xunit;
 
-
 namespace ProjetoTCCBackend.Unit.Test.Services
 {
     public class ExerciseServiceTests
@@ -98,9 +97,24 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             // Arrange
             var exercises = new List<Exercise>
             {
-                new Exercise { Id = 1, Title = "Exercise 1", Description = "Desc 1" },
-                new Exercise { Id = 2, Title = "Exercise 2", Description = "Desc 2" },
-                new Exercise { Id = 3, Title = "Exercise 3", Description = "Desc 3" }
+                new Exercise
+                {
+                    Id = 1,
+                    Title = "Exercise 1",
+                    Description = "Desc 1",
+                },
+                new Exercise
+                {
+                    Id = 2,
+                    Title = "Exercise 2",
+                    Description = "Desc 2",
+                },
+                new Exercise
+                {
+                    Id = 3,
+                    Title = "Exercise 3",
+                    Description = "Desc 3",
+                },
             };
             _exerciseRepoMock.Setup(r => r.GetAll()).Returns(exercises.AsQueryable());
             var service = CreateService();
@@ -120,12 +134,39 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             // Arrange
             var exercises = new List<Exercise>
             {
-                new Exercise { Id = 1, Title = "Exercise 1", Description = "Desc 1" },
-                new Exercise { Id = 2, Title = "Exercise 2", Description = "Desc 2" },
-                new Exercise { Id = 3, Title = "Exercise 3", Description = "Desc 3" },
-                new Exercise { Id = 4, Title = "Exercise 4", Description = "Desc 4" },
-                new Exercise { Id = 5, Title = "Exercise 5", Description = "Desc 5" }
-            }.AsQueryable().BuildMock();
+                new Exercise
+                {
+                    Id = 1,
+                    Title = "Exercise 1",
+                    Description = "Desc 1",
+                },
+                new Exercise
+                {
+                    Id = 2,
+                    Title = "Exercise 2",
+                    Description = "Desc 2",
+                },
+                new Exercise
+                {
+                    Id = 3,
+                    Title = "Exercise 3",
+                    Description = "Desc 3",
+                },
+                new Exercise
+                {
+                    Id = 4,
+                    Title = "Exercise 4",
+                    Description = "Desc 4",
+                },
+                new Exercise
+                {
+                    Id = 5,
+                    Title = "Exercise 5",
+                    Description = "Desc 5",
+                },
+            }
+                .AsQueryable()
+                .BuildMock();
 
             _exerciseRepoMock.Setup(r => r.Query()).Returns(exercises);
             var service = CreateService();
@@ -147,10 +188,30 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             // Arrange
             var exercises = new List<Exercise>
             {
-                new Exercise { Id = 1, Title = "Exercise 1", Description = "Desc 1", ExerciseTypeId = 1 },
-                new Exercise { Id = 2, Title = "Exercise 2", Description = "Desc 2", ExerciseTypeId = 2 },
-                new Exercise { Id = 3, Title = "Exercise 3", Description = "Desc 3", ExerciseTypeId = 1 }
-            }.AsQueryable().BuildMock();
+                new Exercise
+                {
+                    Id = 1,
+                    Title = "Exercise 1",
+                    Description = "Desc 1",
+                    ExerciseTypeId = 1,
+                },
+                new Exercise
+                {
+                    Id = 2,
+                    Title = "Exercise 2",
+                    Description = "Desc 2",
+                    ExerciseTypeId = 2,
+                },
+                new Exercise
+                {
+                    Id = 3,
+                    Title = "Exercise 3",
+                    Description = "Desc 3",
+                    ExerciseTypeId = 1,
+                },
+            }
+                .AsQueryable()
+                .BuildMock();
 
             _exerciseRepoMock.Setup(r => r.Query()).Returns(exercises);
             var service = CreateService();
@@ -173,24 +234,58 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Id = 1,
                 Title = "Test Exercise",
                 Description = "Test",
-                AttachedFile = new AttachedFile { Id = 1, Name = "test.pdf", FilePath = "/path/test.pdf", Size = 1024, Type = "application/pdf" }
+                AttachedFile = new AttachedFile
+                {
+                    Id = 1,
+                    Name = "test.pdf",
+                    FilePath = "/path/test.pdf",
+                    Size = 1024,
+                    Type = "application/pdf",
+                },
             };
 
             var inputs = new List<ExerciseInput>
             {
-                new ExerciseInput { Id = 1, ExerciseId = 1, Input = "input1" }
+                new ExerciseInput
+                {
+                    Id = 1,
+                    ExerciseId = 1,
+                    Input = "input1",
+                },
             };
 
             var outputs = new List<ExerciseOutput>
             {
-                new ExerciseOutput { Id = 1, ExerciseId = 1, Output = "output1" }
+                new ExerciseOutput
+                {
+                    Id = 1,
+                    ExerciseId = 1,
+                    Output = "output1",
+                },
             };
 
-            _exerciseRepoMock.Setup(r => r.Query())
+            _exerciseRepoMock
+                .Setup(r => r.Query())
                 .Returns(new List<Exercise> { exercise }.AsQueryable());
-            _inputRepoMock.Setup(r => r.Find(It.IsAny<System.Linq.Expressions.Expression<System.Func<ExerciseInput, bool>>>()))
+            _inputRepoMock
+                .Setup(r =>
+                    r.Find(
+                        It.IsAny<System.Linq.Expressions.Expression<System.Func<
+                            ExerciseInput,
+                            bool
+                        >>>()
+                    )
+                )
                 .Returns(inputs.AsQueryable());
-            _outputRepoMock.Setup(r => r.Find(It.IsAny<System.Linq.Expressions.Expression<System.Func<ExerciseOutput, bool>>>()))
+            _outputRepoMock
+                .Setup(r =>
+                    r.Find(
+                        It.IsAny<System.Linq.Expressions.Expression<System.Func<
+                            ExerciseOutput,
+                            bool
+                        >>>()
+                    )
+                )
                 .Returns(outputs.AsQueryable());
 
             var service = CreateService();
@@ -199,9 +294,18 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             await service.DeleteExerciseAsync(1);
 
             // Assert
-            _outputRepoMock.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<ExerciseOutput>>()), Times.Once);
-            _inputRepoMock.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<ExerciseInput>>()), Times.Once);
-            _attachedFileServiceMock.Verify(s => s.DeleteAttachedFile(It.IsAny<AttachedFile>()), Times.Once);
+            _outputRepoMock.Verify(
+                r => r.RemoveRange(It.IsAny<IEnumerable<ExerciseOutput>>()),
+                Times.Once
+            );
+            _inputRepoMock.Verify(
+                r => r.RemoveRange(It.IsAny<IEnumerable<ExerciseInput>>()),
+                Times.Once
+            );
+            _attachedFileServiceMock.Verify(
+                s => s.DeleteAttachedFile(It.IsAny<AttachedFile>()),
+                Times.Once
+            );
             _exerciseRepoMock.Verify(r => r.Remove(It.IsAny<Exercise>()), Times.Once);
         }
 
@@ -416,8 +520,13 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Title = "Test",
                 Description = "Test",
                 AttachedFileId = 1,
+                JudgeUuid = "test-uuid",
             };
+
+            // Mock a file with content (Length > 0) but invalid format
             var fileMock = new Mock<IFormFile>();
+            fileMock.Setup(f => f.Length).Returns(1024); // File has content
+
             var request = new UpdateExerciseRequest
             {
                 Title = "Updated Exercise",
@@ -428,14 +537,281 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             };
 
             _exerciseRepoMock.Setup(r => r.GetById(1)).Returns(exercise);
+            _inputRepoMock
+                .Setup(r =>
+                    r.Find(
+                        It.IsAny<System.Linq.Expressions.Expression<System.Func<
+                            ExerciseInput,
+                            bool
+                        >>>()
+                    )
+                )
+                .Returns(new List<ExerciseInput>().AsQueryable());
+            _outputRepoMock
+                .Setup(r =>
+                    r.Find(
+                        It.IsAny<System.Linq.Expressions.Expression<System.Func<
+                            ExerciseOutput,
+                            bool
+                        >>>()
+                    )
+                )
+                .Returns(new List<ExerciseOutput>().AsQueryable());
             _attachedFileServiceMock
                 .Setup(s => s.IsSubmittedFileValid(fileMock.Object))
-                .Returns(false);
+                .Returns(false); // Invalid file format
             var service = CreateService();
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidAttachedFileException>(() =>
                 service.UpdateExerciseAsync(1, fileMock.Object, request)
+            );
+        }
+
+        [Fact]
+        public async Task UpdateExerciseAsync_UpdatesExerciseWithoutFile_WhenFileIsNull()
+        {
+            // Arrange
+            var exercise = new Exercise
+            {
+                Id = 1,
+                Title = "Old Title",
+                Description = "Old Description",
+                AttachedFileId = 1,
+                JudgeUuid = "test-uuid",
+                ExerciseTypeId = 1,
+            };
+
+            var request = new UpdateExerciseRequest
+            {
+                Title = "Updated Exercise",
+                Description = "Updated Description",
+                ExerciseTypeId = 2,
+                Inputs = new List<UpdateExerciseInputRequest>
+                {
+                    new UpdateExerciseInputRequest
+                    {
+                        Id = 1,
+                        Input = "updated input",
+                        ExerciseId = 1,
+                        OrderId = 0,
+                    },
+                },
+                Outputs = new List<UpdateExerciseOutputRequest>
+                {
+                    new UpdateExerciseOutputRequest
+                    {
+                        Id = 1,
+                        Output = "updated output",
+                        ExerciseId = 1,
+                        ExerciseInputId = 1,
+                        OrderId = 0,
+                    },
+                },
+            };
+
+            var existingInputs = new List<ExerciseInput>
+            {
+                new ExerciseInput
+                {
+                    Id = 1,
+                    ExerciseId = 1,
+                    Input = "old input",
+                    JudgeUuid = "test-uuid",
+                },
+            };
+
+            var existingOutputs = new List<ExerciseOutput>
+            {
+                new ExerciseOutput
+                {
+                    Id = 1,
+                    ExerciseId = 1,
+                    ExerciseInputId = 1,
+                    Output = "old output",
+                    JudgeUuid = "test-uuid",
+                },
+            };
+
+            var updatedExercise = new Exercise
+            {
+                Id = 1,
+                Title = "Updated Exercise",
+                Description = "Updated Description",
+                ExerciseTypeId = 2,
+                AttachedFileId = 1,
+                JudgeUuid = "test-uuid",
+                ExerciseInputs = new List<ExerciseInput>
+                {
+                    new ExerciseInput
+                    {
+                        Id = 1,
+                        ExerciseId = 1,
+                        Input = "updated input",
+                        JudgeUuid = "test-uuid",
+                    },
+                },
+                ExerciseOutputs = new List<ExerciseOutput>
+                {
+                    new ExerciseOutput
+                    {
+                        Id = 1,
+                        ExerciseId = 1,
+                        ExerciseInputId = 1,
+                        Output = "updated output",
+                        JudgeUuid = "test-uuid",
+                    },
+                },
+            };
+
+            _exerciseRepoMock.Setup(r => r.GetById(1)).Returns(exercise);
+            _inputRepoMock
+                .Setup(r =>
+                    r.Find(
+                        It.IsAny<System.Linq.Expressions.Expression<System.Func<
+                            ExerciseInput,
+                            bool
+                        >>>()
+                    )
+                )
+                .Returns(existingInputs.AsQueryable());
+            _outputRepoMock
+                .Setup(r =>
+                    r.Find(
+                        It.IsAny<System.Linq.Expressions.Expression<System.Func<
+                            ExerciseOutput,
+                            bool
+                        >>>()
+                    )
+                )
+                .Returns(existingOutputs.AsQueryable());
+
+            var queryableMock = new List<Exercise> { updatedExercise }
+                .AsQueryable()
+                .BuildMock();
+            _exerciseRepoMock.Setup(r => r.Query()).Returns(queryableMock);
+
+            var service = CreateService();
+
+            // Act - Pass null for file parameter
+            var result = await service.UpdateExerciseAsync(1, null, request);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Updated Exercise", result.Title);
+            Assert.Equal("Updated Description", result.Description);
+            Assert.Equal(2, result.ExerciseTypeId);
+            // Verify that file service was NOT called since file is null
+            _attachedFileServiceMock.Verify(
+                s => s.IsSubmittedFileValid(It.IsAny<IFormFile>()),
+                Times.Never
+            );
+            _attachedFileServiceMock.Verify(
+                s => s.DeleteAndReplaceExistentFile(It.IsAny<int>(), It.IsAny<IFormFile>()),
+                Times.Never
+            );
+            // Verify that inputs and outputs were updated
+            _inputRepoMock.Verify(r => r.Update(It.IsAny<ExerciseInput>()), Times.Once);
+            _outputRepoMock.Verify(r => r.Update(It.IsAny<ExerciseOutput>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateExerciseAsync_UpdatesExerciseWithFile_WhenFileIsProvided()
+        {
+            // Arrange
+            var exercise = new Exercise
+            {
+                Id = 1,
+                Title = "Old Title",
+                Description = "Old Description",
+                AttachedFileId = 1,
+                JudgeUuid = "test-uuid",
+                ExerciseTypeId = 1,
+            };
+
+            var newAttachedFile = new AttachedFile
+            {
+                Id = 2,
+                Name = "newfile.pdf",
+                Type = "application/pdf",
+                Size = 2048,
+                FilePath = "/path/newfile.pdf",
+            };
+
+            var fileMock = new Mock<IFormFile>();
+            fileMock.Setup(f => f.Length).Returns(2048);
+
+            var request = new UpdateExerciseRequest
+            {
+                Title = "Updated Exercise",
+                Description = "Updated Description",
+                ExerciseTypeId = 2,
+                Inputs = new List<UpdateExerciseInputRequest>(),
+                Outputs = new List<UpdateExerciseOutputRequest>(),
+            };
+
+            var updatedExercise = new Exercise
+            {
+                Id = 1,
+                Title = "Updated Exercise",
+                Description = "Updated Description",
+                ExerciseTypeId = 2,
+                AttachedFileId = 2,
+                JudgeUuid = "test-uuid",
+                ExerciseInputs = new List<ExerciseInput>(),
+                ExerciseOutputs = new List<ExerciseOutput>(),
+            };
+
+            _exerciseRepoMock.Setup(r => r.GetById(1)).Returns(exercise);
+            _inputRepoMock
+                .Setup(r =>
+                    r.Find(
+                        It.IsAny<System.Linq.Expressions.Expression<System.Func<
+                            ExerciseInput,
+                            bool
+                        >>>()
+                    )
+                )
+                .Returns(new List<ExerciseInput>().AsQueryable());
+            _outputRepoMock
+                .Setup(r =>
+                    r.Find(
+                        It.IsAny<System.Linq.Expressions.Expression<System.Func<
+                            ExerciseOutput,
+                            bool
+                        >>>()
+                    )
+                )
+                .Returns(new List<ExerciseOutput>().AsQueryable());
+            _attachedFileServiceMock
+                .Setup(s => s.IsSubmittedFileValid(fileMock.Object))
+                .Returns(true);
+            _attachedFileServiceMock
+                .Setup(s => s.DeleteAndReplaceExistentFile(1, fileMock.Object))
+                .ReturnsAsync(newAttachedFile);
+
+            var queryableMock = new List<Exercise> { updatedExercise }
+                .AsQueryable()
+                .BuildMock();
+            _exerciseRepoMock.Setup(r => r.Query()).Returns(queryableMock);
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateExerciseAsync(1, fileMock.Object, request);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Updated Exercise", result.Title);
+            Assert.Equal(2, result.AttachedFileId);
+            // Verify that file service WAS called
+            _attachedFileServiceMock.Verify(
+                s => s.IsSubmittedFileValid(fileMock.Object),
+                Times.Once
+            );
+            _attachedFileServiceMock.Verify(
+                s => s.DeleteAndReplaceExistentFile(1, fileMock.Object),
+                Times.Once
             );
         }
     }

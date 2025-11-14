@@ -58,14 +58,10 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Id = "user1",
                 UserName = "testuser",
                 Email = "test@test.com",
-                GroupId = null
+                GroupId = null,
             };
 
-            var request = new CreateGroupRequest
-            {
-                Name = "Test Group",
-                UserRAs = null
-            };
+            var request = new CreateGroupRequest { Name = "Test Group", UserRAs = null };
 
             // Simulates the group after being saved to the database with generated ID
             var savedGroup = new Group
@@ -74,16 +70,19 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Name = "Test Group",
                 LeaderId = "user1",
                 Users = new List<User> { loggedUser },
-                GroupInvites = new List<GroupInvite>()
+                GroupInvites = new List<GroupInvite>(),
             };
 
             // First call: check if user already has a group (returns empty)
             var emptyGroupsQuery = new List<Group>().AsQueryable().BuildMock();
-            
-            // Second call: fetch the newly created group
-            var groupQueryWithNew = new List<Group> { savedGroup }.AsQueryable().BuildMock();
 
-            _groupRepositoryMock.SetupSequence(r => r.Query())
+            // Second call: fetch the newly created group
+            var groupQueryWithNew = new List<Group> { savedGroup }
+                .AsQueryable()
+                .BuildMock();
+
+            _groupRepositoryMock
+                .SetupSequence(r => r.Query())
                 .Returns(emptyGroupsQuery)
                 .Returns(groupQueryWithNew);
 
@@ -115,30 +114,29 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             {
                 Id = "user1",
                 UserName = "testuser",
-                Email = "test@test.com"
+                Email = "test@test.com",
             };
 
             var existingGroup = new Group
             {
                 Id = 1,
                 Name = "Existing Group",
-                LeaderId = "user1"
+                LeaderId = "user1",
             };
 
-            var request = new CreateGroupRequest
-            {
-                Name = "New Group"
-            };
+            var request = new CreateGroupRequest { Name = "New Group" };
 
-            var groups = new List<Group> { existingGroup }.AsQueryable().BuildMock();
+            var groups = new List<Group> { existingGroup }
+                .AsQueryable()
+                .BuildMock();
             _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
 
             var service = CreateService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<UserHasGroupException>(
-                () => service.CreateGroupAsync(request)
+            await Assert.ThrowsAsync<UserHasGroupException>(() =>
+                service.CreateGroupAsync(request)
             );
         }
 
@@ -151,20 +149,20 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Id = "user1",
                 UserName = "testuser",
                 Email = "test@test.com",
-                GroupId = null
+                GroupId = null,
             };
 
             var invitedUser = new User
             {
                 Id = "user2",
                 RA = "12345",
-                UserName = "inviteduser"
+                UserName = "inviteduser",
             };
 
             var request = new CreateGroupRequest
             {
                 Name = "Test Group",
-                UserRAs = new List<string> { "12345" }
+                UserRAs = new List<string> { "12345" },
             };
 
             var savedGroup = new Group
@@ -173,19 +171,22 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Name = "Test Group",
                 LeaderId = "user1",
                 Users = new List<User> { loggedUser },
-                GroupInvites = new List<GroupInvite>()
+                GroupInvites = new List<GroupInvite>(),
             };
 
             var emptyGroupsQuery = new List<Group>().AsQueryable().BuildMock();
-            var groupQueryWithNew = new List<Group> { savedGroup }.AsQueryable().BuildMock();
+            var groupQueryWithNew = new List<Group> { savedGroup }
+                .AsQueryable()
+                .BuildMock();
 
-            _groupRepositoryMock.SetupSequence(r => r.Query())
+            _groupRepositoryMock
+                .SetupSequence(r => r.Query())
                 .Returns(emptyGroupsQuery)
                 .Returns(groupQueryWithNew);
 
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
             _userRepositoryMock.Setup(r => r.GetByRa("12345")).Returns(invitedUser);
-            
+
             _groupRepositoryMock
                 .Setup(r => r.Add(It.IsAny<Group>()))
                 .Callback<Group>(g => g.Id = 1);
@@ -207,24 +208,16 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         public void ChangeGroupName_ChangesName_WhenUserIsInGroup()
         {
             // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                GroupId = 1
-            };
+            var loggedUser = new User { Id = "user1", GroupId = 1 };
 
             var group = new Group
             {
                 Id = 1,
                 Name = "Old Name",
-                LeaderId = "user1"
+                LeaderId = "user1",
             };
 
-            var request = new ChangeGroupNameRequest
-            {
-                Id = 1,
-                Name = "New Name"
-            };
+            var request = new ChangeGroupNameRequest { Id = 1, Name = "New Name" };
 
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
             _groupRepositoryMock.Setup(r => r.GetById(1)).Returns(group);
@@ -244,17 +237,9 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         public void ChangeGroupName_ReturnsNull_WhenGroupNotFound()
         {
             // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                GroupId = 1
-            };
+            var loggedUser = new User { Id = "user1", GroupId = 1 };
 
-            var request = new ChangeGroupNameRequest
-            {
-                Id = 999,
-                Name = "New Name"
-            };
+            var request = new ChangeGroupNameRequest { Id = 999, Name = "New Name" };
 
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
             _groupRepositoryMock.Setup(r => r.GetById(999)).Returns((Group)null!);
@@ -272,24 +257,16 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         public void ChangeGroupName_ThrowsException_WhenUserNotInGroup()
         {
             // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                GroupId = 2
-            };
+            var loggedUser = new User { Id = "user1", GroupId = 2 };
 
             var group = new Group
             {
                 Id = 1,
                 Name = "Old Name",
-                LeaderId = "user2"
+                LeaderId = "user2",
             };
 
-            var request = new ChangeGroupNameRequest
-            {
-                Id = 1,
-                Name = "New Name"
-            };
+            var request = new ChangeGroupNameRequest { Id = 1, Name = "New Name" };
 
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
             _groupRepositoryMock.Setup(r => r.GetById(1)).Returns(group);
@@ -297,30 +274,26 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var service = CreateService();
 
             // Act & Assert
-            Assert.Throws<UnauthorizedAccessException>(
-                () => service.ChangeGroupName(request)
-            );
+            Assert.Throws<UnauthorizedAccessException>(() => service.ChangeGroupName(request));
         }
 
         [Fact]
         public void GetGroupById_ReturnsGroup_WhenUserHasAccess()
         {
             // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                GroupId = 1
-            };
+            var loggedUser = new User { Id = "user1", GroupId = 1 };
 
             var group = new Group
             {
                 Id = 1,
                 Name = "Test Group",
                 LeaderId = "user1",
-                Users = new List<User> { loggedUser }
+                Users = new List<User> { loggedUser },
             };
 
-            var groups = new List<Group> { group }.AsQueryable().BuildMock();
+            var groups = new List<Group> { group }
+                .AsQueryable()
+                .BuildMock();
             _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
 
@@ -339,28 +312,32 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         public void GetGroupById_ThrowsException_WhenUserHasNoAccess()
         {
             // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                GroupId = 2
-            };
+            var loggedUser = new User { Id = "user1", GroupId = 2 };
 
             _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
 
             var service = CreateService();
 
             // Act & Assert
-            Assert.Throws<UnauthorizedAccessException>(
-                () => service.GetGroupById(1)
-            );
+            Assert.Throws<UnauthorizedAccessException>(() => service.GetGroupById(1));
         }
 
         [Fact]
         public async Task GetGroupsAsync_ReturnsAllGroups_WithoutSearch()
         {
             // Arrange
-            var user1 = new User { Id = "user1", UserName = "User 1", RA = "001" };
-            var user2 = new User { Id = "user2", UserName = "User 2", RA = "002" };
+            var user1 = new User
+            {
+                Id = "user1",
+                UserName = "User 1",
+                RA = "001",
+            };
+            var user2 = new User
+            {
+                Id = "user2",
+                UserName = "User 2",
+                RA = "002",
+            };
 
             var groups = new List<Group>
             {
@@ -369,15 +346,15 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                     Id = 1,
                     Name = "Group 1",
                     LeaderId = "user1",
-                    Users = new List<User> { user1 }
+                    Users = new List<User> { user1 },
                 },
                 new Group
                 {
                     Id = 2,
                     Name = "Group 2",
                     LeaderId = "user2",
-                    Users = new List<User> { user2 }
-                }
+                    Users = new List<User> { user2 },
+                },
             };
 
             var mock = groups.AsQueryable().BuildMock();
@@ -398,8 +375,18 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         public async Task GetGroupsAsync_ReturnsFilteredGroups_WithSearch()
         {
             // Arrange
-            var user1 = new User { Id = "user1", UserName = "User 1", RA = "001" };
-            var user2 = new User { Id = "user2", UserName = "User 2", RA = "002" };
+            var user1 = new User
+            {
+                Id = "user1",
+                UserName = "User 1",
+                RA = "001",
+            };
+            var user2 = new User
+            {
+                Id = "user2",
+                UserName = "User 2",
+                RA = "002",
+            };
 
             var groups = new List<Group>
             {
@@ -408,15 +395,15 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                     Id = 1,
                     Name = "Python Group",
                     LeaderId = "user1",
-                    Users = new List<User> { user1 }
+                    Users = new List<User> { user1 },
                 },
                 new Group
                 {
                     Id = 2,
                     Name = "Java Group",
                     LeaderId = "user2",
-                    Users = new List<User> { user2 }
-                }
+                    Users = new List<User> { user2 },
+                },
             };
 
             var mock = groups.AsQueryable().BuildMock();
@@ -440,13 +427,15 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var groups = new List<Group>();
             for (int i = 1; i <= 5; i++)
             {
-                groups.Add(new Group
-                {
-                    Id = i,
-                    Name = $"Group {i}",
-                    LeaderId = $"user{i}",
-                    Users = new List<User>()
-                });
+                groups.Add(
+                    new Group
+                    {
+                        Id = i,
+                        Name = $"Group {i}",
+                        LeaderId = $"user{i}",
+                        Users = new List<User>(),
+                    }
+                );
             }
 
             var mock = groups.AsQueryable().BuildMock();
@@ -477,16 +466,18 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Id = 1,
                 Name = "Old Name",
                 LeaderId = userId,
-                Users = new List<User>()
+                Users = new List<User>(),
             };
 
             var request = new UpdateGroupRequest
             {
                 Name = "New Name",
-                MembersToRemove = new List<string>()
+                MembersToRemove = new List<string>(),
             };
 
-            var groups = new List<Group> { group }.AsQueryable().BuildMock();
+            var groups = new List<Group> { group }
+                .AsQueryable()
+                .BuildMock();
             _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
 
             var service = CreateService();
@@ -510,7 +501,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var request = new UpdateGroupRequest
             {
                 Name = "New Name",
-                MembersToRemove = new List<string>()
+                MembersToRemove = new List<string>(),
             };
 
             var emptyGroups = new List<Group>().AsQueryable().BuildMock();
@@ -537,16 +528,18 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Id = 1,
                 Name = "Test Group",
                 LeaderId = "user2", // Different user
-                Users = new List<User>()
+                Users = new List<User>(),
             };
 
             var request = new UpdateGroupRequest
             {
                 Name = "New Name",
-                MembersToRemove = new List<string>()
+                MembersToRemove = new List<string>(),
             };
 
-            var groups = new List<Group> { group }.AsQueryable().BuildMock();
+            var groups = new List<Group> { group }
+                .AsQueryable()
+                .BuildMock();
             _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
 
             var service = CreateService();
@@ -570,13 +563,13 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Id = 1,
                 Name = "Old Name",
                 LeaderId = userId, // Admin is the leader to pass the first query
-                Users = new List<User>()
+                Users = new List<User>(),
             };
 
             var request = new UpdateGroupRequest
             {
                 Name = "New Name",
-                MembersToRemove = new List<string>()
+                MembersToRemove = new List<string>(),
             };
 
             var updatedGroup = new Group
@@ -584,13 +577,18 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Id = 1,
                 Name = "New Name",
                 LeaderId = userId,
-                Users = new List<User>()
+                Users = new List<User>(),
             };
 
-            var groupsQuery1 = new List<Group> { group }.AsQueryable().BuildMock();
-            var groupsQuery2 = new List<Group> { updatedGroup }.AsQueryable().BuildMock();
+            var groupsQuery1 = new List<Group> { group }
+                .AsQueryable()
+                .BuildMock();
+            var groupsQuery2 = new List<Group> { updatedGroup }
+                .AsQueryable()
+                .BuildMock();
 
-            _groupRepositoryMock.SetupSequence(r => r.Query())
+            _groupRepositoryMock
+                .SetupSequence(r => r.Query())
                 .Returns(groupsQuery1)
                 .Returns(groupsQuery2);
 
@@ -616,16 +614,18 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 Id = 1,
                 Name = "Test Group",
                 LeaderId = userId,
-                Users = new List<User>()
+                Users = new List<User>(),
             };
 
             var request = new UpdateGroupRequest
             {
                 Name = "Test Group",
-                MembersToRemove = new List<string> { "user2", "user3" }
+                MembersToRemove = new List<string> { "user2", "user3" },
             };
 
-            var groups = new List<Group> { group }.AsQueryable().BuildMock();
+            var groups = new List<Group> { group }
+                .AsQueryable()
+                .BuildMock();
             _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
             _groupInviteServiceMock
                 .Setup(s => s.RemoveUserFromGroupAsync(It.IsAny<int>(), It.IsAny<string>()))
@@ -638,14 +638,8 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 
             // Assert
             Assert.NotNull(result);
-            _groupInviteServiceMock.Verify(
-                s => s.RemoveUserFromGroupAsync(1, "user2"),
-                Times.Once
-            );
-            _groupInviteServiceMock.Verify(
-                s => s.RemoveUserFromGroupAsync(1, "user3"),
-                Times.Once
-            );
+            _groupInviteServiceMock.Verify(s => s.RemoveUserFromGroupAsync(1, "user2"), Times.Once);
+            _groupInviteServiceMock.Verify(s => s.RemoveUserFromGroupAsync(1, "user3"), Times.Once);
         }
     }
 }

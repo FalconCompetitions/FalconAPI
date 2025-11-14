@@ -44,7 +44,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         {
             var httpClient = new HttpClient(_httpMessageHandlerMock.Object)
             {
-                BaseAddress = new Uri("http://localhost:8000")
+                BaseAddress = new Uri("http://localhost:8000"),
             };
 
             _httpClientFactoryMock.Setup(f => f.CreateClient("JudgeAPI")).Returns(httpClient);
@@ -80,7 +80,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                         StatusCode = HttpStatusCode.OK,
                         Content = new StringContent(
                             System.Text.Json.JsonSerializer.Serialize(authResponse)
-                        )
+                        ),
                     }
                 );
 
@@ -126,7 +126,9 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var cachedToken = "cached-jwt-token";
             object cacheValue = cachedToken;
 
-            _memoryCacheMock.Setup(m => m.TryGetValue(It.IsAny<object>(), out cacheValue)).Returns(true);
+            _memoryCacheMock
+                .Setup(m => m.TryGetValue(It.IsAny<object>(), out cacheValue))
+                .Returns(true);
             _tokenServiceMock.Setup(t => t.ValidateToken(cachedToken)).Returns(true);
 
             var service = CreateService();
@@ -143,15 +145,19 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         public async Task SendGroupExerciseAttempt_ThrowsException_WhenExerciseNotFound()
         {
             // Arrange
-            var request = new GroupExerciseAttemptWorkerRequest { ExerciseId = 999, Code = "test code" };
+            var request = new GroupExerciseAttemptWorkerRequest
+            {
+                ExerciseId = 999,
+                Code = "test code",
+            };
 
             _exerciseRepositoryMock.Setup(r => r.GetById(999)).Returns(() => null!);
 
             var service = CreateService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ExerciseNotFoundException>(
-                () => service.SendGroupExerciseAttempt(request)
+            await Assert.ThrowsAsync<ExerciseNotFoundException>(() =>
+                service.SendGroupExerciseAttempt(request)
             );
         }
 
@@ -159,13 +165,17 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         public async Task SendGroupExerciseAttempt_ReturnsValidResponse()
         {
             // Arrange
-            var request = new GroupExerciseAttemptWorkerRequest { ExerciseId = 1, Code = "test code" };
+            var request = new GroupExerciseAttemptWorkerRequest
+            {
+                ExerciseId = 1,
+                Code = "test code",
+            };
 
             var exercise = new Exercise
             {
                 Id = 1,
                 JudgeUuid = "test-uuid",
-                Title = "Test Exercise"
+                Title = "Test Exercise",
             };
 
             _exerciseRepositoryMock.Setup(r => r.GetById(1)).Returns(exercise);
@@ -188,7 +198,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                     JudgeSubmissionResponseEnum.MemoryLimitExceeded,
                     JudgeSubmissionResponseEnum.RuntimeError,
                     JudgeSubmissionResponseEnum.PresentationError,
-                    JudgeSubmissionResponseEnum.SecurityError
+                    JudgeSubmissionResponseEnum.SecurityError,
                 }
             );
         }
