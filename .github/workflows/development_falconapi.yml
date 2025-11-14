@@ -60,7 +60,7 @@ jobs:
         run: dotnet new tool-manifest
       
       - name: Install dotnet-ef tool
-        run: dotnet tool install dotnet-ef
+        run: dotnet tool install dotnet-ef --version 8.*
 
       - name: Restore dependencies
         run: dotnet restore
@@ -126,4 +126,5 @@ jobs:
           slot-name: 'Production'
           package: .
           clean: true
+
           
