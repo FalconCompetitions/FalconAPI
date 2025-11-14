@@ -62,6 +62,9 @@ jobs:
       - name: Install dotnet-ef tool
         run: dotnet tool install dotnet-ef
 
+      - name: Restore dependencies
+        run: dotnet restore
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
