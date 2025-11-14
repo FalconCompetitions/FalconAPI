@@ -303,12 +303,20 @@ namespace ProjetoTccBackend
 
             builder.Services.AddHttpContextAccessor();
 
+            var judgeApiUrl = builder.Configuration["JudgeApi:Url"];
+            if (string.IsNullOrEmpty(judgeApiUrl))
+            {
+                throw new InvalidOperationException(
+                    "Configuration 'JudgeApi:Url' is missing. Please ensure it is set in appsettings.json or environment variables."
+                );
+            }
+
             builder
                 .Services.AddHttpClient(
                     "JudgeAPI",
                     client =>
                     {
-                        client.BaseAddress = new Uri(builder.Configuration["JudgeApi:Url"]!);
+                        client.BaseAddress = new Uri(judgeApiUrl);
                         //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
                         //client.DefaultRequestHeaders.Add("Accept", "application/json");
                         client.Timeout = TimeSpan.FromSeconds(40);
