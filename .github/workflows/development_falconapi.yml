@@ -71,13 +71,13 @@ jobs:
         run: echo "RUNNER_IP=$(curl https://api.ipify.org)" >> $GITHUB_OUTPUT
         
       - name: Add Firewall Rule for Runner
-        run: |
-          az sql server firewall-rule create \
-            --resource-group FalconAPIDevelopment \ 
-            --server falcon-api-db \ 
-            --name "GitHubRunner-${{ github.run_id }}" \
-            --start-ip-address ${{ steps.get_ip.outputs.RUNNER_IP }} \ 
-            --end-ip-address ${{ steps.get_ip.outputs.RUNNER_IP }}
+        run: >-
+          az sql server firewall-rule create
+          --resource-group FalconAPIDevelopment
+          --server falcon-api-db
+          --name "GitHubRunner-${{ github.run_id }}"
+          --start-ip-address ${{ steps.get_ip.outputs.RUNNER_IP }}
+          --end-ip-address ${{ steps.get_ip.outputs.RUNNER_IP }}
       - name: 'Run EF Migrations'
         run: |
           dotnet ef database update --project ProjetoTccBackend/ProjetoTccBackend.csproj --startup-project ProjetoTccBackend/ProjetoTccBackend.csproj
@@ -86,11 +86,11 @@ jobs:
       
       - name: Remove Firewall Rule for Runner
         if: always()
-        run: |
-          az sql server firewall-rule delete \
-            --resource-group FalconAPIDevelopment \ 
-            --server falcon-api-db \ 
-            --name "GitHubRunner-${{ github.run_id }}"
+        run: >-
+          az sql server firewall-rule delete
+          --resource-group FalconAPIDevelopment
+          --server falcon-api-db
+          --name "GitHubRunner-${{ github.run_id }}"
 
   deploy:
     runs-on: ubuntu-latest
