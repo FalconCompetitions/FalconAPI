@@ -15,7 +15,10 @@ namespace ProjetoTccBackend.Controllers
         private readonly ICompetitionService _competitionService;
         private readonly ILogger<CompetitionController> _logger;
 
-        public CompetitionController(ICompetitionService competitionService, ILogger<CompetitionController> logger)
+        public CompetitionController(
+            ICompetitionService competitionService,
+            ILogger<CompetitionController> logger
+        )
         {
             this._competitionService = competitionService;
             this._logger = logger;
@@ -36,9 +39,10 @@ namespace ProjetoTccBackend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetExistentCompetition()
         {
-            Competition? existentCompetition = await this._competitionService.GetExistentCompetition();
+            Competition? existentCompetition =
+                await this._competitionService.GetExistentCompetition();
 
-            if(existentCompetition is null)
+            if (existentCompetition is null)
             {
                 return NoContent();
             }
@@ -47,10 +51,72 @@ namespace ProjetoTccBackend.Controllers
         }
 
         /// <summary>
+        /// Retrieves a collection of competitions that were created as templates.
+        /// </summary>
+        /// <remarks>This method is accessible only to users with the "Admin" or "Teacher" roles. It
+        /// returns a collection of competitions that are marked as templates, which can be used for creating new
+        /// competitions based on predefined settings.</remarks>
+        /// <returns>An <see cref="IActionResult"/> containing a collection of <see cref="CompetitionResponse"/> objects
+        /// representing the template competitions. The response is returned with an HTTP 200 status code.</returns>
+        [HttpGet("template")]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<IActionResult> GetCreatedTemplateCompetitions()
+        {
+            ICollection<CompetitionResponse> response =
+                await this._competitionService.GetCreatedTemplateCompetitions();
+
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// Retrieves a list of competitions that currently have open inscriptions.
+        /// </summary>
+        /// <remarks>This method returns competitions where the inscription period is currently active.
+        /// The response includes details such as the competition's name, description, duration, and other relevant
+        /// metadata. The list is returned as a collection of competition responses.</remarks>
+        /// <returns>An <see cref="IActionResult"/> containing a list of competitions with open inscriptions. The response is
+        /// serialized as a collection of <see cref="CompetitionResponse"/> objects.</returns>
+        /// <response code="200">Returns the competitions with open subscription</response>
+        [HttpGet("open")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetCompetitionsWithOpenInscriptions()
+        {
+            ICollection<Competition> res =
+                await this._competitionService.GetOpenSubscriptionCompetitionsAsync();
+
+            List<CompetitionResponse> response = res.Select(x => new CompetitionResponse()
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    BlockSubmissions = x.BlockSubmissions,
+                    CompetitionRankings = null,
+                    Description = x.Description,
+                    Duration = x.Duration,
+                    StartInscriptions = x.StartInscriptions,
+                    EndInscriptions = x.EndInscriptions,
+                    StartTime = x.StartTime,
+                    EndTime = x.EndTime,
+                    ExerciseIds = [],
+                    Exercises = [],
+                    MaxExercises = x.MaxExercises,
+                    MaxMembers = x.MaxMembers,
+                    MaxSubmissionSize = x.MaxSubmissionSize,
+                    Status = x.Status,
+                    StopRanking = x.StopRanking,
+                    SubmissionPenalty = x.SubmissionPenalty,
+                })
+                .ToList();
+
+            return Ok(response);
+        }
+
+        /// <summary>
         /// Creates a new competition.
         /// </summary>
         /// <param name="request">The competition creation request containing start and end times.</param>
-        /// <returns>The created <see cref="Competition"/> object.</returns>
+        /// <returns>The created <see cref="Competition"/> object in <see cref="CompetitionResponse"/> format.</returns>
         /// <remarks>
         /// Accessible only to users with the "Admin" role.<br/>
         /// Exemplo de request:
@@ -64,29 +130,163 @@ namespace ProjetoTccBackend.Controllers
         /// </remarks>
         /// <response code="201">Returns the created competition.</response>
         /// <response code="400">If the request is invalid or a competition already exists for the same date.</response>
-        [Authorize("Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> CreateNewCompetition([FromBody]CompetitionRequest request)
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> CreateNewCompetition([FromBody] CompetitionRequest request)
         {
             Competition? newCompetition = null;
 
             try
             {
                 newCompetition = await this._competitionService.CreateCompetition(request);
-            } catch(ExistentCompetitionException ex)
+            }
+            catch (ExistentCompetitionException ex)
             {
-                throw new FormException(new Dictionary<string, string>
-                {
-                    { "general", "Já existe uma competição marcada para a mesma data" }
-                });
+                throw new FormException(
+                    new Dictionary<string, string>
+                    {
+                        { "general", "Já existe uma competição marcada para a mesma data" },
+                    }
+                );
             }
 
-            if(newCompetition == null)
+            if (newCompetition is null)
             {
                 throw new ErrorException("Não foi possível criar uma nova competição");
             }
 
-            return CreatedAtAction(nameof(GetExistentCompetition), new { }, newCompetition);
+            CompetitionResponse response = new CompetitionResponse()
+            {
+                Id = newCompetition.Id,
+                SubmissionPenalty = newCompetition.SubmissionPenalty,
+                StopRanking = newCompetition.StopRanking,
+                MaxSubmissionSize = newCompetition.MaxSubmissionSize,
+                MaxExercises = newCompetition.MaxExercises,
+                BlockSubmissions = newCompetition.BlockSubmissions,
+                EndInscriptions = newCompetition.EndInscriptions,
+                EndTime = newCompetition.EndTime,
+                ExerciseIds = request.ExerciseIds,
+                StartInscriptions = newCompetition.StartInscriptions,
+                StartTime = newCompetition.StartTime,
+                Name = newCompetition.Name,
+                Duration = newCompetition.Duration,
+                Status = newCompetition.Status,
+                Description = newCompetition.Description,
+                MaxMembers = newCompetition.MaxMembers,
+            };
+
+            return CreatedAtAction(nameof(GetExistentCompetition), new { }, response);
+        }
+
+        /// <summary>
+        /// Updates an existing competition.
+        /// </summary>
+        /// <param name="id">The unique identifier of the competition to update.</param>
+        /// <param name="request">The update request containing new competition data.</param>
+        /// <returns>The updated <see cref="Competition"/> object in <see cref="CompetitionResponse"/> format.</returns>
+        /// <remarks>
+        /// Accessible only to users with the "Admin" role.<br/>
+        /// Exemplo de request:
+        /// <code>
+        ///     PUT /api/competition/1
+        ///     {
+        ///         "startTime": "2024-08-21T10:00:00",
+        ///         "endTime": "2024-08-21T12:00:00"
+        ///     }
+        /// </code>
+        /// </remarks>
+        /// <response code="200">Returns the updated competition.</response>
+        /// <response code="404">If the competition is not found.</response>
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCompetition(
+            int id,
+            [FromBody] UpdateCompetitionRequest request
+        )
+        {
+            var updatedCompetition = await this._competitionService.UpdateCompetitionAsync(
+                id,
+                request
+            );
+            if (updatedCompetition == null)
+            {
+                return NotFound();
+            }
+
+            CompetitionResponse response = new CompetitionResponse()
+            {
+                Id = updatedCompetition.Id,
+                SubmissionPenalty = updatedCompetition.SubmissionPenalty,
+                StopRanking = updatedCompetition.StopRanking,
+                MaxSubmissionSize = updatedCompetition.MaxSubmissionSize,
+                MaxExercises = updatedCompetition.MaxExercises,
+                BlockSubmissions = updatedCompetition.BlockSubmissions,
+                EndInscriptions = updatedCompetition.EndInscriptions,
+                EndTime = updatedCompetition.EndTime,
+                ExerciseIds = request.ExerciseIds,
+                StartInscriptions = updatedCompetition.StartInscriptions,
+                StartTime = updatedCompetition.StartTime,
+                Status = updatedCompetition.Status,
+                Duration = updatedCompetition.Duration,
+                Name = updatedCompetition.Name,
+                Description = updatedCompetition.Description,
+                MaxMembers = updatedCompetition.MaxMembers,
+            };
+
+            return Ok(response);
+        }
+
+        [Authorize(Roles = "Student")]
+        [HttpPost("inscribe")]
+        public async Task<IActionResult> InscribeGroupToCompetition(
+            [FromBody] InscribeGroupToCompetitionRequest request
+        )
+        {
+            try
+            {
+                GroupInCompetition response =
+                    await this._competitionService.InscribeGroupInCompetition(request);
+                return Ok(
+                    new InscribeGroupInCompetitionResponse()
+                    {
+                        CompetitionId = response.CompetitionId,
+                        GroupId = response.GroupId,
+                        CreatedOn = response.CreatedOn,
+                    }
+                );
+            }
+            catch (UserIsNotLeaderException)
+            {
+                return BadRequest(new { message = "O usuário não é o líder do grupo." });
+            }
+            catch (NotExistentCompetitionException)
+            {
+                return BadRequest(new { message = "Competição não existente." });
+            }
+            catch (AlreadyInCompetitionException)
+            {
+                return BadRequest(new { message = "O grupo já está inscrito na competição." });
+            }
+            catch (NotValidCompetitionException)
+            {
+                return BadRequest(new { message = "Competição não está válida para inscrição." });
+            }
+            catch (MaxMembersExceededException)
+            {
+                return BadRequest(
+                    new
+                    {
+                        message = "O grupo excedeu o número máximo de membros permitido na competição.",
+                    }
+                );
+            }
+            catch (Exception)
+            {
+                return BadRequest(new { message = "Erro desconhecido" });
+            }
         }
     }
 }

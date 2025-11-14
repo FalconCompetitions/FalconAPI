@@ -13,7 +13,6 @@ namespace ProjetoTccBackend.Swagger.Examples
             ExerciseTypeId = 1,
             Title = "Nova Soma",
             Description = "Atualize a soma de dois números.",
-            EstimatedTime = TimeSpan.FromMinutes(20),
             Inputs = new List<UpdateExerciseInputRequest>(),
             Outputs = new List<UpdateExerciseOutputRequest>()
         };

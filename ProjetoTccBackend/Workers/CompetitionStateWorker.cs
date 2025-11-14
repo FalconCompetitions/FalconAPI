@@ -19,27 +19,34 @@ namespace ProjetoTccBackend.Workers
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ICompetitionStateService _competitionStateService;
-        private readonly TimeSpan _idleTime = TimeSpan.FromMinutes(5);
-        private readonly TimeSpan _operationalTime = TimeSpan.FromMinutes(1);
+        private readonly TimeSpan _idleTime;
+        private readonly TimeSpan _operationalTime;
         private const string CompetitionCacheKey = "currentCompetition";
 
         public CompetitionStateWorker(
+            IConfiguration configuration,
             ILogger<CompetitionStateWorker> logger,
             IMemoryCache memoryCache,
             IServiceScopeFactory scopeFactory,
             ICompetitionStateService competitionStateService
         )
         {
+            int idleSeconds = configuration.GetValue<int>("CompetitionWorker:IdleSeconds");
+            int operationalSeconds = configuration.GetValue<int>(
+                "CompetitionWorker:OperationalSeconds"
+            );
             this._logger = logger;
             this._memoryCache = memoryCache;
             this._scopeFactory = scopeFactory;
             this._competitionStateService = competitionStateService;
+            this._idleTime = TimeSpan.FromSeconds(idleSeconds);
+            this._operationalTime = TimeSpan.FromSeconds(operationalSeconds);
         }
 
         /// <summary>
         /// Checks the initial state of open competitions and signals the competition state service if any are found.
         /// </summary>
-        /// <remarks>This method retrieves the list of open competitions using the competition service. 
+        /// <remarks>This method retrieves the list of open competitions using the competition service.
         /// If one or more open competitions are detected, it signals the competition state service  to indicate the
         /// presence of a new competition.</remarks>
         /// <returns></returns>
@@ -48,7 +55,8 @@ namespace ProjetoTccBackend.Workers
             using var scope = this._scopeFactory.CreateScope();
             var competitionService =
                 scope.ServiceProvider.GetRequiredService<ICompetitionService>();
-            var competitions = await competitionService.GetOpenCompetitionsAsync();
+            ICollection<Competition> competitions =
+                await competitionService.GetOpenCompetitionsAsync();
 
             if (competitions.Any())
             {
@@ -63,34 +71,64 @@ namespace ProjetoTccBackend.Workers
         /// enters a loop that periodically processes active competitions. The loop continues until the <paramref
         /// name="stoppingToken"/> is triggered. The delay between iterations is determined by whether there are active
         /// competitions.</remarks>
+        /// <remarks> If an error occurs during processing, it is logged, and the worker waits for a minute before
+        /// retrying. The worker also handles graceful shutdown when the cancellation token is triggered.</remarks>
         /// <param name="stoppingToken">A <see cref="CancellationToken"/> that is triggered when the worker process should stop.</param>
         /// <returns></returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             this._logger.LogInformation("Competition State Worker Initialized...");
-
-            await this.CheckInitialStateAsync();
+            try
+            {
+                await this.CheckInitialStateAsync();
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Error initializing Competition State Worker");
+            }
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                var now = DateTime.UtcNow;
-
-                using (var scope = this._scopeFactory.CreateScope())
+                try
                 {
-                    bool hasActiveCompetitions =
-                        this._competitionStateService.HasActiveCompetitions;
-                    var delay = (hasActiveCompetitions) ? this._operationalTime : this._idleTime;
-
-                    if (hasActiveCompetitions)
+                    using (var scope = this._scopeFactory.CreateScope())
                     {
-                        await this.ProcessCompetitionsAsync();
-                    }
+                        bool hasActiveCompetitions =
+                            this._competitionStateService.HasActiveCompetitions;
+                        var delay =
+                            (hasActiveCompetitions) ? this._operationalTime : this._idleTime;
 
-                    await Task.Delay(delay, stoppingToken);
+                        if (delay.TotalSeconds < 1)
+                        {
+                            this._logger.LogWarning(
+                                "Competition State Worker delay is set to less than 1 second. Adjusting to 1 second."
+                            );
+                            delay = TimeSpan.FromSeconds(10);
+                        }
+
+                        this._logger.LogCritical($"HasActiveCompetitions: {hasActiveCompetitions}");
+
+                        if (hasActiveCompetitions)
+                        {
+                            await this.ProcessCompetitionsAsync();
+                        }
+
+                        await Task.Delay(delay, stoppingToken);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Graceful shutdown
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError(ex, "Error in Competition State Worker loop");
+
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
                 }
             }
         }
-
 
         /// <summary>
         /// Processes all open competitions asynchronously.
@@ -122,20 +160,31 @@ namespace ProjetoTccBackend.Workers
             }
         }
 
-
         /// <summary>
         /// Processes the current state of a competition and transitions it to the appropriate next state based on the
         /// current time and its status.
         /// </summary>
-        /// <remarks>This method evaluates the competition's current status and performs the necessary
-        /// state transition: <list type="bullet"> <item> <description>If the competition is in the <see
-        /// cref="CompetitionStatus.Pending"/> state and the current time is within the inscription period, inscriptions
-        /// are opened.</description> </item> <item> <description>If the competition is in the <see
-        /// cref="CompetitionStatus.OpenInscriptions"/> state and the inscription period has ended, inscriptions are
-        /// closed.</description> </item> <item> <description>If the competition is in the <see
-        /// cref="CompetitionStatus.Ongoing"/> state and the competition's end time has passed, the competition is
-        /// ended.</description> </item> </list> No action is taken if the competition's state does not meet the
-        /// conditions for a transition.</remarks>
+        /// <remarks>
+        /// This method evaluates the competition's current status and performs the necessary state transition:
+        /// <list type="bullet">
+        ///   <item>
+        ///     <description>If the competition is already invalid for some reason, closes the competition</description>
+        ///   </item>
+        ///   <item>
+        ///     <description>If the competition is in the <see cref="CompetitionStatus.Pending"/> state and the current time is within the inscription period, inscriptions are opened.</description>
+        ///   </item>
+        ///   <item>
+        ///     <description>If the competition is in the <see cref="CompetitionStatus.OpenInscriptions"/> state and the inscription period has ended, inscriptions are closed.</description>
+        ///   </item>
+        ///   <item>
+        ///     <description>If the competition is in the <see cref="CompetitionStatus.ClosedInscriptions"/> state and the competition's start time has passed, the competition is started and transitions to <see cref="CompetitionStatus.Ongoing"/>.</description>
+        ///   </item>
+        ///   <item>
+        ///     <description>If the competition is in the <see cref="CompetitionStatus.Ongoing"/> state and the competition's end time has passed, the competition is ended.</description>
+        ///   </item>
+        /// </list>
+        /// No action is taken if the competition's state does not meet the conditions for a transition.
+        /// </remarks>
         /// <param name="competition">The competition to process. Must not be null.</param>
         /// <param name="competitionService">The service responsible for handling competition state transitions. Must not be null.</param>
         /// <param name="now">The current date and time used to evaluate the competition's state.</param>
@@ -146,27 +195,42 @@ namespace ProjetoTccBackend.Workers
             DateTime now
         )
         {
-            if (competition.Status.Equals(CompetitionStatus.Pending))
+            if (competition.EndTime <= now)
             {
-                if(competition.StartInscriptions < now && competition.EndInscriptions > now)
+                await competitionService.EndCompetitionAsync(competition);
+                return;
+            }
+
+            if (competition.Status == CompetitionStatus.Pending)
+            {
+                if (competition.StartInscriptions < now && competition.EndInscriptions > now)
                 {
                     await competitionService.OpenCompetitionInscriptionsAsync(competition);
                 }
                 return;
             }
 
-            if(competition.Status.Equals(CompetitionStatus.OpenInscriptions))
+            if (competition.Status == CompetitionStatus.OpenInscriptions)
             {
-                if(competition.EndInscriptions < now)
+                if (competition.EndInscriptions < now)
                 {
                     await competitionService.CloseCompetitionInscriptionsAsync(competition);
                 }
                 return;
             }
 
-            if(competition.Status.Equals(CompetitionStatus.Ongoing))
+            if (competition.Status == CompetitionStatus.ClosedInscriptions)
             {
-                if(competition.EndTime < now)
+                if (competition.StartTime < now)
+                {
+                    await competitionService.StartCompetitionAsync(competition);
+                }
+                return;
+            }
+
+            if (competition.Status == CompetitionStatus.Ongoing)
+            {
+                if (competition.EndTime < now)
                 {
                     await competitionService.EndCompetitionAsync(competition);
                 }

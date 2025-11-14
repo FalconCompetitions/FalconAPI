@@ -1,11 +1,13 @@
 ﻿using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Exercise;
+using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Exceptions;
+using ProjetoTccBackend.Exceptions.AttachedFile;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
-using ProjetoTccBackend.Database.Responses.Global;
 
 namespace ProjetoTccBackend.Services
 {
@@ -15,6 +17,7 @@ namespace ProjetoTccBackend.Services
         private readonly IExerciseInputRepository _exerciseInputRepository;
         private readonly IExerciseOutputRepository _exerciseOutputRepository;
         private readonly IJudgeService _judgeService;
+        private readonly IAttachedFileService _attachedFileService;
         private readonly TccDbContext _dbContext;
         private readonly ILogger<ExerciseService> _logger;
 
@@ -23,6 +26,7 @@ namespace ProjetoTccBackend.Services
             IExerciseInputRepository exerciseInputRepository,
             IExerciseOutputRepository exerciseOutputRepository,
             IJudgeService judgeService,
+            IAttachedFileService attachedFileService,
             TccDbContext dbContext,
             ILogger<ExerciseService> logger
         )
@@ -31,19 +35,34 @@ namespace ProjetoTccBackend.Services
             this._exerciseInputRepository = exerciseInputRepository;
             this._exerciseOutputRepository = exerciseOutputRepository;
             this._judgeService = judgeService;
+            this._attachedFileService = attachedFileService;
             this._dbContext = dbContext;
             this._logger = logger;
         }
 
-        /// <inheritdoc/>
-        public async Task<Exercise> CreateExerciseAsync(CreateExerciseRequest request)
+        /// <inheritdoc />
+        public async Task<Exercise> CreateExerciseAsync(
+            CreateExerciseRequest request,
+            IFormFile file
+        )
         {
-            string? judgeUuid = await this._judgeService.CreateJudgeExerciseAsync(request);
+            bool isFileFormatValid = this._attachedFileService.IsSubmittedFileValid(file);
 
+            if (isFileFormatValid is false)
+            {
+                throw new InvalidAttachedFileException("Formato de arquivo inválido!");
+            }
+
+            AttachedFile attachedFile = await this._attachedFileService.ProcessAndSaveFile(file);
+
+            string? judgeUuid = "ed2e8459-c43a-42d5-9a1e-87835a769ea1"; //await this._judgeService.CreateJudgeExerciseAsync(request);
+
+            /*
             if (judgeUuid == null)
             {
                 throw new ErrorException(new { Message = "Não foi possível criar o exercício" });
             }
+            */
 
             var inputsRequest = request.Inputs.ToList();
             var outputsRequest = request.Outputs.ToList();
@@ -51,13 +70,15 @@ namespace ProjetoTccBackend.Services
             Exercise exercise = new Exercise()
             {
                 JudgeUuid = judgeUuid,
+                AttachedFileId = attachedFile.Id,
                 Title = request.Title,
                 Description = request.Description,
-                EstimatedTime = request.EstimatedTime,
+                EstimatedTime = TimeSpan.FromMinutes(20),
                 ExerciseTypeId = request.ExerciseTypeId,
             };
 
             this._exerciseRepository.Add(exercise);
+            await this._dbContext.SaveChangesAsync();
 
             List<ExerciseInput> inputs = new List<ExerciseInput>();
             List<ExerciseOutput> outputs = new List<ExerciseOutput>();
@@ -75,6 +96,7 @@ namespace ProjetoTccBackend.Services
             }
 
             this._exerciseInputRepository.AddRange(inputs);
+            await this._dbContext.SaveChangesAsync();
 
             for (int i = 0; i < outputsRequest.Count; i++)
             {
@@ -91,9 +113,17 @@ namespace ProjetoTccBackend.Services
 
             this._exerciseOutputRepository.AddRange(outputs);
 
-            this._dbContext.SaveChanges();
+            await this._dbContext.SaveChangesAsync();
 
-            return exercise;
+            Exercise createdExercise = await this
+                ._exerciseRepository.Query()
+                .Where(x => x.Id.Equals(exercise.Id))
+                .Include(x => x.ExerciseInputs)
+                .Include(x => x.ExerciseOutputs)
+                .Include(x => x.AttachedFile)
+                .FirstAsync();
+
+            return createdExercise;
         }
 
         /// <inheritdoc/>
@@ -111,36 +141,81 @@ namespace ProjetoTccBackend.Services
             return exercises;
         }
 
-        public async Task<PagedResult<Exercise>> GetExercisesAsync(int page, int pageSize, string? search = null)
+        /// <inheritdoc />
+        public async Task<PagedResult<Exercise>> GetExercisesAsync(
+            int page,
+            int pageSize,
+            string? search = null,
+            int? exerciseTypeId = null
+        )
         {
-            var query = this._exerciseRepository.GetAll().AsQueryable();
+            var query = this._exerciseRepository.Query();
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(e => e.Title.Contains(search) || e.Description.Contains(search));
+                query = query.Where(e =>
+                    e.Title.Contains(search) || e.Description.Contains(search)
+                );
             }
+
+            this._logger.LogInformation($"ExerciseTypeId: {exerciseTypeId}");
+
+            if (exerciseTypeId != null)
+            {
+                query = query.Where(e => e.ExerciseTypeId == exerciseTypeId);
+            }
+
             int totalCount = query.Count();
-            var items = query.OrderBy(e => e.Id).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-            return await Task.FromResult(new PagedResult<Exercise>
+            int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            var items = await query
+                .AsSplitQuery()
+                .OrderBy(e => e.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Include(x => x.ExerciseInputs)
+                .Include(x => x.ExerciseOutputs)
+                .Include(x => x.AttachedFile)
+                .ToListAsync();
+
+            return new PagedResult<Exercise>
             {
                 Items = items,
                 TotalCount = totalCount,
+                TotalPages = totalPages,
                 Page = page,
-                PageSize = pageSize
-            });
+                PageSize = pageSize,
+            };
         }
 
         /// <inheritdoc/>
-        public async Task UpdateExerciseAsync(int id, UpdateExerciseRequest request)
+        public async Task<Exercise> UpdateExerciseAsync(
+            int id,
+            IFormFile file,
+            UpdateExerciseRequest request
+        )
         {
             var exercise = this._exerciseRepository.GetById(id);
 
             if (exercise == null)
                 throw new ErrorException($"Exercício com id {id} não encontrado.");
 
+            bool isFileValid = this._attachedFileService.IsSubmittedFileValid(file);
+
+            if (isFileValid is false)
+            {
+                throw new InvalidAttachedFileException("Formato de arquivo inválido!");
+            }
+
+            AttachedFile newAttachedFile =
+                await this._attachedFileService.DeleteAndReplaceExistentFile(
+                    (int)exercise.AttachedFileId!,
+                    file
+                );
+
             exercise.Title = request.Title;
             exercise.Description = request.Description;
-            exercise.EstimatedTime = request.EstimatedTime;
+            exercise.EstimatedTime = TimeSpan.FromMinutes(20);
             exercise.ExerciseTypeId = request.ExerciseTypeId;
+            exercise.AttachedFileId = newAttachedFile.Id;
 
             // Current inputs and outputs in the database
 
@@ -204,6 +279,7 @@ namespace ProjetoTccBackend.Services
             }
 
             this._exerciseInputRepository.AddRange(createdInputs);
+            await this._dbContext.SaveChangesAsync();
 
             for (int i = 0; i < outputsToCreate.Count; i++)
             {
@@ -219,6 +295,7 @@ namespace ProjetoTccBackend.Services
             }
 
             this._exerciseOutputRepository.AddRange(createdOutputs);
+            await this._dbContext.SaveChangesAsync();
 
             List<ExerciseInput> inputsToDelete = new List<ExerciseInput>();
             List<ExerciseOutput> outputsToDelete = new List<ExerciseOutput>();
@@ -251,12 +328,27 @@ namespace ProjetoTccBackend.Services
             this._exerciseRepository.Update(exercise);
 
             await this._dbContext.SaveChangesAsync();
+
+            var updatedExercise = await this
+                ._exerciseRepository.Query()
+                .Where(x => x.Id.Equals(id))
+                .Include(x => x.AttachedFile)
+                .Include(x => x.ExerciseInputs)
+                .Include(x => x.ExerciseOutputs)
+                .FirstAsync();
+
+            return updatedExercise;
         }
 
         /// <inheritdoc/>
         public async Task DeleteExerciseAsync(int id)
         {
-            var exercise = this._exerciseRepository.GetById(id);
+            var exercise = this
+                ._exerciseRepository.Query()
+                .Include(e => e.AttachedFile)
+                .Where(e => e.Id == id)
+                .FirstOrDefault();
+
             if (exercise == null)
                 throw new ErrorException($"Exercício com id {id} não encontrado.");
 
@@ -266,6 +358,7 @@ namespace ProjetoTccBackend.Services
             this._exerciseOutputRepository.RemoveRange(outputs);
             this._exerciseInputRepository.RemoveRange(inputs);
 
+            this._attachedFileService.DeleteAttachedFile(exercise.AttachedFile!);
             this._exerciseRepository.Remove(exercise);
             await this._dbContext.SaveChangesAsync();
         }

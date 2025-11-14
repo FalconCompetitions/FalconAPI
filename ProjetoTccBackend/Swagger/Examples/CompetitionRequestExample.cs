@@ -9,7 +9,6 @@ namespace ProjetoTccBackend.Swagger.Examples
         public CompetitionRequest GetExample() => new CompetitionRequest()
         {
             StartTime = DateTime.UtcNow,
-            EndTime = DateTime.UtcNow.AddHours(2)
         };
     }
 }

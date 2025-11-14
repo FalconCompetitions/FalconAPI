@@ -38,5 +38,15 @@ namespace ProjetoTccBackend.Repositories
                 .Where(x => x.Id.Equals(id))
                 .FirstOrDefault();
         }
+
+        public async Task<bool> DeleteByIdAsync(string id)
+        {
+            var user = await this._dbContext.Users.FindAsync(id);
+            if (user == null)
+                return false;
+            this._dbContext.Users.Remove(user);
+            await this._dbContext.SaveChangesAsync();
+            return true;
+        }
     }
 }

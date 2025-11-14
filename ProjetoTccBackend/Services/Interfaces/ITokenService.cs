@@ -39,5 +39,22 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// If any of these checks fail, the method returns false.
         /// </remarks>
         bool ValidateToken(string token);
+
+
+        /// <summary>
+        /// Generates a JSON Web Token (JWT) for authentication purposes.
+        /// </summary>
+        /// <remarks>The generated token includes claims, is signed using the HMAC-SHA256 algorithm, and
+        /// is valid for one day. The token is configured with the specified issuer, audience, and signing
+        /// credentials.</remarks>
+        /// <returns>A string representation of the generated JWT.</returns>
+        string GenerateJudgeToken();
+
+        /// <summary>
+        /// Retrieves a private access token from the memory cache, if available.
+        /// </summary>
+        /// <returns>The private access token as a <see cref="string"/>, or <see langword="null"/> if the token is not found in
+        /// the cache.</returns>
+        string? FetchPrivateAccessToken();
     }
 }

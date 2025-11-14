@@ -9,9 +9,11 @@ namespace ProjetoTccBackend.Database
 {
     public class TccDbContext : IdentityDbContext<User>
     {
-        private IConfiguration _configuration;
+        private readonly IConfiguration? _configuration;
 
+        public DbSet<AttachedFile> AttachedFiles { get; set; }
         public DbSet<Group> Groups { get; set; }
+        public DbSet<GroupInvite> GroupInvites { get; set; }
         public DbSet<Competition> Competitions { get; set; }
         public DbSet<CompetitionRanking> CompetitionRankings { get; set; }
         public DbSet<ExerciseType> ExerciseTypes { get; set; }
@@ -26,25 +28,45 @@ namespace ProjetoTccBackend.Database
         public DbSet<Log> Logs { get; set; }
         public DbSet<ExerciseSubmissionQueueItem> ExerciseSubmissionQueueItems { get; set; }
 
-        public TccDbContext(IConfiguration configuration)
-            : base()
-        {
-            this._configuration = configuration;
-        }
+        // Construtor para testes
+        public TccDbContext(DbContextOptions<TccDbContext> options)
+            : base(options) { }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseMySql(
-                this._configuration.GetConnectionString("DefaultConnection"),
-                ServerVersion.AutoDetect(
-                    this._configuration.GetConnectionString("DefaultConnection")
-                )
-            );
+            if (_configuration != null)
+            {
+                optionsBuilder.UseSqlServer(
+                    _configuration.GetConnectionString("DefaultConnection")
+                );
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            // Configurar todas as chaves estrangeiras para User.Id com nvarchar(450)
+            // para compatibilidade com SQL Server Identity
+            builder.Entity<Group>()
+                .Property(g => g.LeaderId)
+                .HasMaxLength(450);
+
+            builder.Entity<GroupInvite>()
+                .Property(gi => gi.UserId)
+                .HasMaxLength(450);
+
+            builder.Entity<Question>()
+                .Property(q => q.UserId)
+                .HasMaxLength(450);
+
+            builder.Entity<Answer>()
+                .Property(a => a.UserId)
+                .HasMaxLength(450);
+
+            builder.Entity<Log>()
+                .Property(l => l.UserId)
+                .HasMaxLength(450);
 
             // Group - Users
             builder
@@ -61,7 +83,7 @@ namespace ProjetoTccBackend.Database
                 .HasMany<Group>(e => e.Groups)
                 .WithMany(u => u.Competitions)
                 .UsingEntity<GroupInCompetition>(e =>
-                    e.Property(p => p.CreatedOn).HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    e.Property(p => p.CreatedOn).HasDefaultValueSql("GETDATE()")
                 );
 
             // CompetitionRanking - Competition
@@ -107,12 +129,13 @@ namespace ProjetoTccBackend.Database
                 .IsRequired(required: true);
 
             // Exercise - ExerciseOutputs[]
+            // NoAction para evitar ciclo de cascade (ExerciseInput já faz cascade de Exercise)
             builder
                 .Entity<Exercise>()
                 .HasMany(e => e.ExerciseOutputs)
                 .WithOne(e => e.Exercise)
                 .HasForeignKey(e => e.ExerciseId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired(required: true);
 
             builder
@@ -152,7 +175,7 @@ namespace ProjetoTccBackend.Database
                 .HasMany(u => u.Questions)
                 .WithOne(q => q.User)
                 .HasForeignKey(s => s.UserId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired(required: true);
 
             builder
@@ -160,7 +183,7 @@ namespace ProjetoTccBackend.Database
                 .HasMany(u => u.Answers)
                 .WithOne(a => a.User)
                 .HasForeignKey(a => a.UserId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired(required: true);
 
             builder
@@ -171,7 +194,7 @@ namespace ProjetoTccBackend.Database
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(required: true);
 
-            // Exercise - ExerciseType
+            // Exercise - ExerciseTypeId
             builder
                 .Entity<Exercise>()
                 .HasOne(e => e.ExerciseType)
@@ -212,24 +235,49 @@ namespace ProjetoTccBackend.Database
                 .HasOne(q => q.Answer)
                 .WithOne(a => a.Question)
                 .HasForeignKey<Question>(q => q.AnswerId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired(required: true);
+                .OnDelete(DeleteBehavior.NoAction)
+                .IsRequired(required: false);
 
             var groupExerciseAttemptRequestConverter = new ValueConverter<
-                GroupExerciseAttemptRequest,
+                GroupExerciseAttemptWorkerRequest,
                 string
             >(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
                 v =>
-                    JsonSerializer.Deserialize<GroupExerciseAttemptRequest>(
+                    JsonSerializer.Deserialize<GroupExerciseAttemptWorkerRequest>(
                         v,
                         (JsonSerializerOptions)null
                     )
             );
 
-            builder.Entity<ExerciseSubmissionQueueItem>()
+            builder
+                .Entity<ExerciseSubmissionQueueItem>()
                 .Property(e => e.Request)
                 .HasConversion(groupExerciseAttemptRequestConverter);
+
+            builder
+                .Entity<GroupInvite>()
+                .HasOne(g => g.User)
+                .WithMany(u => u.GroupInvites)
+                .HasForeignKey(g => g.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(required: true);
+
+            builder
+                .Entity<GroupInvite>()
+                .HasOne(g => g.Group)
+                .WithMany(g => g.GroupInvites)
+                .HasForeignKey(g => g.GroupId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(required: true);
+
+            builder
+                .Entity<Exercise>()
+                .HasOne(e => e.AttachedFile)
+                .WithMany(a => a.Exercises)
+                .HasForeignKey(e => e.AttachedFileId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(required: false);
         }
     }
 }

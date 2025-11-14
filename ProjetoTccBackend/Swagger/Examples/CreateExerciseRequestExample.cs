@@ -12,7 +12,6 @@ namespace ProjetoTccBackend.Swagger.Examples
             ExerciseTypeId = 1,
             Title = "Soma de Números",
             Description = "Some dois números inteiros.",
-            EstimatedTime = TimeSpan.FromMinutes(30),
             Inputs = new List<CreateExerciseInputRequest>(),
             Outputs = new List<CreateExerciseOutputRequest>()
         };

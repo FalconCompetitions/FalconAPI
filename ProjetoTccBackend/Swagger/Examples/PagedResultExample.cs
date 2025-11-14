@@ -24,7 +24,11 @@ namespace ProjetoTccBackend.Swagger.Examples
                             Id = "user-uuid",
                             Name = "Usuário Exemplo",
                             Email = "exemplo@email.com",
-                            JoinYear = 2024
+                            JoinYear = 2024,
+                            CreatedAt = DateTime.UtcNow,
+                            Department = "Departamento",
+                            LastLoggedAt = DateTime.UtcNow,
+                            Ra = "000000"
                         }
                     }
                 }
@@ -47,7 +51,11 @@ namespace ProjetoTccBackend.Swagger.Examples
                     Id = "user-uuid",
                     Name = "Usuário Exemplo",
                     Email = "exemplo@email.com",
-                    JoinYear = 2024
+                    JoinYear = 2024,
+                    CreatedAt = DateTime.UtcNow,
+                    Department = "Departamento",
+                    Ra = "0000000",
+                    LastLoggedAt = DateTime.UtcNow,
                 }
             },
             TotalCount = 1,

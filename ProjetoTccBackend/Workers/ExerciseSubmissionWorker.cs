@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
 using ProjetoTccBackend.Database.Responses.Exercise;
+using ProjetoTccBackend.Enums;
 using ProjetoTccBackend.Hubs;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Workers.Queues;
-
 
 namespace ProjetoTccBackend.Workers
 {
@@ -24,6 +24,14 @@ namespace ProjetoTccBackend.Workers
         private readonly IServiceProvider _serviceProvider;
         private readonly IMemoryCache _memoryCache;
         private readonly ILogger<ExerciseSubmissionWorker> _logger;
+
+        /// <summary>
+        /// Represents the maximum number of worker threads that can be utilized.
+        /// </summary>
+        /// <remarks>This constant defines an upper limit for worker thread allocation, ensuring that no
+        /// more than the specified number of threads are used in operations. It is intended for internal use
+        /// only.</remarks>
+        private const int MAX_WORKER_COUNT = 8;
 
         private const string CompetitionCacheKey = "currentCompetition";
 
@@ -73,7 +81,7 @@ namespace ProjetoTccBackend.Workers
             if (competition is not null)
             {
                 var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(
-                    competition.EndTime
+                    competition.EndTime!.Value
                 );
 
                 this._memoryCache.Set(CompetitionCacheKey, competition, cacheEntryOptions);
@@ -96,40 +104,69 @@ namespace ProjetoTccBackend.Workers
         /// <returns>A <see cref="Task"/> representing the asynchronous execution of the background service.</returns>
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            int queueSize = this._queue.GetQueueSize();
-            int workerCount = Environment.ProcessorCount;
-            workerCount = (workerCount < queueSize) ? queueSize : workerCount;
+            this._logger.LogInformation("ExerciseSubmissionWorkerInitialized...");
 
-            List<Task> tasks = new List<Task>();
-
-            for (int i = 0; i < workerCount; i++)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                tasks.Add(
-                    Task.Run(
-                        async () =>
-                        {
-                            while (!cancellationToken.IsCancellationRequested)
+                int queueSize = this._queue.GetQueueSize();
+
+                if (queueSize == 0)
+                {
+                    await Task.Delay(1000, cancellationToken);
+                    continue;
+                }
+
+                int workerCount = Environment.ProcessorCount;
+                workerCount = (queueSize < workerCount) ? queueSize : workerCount;
+
+                workerCount = (workerCount > MAX_WORKER_COUNT) ? MAX_WORKER_COUNT : workerCount;
+
+                List<Task> tasks = new List<Task>();
+
+                for (int i = 0; i < workerCount; i++)
+                {
+                    tasks.Add(
+                        Task.Run(
+                            async () =>
                             {
-                                var queueItem = await this._queue.DequeueAsync(cancellationToken);
-
-                                if(queueItem is null)
                                 {
-                                    this._logger.LogCritical($"null item received from queue submission.");
-                                    continue;
-                                }
+                                    var queueItem = await this._queue.DequeueAsync(
+                                        cancellationToken
+                                    );
 
-                                using (var scope = this._serviceProvider.CreateScope())
-                                {
-                                    await this.ProcessExerciseAttempt(scope, queueItem);
+                                    if (queueItem is null)
+                                    {
+                                        this._logger.LogCritical(
+                                            $"null item received from queue submission."
+                                        );
+                                        return;
+                                    }
+
+                                    using (var scope = this._serviceProvider.CreateScope())
+                                    {
+                                        try
+                                        {
+                                            await this.ProcessExerciseAttempt(scope, queueItem);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            this._logger.LogCritical(
+                                                eventId: (int)LoggerEvent.ExerciseSubmissionQueue,
+                                                exception: ex,
+                                                message: $"The processing of ExerciseId: {queueItem.Request.ExerciseId}, from: {queueItem.ConnectionId} failed"
+                                            );
+                                        }
+                                    }
                                 }
-                            }
-                        },
-                        cancellationToken
-                    )
-                );
+                            },
+                            cancellationToken
+                        )
+                    );
+                }
+
+                await Task.WhenAll(tasks);
+                await Task.Delay(2000, cancellationToken);
             }
-
-            await Task.WhenAll(tasks);
         }
 
         /// <summary>
@@ -137,7 +174,8 @@ namespace ProjetoTccBackend.Workers
         /// </summary>
         /// <remarks>This method retrieves the current competition context, processes the exercise
         /// submission using the group attempt service, and sends the resulting response to multiple client groups,
-        /// including administrators, teachers, and the submitting client.</remarks>
+        /// including administrators, teachers, and the submitting client. Additionally, it broadcasts the updated
+        /// ranking to all connected clients in the Students, Teachers, and Admins groups.</remarks>
         /// <param name="serviceScope">The <see cref="IServiceScope"/> used to resolve scoped services for the operation.</param>
         /// <param name="queueItem">The <see cref="ExerciseSubmissionQueueItem"/> containing the details of the exercise submission, including
         /// the request data and the connection ID of the submitting client.</param>
@@ -148,23 +186,47 @@ namespace ProjetoTccBackend.Workers
         )
         {
             var currentCompetition = await this.FetchCurrentCompetitionAsync(serviceScope);
+
+            if (currentCompetition is null)
+            {
+                this._logger.LogWarning(
+                    "No active competition found for exercise submission processing"
+                );
+                return;
+            }
+
             var groupAttemptService =
                 serviceScope.ServiceProvider.GetRequiredService<IGroupAttemptService>();
 
-            ExerciseSubmissionResponse response = await groupAttemptService.SubmitExerciseAttempt(
-                currentCompetition,
-                queueItem.Request
-            );
+            var (submissionResponse, rankingResponse) =
+                await groupAttemptService.SubmitExerciseAttempt(
+                    currentCompetition,
+                    queueItem.Request
+                );
 
+            // Send submission response to admins and teachers
             await this
                 ._hubContext.Clients.Group("Admins")
-                .SendAsync("ReceiveExerciseAttempt", response);
+                .SendAsync("ReceiveExerciseAttempt", submissionResponse);
             await this
                 ._hubContext.Clients.Group("Teachers")
-                .SendAsync("ReceiveExerciseAttempt", response);
+                .SendAsync("ReceiveExerciseAttempt", submissionResponse);
+
+            // Send submission response to the submitting client
             await this
                 ._hubContext.Clients.Client(queueItem.ConnectionId)
-                .SendAsync("ReceiveExerciseAttemptResponse", response);
+                .SendAsync("ReceiveExerciseAttemptResponse", submissionResponse);
+
+            // Broadcast updated ranking to all participants
+            await this
+                ._hubContext.Clients.Group("Students")
+                .SendAsync("ReceiveRankingUpdate", rankingResponse);
+            await this
+                ._hubContext.Clients.Group("Teachers")
+                .SendAsync("ReceiveRankingUpdate", rankingResponse);
+            await this
+                ._hubContext.Clients.Group("Admins")
+                .SendAsync("ReceiveRankingUpdate", rankingResponse);
         }
     }
 }

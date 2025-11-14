@@ -4,28 +4,34 @@ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Group;
+using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Exceptions;
+using ProjetoTccBackend.Exceptions.Group;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <inheritdoc />
     public class GroupService : IGroupService
     {
         private readonly IUserService _userService;
         private readonly IUserRepository _userRepository;
         private readonly IGroupRepository _groupRepository;
+        private readonly IGroupInviteService _groupInviteService;
         private readonly ILogger<GroupService> _logger;
         private readonly TccDbContext _dbContext;
+        private const int MAX_MEMBERS_PER_GROUP = 3;
 
         public GroupService(
             IUserService userService,
             IUserRepository userRepository,
             IGroupRepository groupRepository,
+            IGroupInviteService groupInviteService,
             TccDbContext dbContext,
             ILogger<GroupService> logger
         )
@@ -33,6 +39,7 @@ namespace ProjetoTccBackend.Services
             this._userService = userService;
             this._userRepository = userRepository;
             this._groupRepository = groupRepository;
+            this._groupInviteService = groupInviteService;
             this._dbContext = dbContext;
             this._logger = logger;
         }
@@ -41,6 +48,16 @@ namespace ProjetoTccBackend.Services
         public async Task<Group> CreateGroupAsync(CreateGroupRequest groupRequest)
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
+
+            Group? existentGroup = await this
+                ._groupRepository.Query()
+                .Where(g => g.LeaderId == loggedUser.Id)
+                .FirstOrDefaultAsync();
+
+            if (existentGroup != null)
+            {
+                throw new UserHasGroupException();
+            }
 
             Group newGroup = new Group { Name = groupRequest.Name, LeaderId = loggedUser.Id };
 
@@ -51,10 +68,38 @@ namespace ProjetoTccBackend.Services
                 throw new UnauthorizedAccessException("Usuário não autenticado");
             }
 
+            await this._dbContext.SaveChangesAsync();
+
             loggedUser.GroupId = newGroup.Id;
+
             this._userRepository.Update(loggedUser);
 
             await this._dbContext.SaveChangesAsync();
+
+            if (groupRequest.UserRAs != null)
+            {
+                foreach (string ra in groupRequest.UserRAs)
+                {
+                    User? user = this._userRepository.GetByRa(ra);
+
+                    if (user == null)
+                    {
+                        continue;
+                    }
+
+                    await this._groupInviteService.SendGroupInviteToUser(
+                        new InviteUserToGroupRequest() { GroupId = newGroup.Id, RA = user.RA }
+                    );
+                }
+            }
+
+            newGroup = await this
+                ._groupRepository.Query()
+                .Include(g => g.Users)
+                .Include(g => g.GroupInvites)
+                .ThenInclude(g => g.User)
+                .Where(g => g.Id == newGroup.Id)
+                .FirstAsync();
 
             return newGroup;
         }
@@ -95,7 +140,13 @@ namespace ProjetoTccBackend.Services
                 throw new UnauthorizedAccessException("Não possui acesso ao grupo requisitado");
             }
 
-            Group? group = this._groupRepository.GetById(id);
+            Group? group = this
+                ._groupRepository.Query()
+                .Include(g => g.Users)
+                .Include(g => g.GroupInvites)
+                .ThenInclude(g => g.User)
+                .Where(g => g.Id == id)
+                .FirstOrDefault();
 
             return group;
         }
@@ -107,16 +158,20 @@ namespace ProjetoTccBackend.Services
             string? search
         )
         {
-            var query = this._groupRepository.GetAll().AsQueryable();
+            var query = this._groupRepository.Query();
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(g => g.Name.Contains(search));
             }
 
-            query = query.Include(g => g.Users);
-
             int totalCount = query.Count();
-            var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            List<Group> items = await query
+                .AsSplitQuery()
+                .OrderBy(e => e.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Include(x => x.Users)
+                .ToListAsync();
 
             List<GroupResponse> groupResponses = new List<GroupResponse>();
 
@@ -131,9 +186,13 @@ namespace ProjetoTccBackend.Services
                         new GenericUserInfoResponse()
                         {
                             Id = user.Id,
+                            Ra = user.RA,
                             Name = user.UserName!,
                             Email = user.Email!,
-                            JoinYear = (int)user.JoinYear!,
+                            JoinYear = user.JoinYear,
+                            CreatedAt = user.CreatedAt,
+                            LastLoggedAt = user.LastLoggedAt,
+                            Department = user.Department,
                         }
                     );
                 }
@@ -149,15 +208,13 @@ namespace ProjetoTccBackend.Services
                 );
             }
 
-            return await Task.FromResult(
-                new PagedResult<GroupResponse>
-                {
-                    Items = groupResponses,
-                    TotalCount = totalCount,
-                    Page = page,
-                    PageSize = pageSize,
-                }
-            );
+            return new PagedResult<GroupResponse>
+            {
+                Items = groupResponses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+            };
         }
 
         /// <inheritdoc/>
@@ -168,62 +225,57 @@ namespace ProjetoTccBackend.Services
             IList<string> userRoles
         )
         {
-            var group = this._groupRepository.GetById(groupId);
+            var group = await this
+                ._groupRepository.Query()
+                .Include(g => g.Users)
+                .Where(g => g.Id == groupId && g.LeaderId == userId)
+                .FirstOrDefaultAsync();
+
             if (group == null)
                 return null;
-            // Permissão: Admin, Teacher ou membro do grupo
             bool isAdmin = userRoles.Contains("Admin");
-            bool isTeacher = userRoles.Contains("Teacher");
-            bool isMember = group.Users.Any(u => u.Id == userId);
-            if (!(isAdmin || isTeacher || isMember))
+            bool isLeader = group.LeaderId == userId;
+            if (!isAdmin && !isLeader)
                 return null;
+
             group.Name = request.Name;
-            // Atualiza os usuários do grupo
-            List<User> currentUsers = group.Users.ToList();
-            var newUsers = this
-                ._userRepository.GetAll()
-                .Where(u => request.UserIds.Contains(u.Id))
-                .ToList();
 
-            var users = currentUsers.ToList();
-
-            // Remove usuários que não estão mais
-            foreach (var user in currentUsers)
+            foreach (string id in request.MembersToRemove)
             {
-                if (!request.UserIds.Contains(user.Id))
-                {
-                    user.GroupId = null;
-                    this._userRepository.Update(user);
+                bool? res = await this._groupInviteService.RemoveUserFromGroupAsync(groupId, id);
+            }
 
-                    int indexToRemove = users.IndexOf(user);
-                    users.RemoveAt(indexToRemove);
-                }
-            }
-            // Adiciona novos usuários
-            foreach (var user in newUsers)
-            {
-                if (user.GroupId != group.Id)
-                {
-                    user.GroupId = group.Id;
-                    this._userRepository.Update(user);
-                    users.Add(user);
-                }
-            }
             this._groupRepository.Update(group);
-            this._dbContext.SaveChanges();
+            try
+            {
+                this._dbContext.SaveChanges();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new GroupConcurrencySuccessException();
+            }
+
+            group = await this
+                ._groupRepository.Query()
+                .Include(g => g.Users)
+                .Where(g => g.Id == groupId)
+                .FirstAsync();
 
             GroupResponse response = new GroupResponse()
             {
                 Id = group.Id,
                 LeaderId = group.LeaderId,
                 Name = group.Name,
-                Users = users.Select(user => new GenericUserInfoResponse()
-                {
-                    Id = user.Id,
-                    Email = user.Email!,
-                    JoinYear = (int)user.JoinYear!,
-                    Name = user.Name
-                }).ToList(),
+                Users = group
+                    .Users.Select(user => new GenericUserInfoResponse()
+                    {
+                        Id = user.Id,
+                        Email = user.Email!,
+                        JoinYear = user.JoinYear,
+                        Name = user.Name,
+                        CreatedAt = user.CreatedAt,
+                    })
+                    .ToList(),
             };
 
             return response;

@@ -97,6 +97,11 @@ namespace ProjetoTccBackend.Middlewares
                 }
             }
 
+            if(context.Response.HasStarted)
+            {
+                return;
+            }
+
             context.Response.ContentType = "application/json";
             if(isFormException is true)
             {
@@ -117,6 +122,8 @@ namespace ProjetoTccBackend.Middlewares
         private bool IsJsonRequest(HttpContext context)
         {
             if (context.Request.ContentType is null) return false;
+
+            if (context.Response.ContentType is null) return false;
 
             return context.Response.ContentType!.Contains("application/json", StringComparison.OrdinalIgnoreCase);
         }

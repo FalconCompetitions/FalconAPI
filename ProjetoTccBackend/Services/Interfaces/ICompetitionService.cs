@@ -1,4 +1,6 @@
 ﻿using ProjetoTccBackend.Database.Requests.Competition;
+using ProjetoTccBackend.Database.Responses.Competition;
+using ProjetoTccBackend.Enums.Competition;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 
@@ -24,10 +26,21 @@ namespace ProjetoTccBackend.Services.Interfaces
         Task<Competition> GetExistentCompetition();
 
         /// <summary>
+        /// Retrieves a collection of competitions that are marked as template models.
+        /// </summary>
+        /// <remarks>This method queries the competition repository to retrieve competitions with a status
+        /// of <see cref="CompetitionStatus.ModelTemplate"/>. The returned competitions are mapped to <see
+        /// cref="CompetitionResponse"/> objects, which include key details such as competition metadata and associated
+        /// exercise IDs.</remarks>
+        /// <returns>A collection of <see cref="CompetitionResponse"/> objects representing competitions that are designated as
+        /// templates. If no template competitions exist, an empty collection is returned.</returns>
+        Task<ICollection<CompetitionResponse>> GetCreatedTemplateCompetitions();
+
+        /// <summary>
         /// Retrieves the current competition based on the system's current date and time.
-        /// 
+        ///
         /// This method queries the competition repository to find a competition where the current date and time falls within its start and end time.
-        /// 
+        ///
         /// Returns the current competition if found, otherwise returns null.
         /// </summary>
         Task<Competition?> GetCurrentCompetition();
@@ -45,10 +58,9 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <param name="loggedUser">The user who is answering the question.</param>
         /// <param name="request">The request containing details of the answer to be submitted.</param>
-        /// <returns>The <see cref="Answer"/> object representing the answer to the question.</returns>
+        /// <returns>The <see cref="AnswerResponse"/> object representing the answer to the question.</returns>
         /// <remarks>Only Admin and Teacher users have access to this method.</remarks>
-        Task<Answer> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request);
-
+        Task<AnswerResponse> AnswerGroupQuestion(User loggedUser, AnswerGroupQuestionRequest request);
 
         /// <summary>
         /// Opens inscriptions for the specified competition, allowing participants to register.
@@ -58,7 +70,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="competition">The competition for which inscriptions will be opened. Cannot be null.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task OpenCompetitionInscriptionsAsync(Competition competition);
-
 
         /// <summary>
         /// Closes the inscriptions period for the specified competition.
@@ -70,7 +81,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task CloseCompetitionInscriptionsAsync(Competition competition);
 
-
         /// <summary>
         /// Starts the specified competition asynchronously.
         /// </summary>
@@ -79,7 +89,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="competition">The <see cref="Competition"/> instance representing the competition to start. Cannot be null.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task StartCompetitionAsync(Competition competition);
-
 
         /// <summary>
         /// Ends the specified competition and performs any necessary finalization tasks.
@@ -91,7 +100,6 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task EndCompetitionAsync(Competition competition);
 
-
         /// <summary>
         /// Asynchronously retrieves a collection of competitions that are currently open for participation.
         /// </summary>
@@ -102,5 +110,87 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// cref="Competition"/> objects representing the open competitions. If no competitions are open,  the
         /// collection will be empty.</returns>
         Task<ICollection<Competition>> GetOpenCompetitionsAsync();
+
+        /// <summary>
+        /// Updates an existing competition with the specified data.
+        /// </summary>
+        /// <remarks>This method updates the competition's details and synchronizes its associated
+        /// exercises based on the provided request. Any exercises not included in the request will be removed from the
+        /// competition, and new exercises will be added.</remarks>
+        /// <param name="id">The unique identifier of the competition to update.</param>
+        /// <param name="request">An <see cref="UpdateCompetitionRequest"/> object containing the updated competition details,  such as name,
+        /// start time, duration, exercise IDs, and other configuration settings.</param>
+        /// <returns>The updated <see cref="Competition"/> object if the competition exists; otherwise, <see langword="null"/>.</returns>
+        Task<Competition?> UpdateCompetitionAsync(int id, UpdateCompetitionRequest request);
+
+        /// <summary>
+        /// Retrieves a collection of competitions that are currently open for subscriptions.
+        /// </summary>
+        /// <remarks>This method queries the underlying competition repository to find competitions with a
+        /// status  of <see cref="CompetitionStatus.OpenInscriptions"/>. The returned collection is read-only and
+        /// reflects the current state of the repository at the time of the query.</remarks>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a collection of  <see
+        /// cref="Competition"/> objects where the subscription status is open. If no competitions  are open for
+        /// subscriptions, the collection will be empty.</returns>
+        Task<ICollection<Competition>> GetOpenSubscriptionCompetitionsAsync();
+
+        /// <summary>
+        /// Registers the logged-in user's group in a specified competition.
+        /// </summary>
+        /// <remarks>The logged-in user must be the leader of their group to perform this operation. The
+        /// competition must exist, be open for inscriptions, and the group must not already be registered.
+        /// Additionally, the group's member count must not exceed the competition's maximum allowed members.</remarks>
+        /// <param name="request">The request containing the competition ID to register the group in.</param>
+        /// <returns>A <see cref="GroupInCompetition"/> object representing the group's registration in the competition.</returns>
+        /// <exception cref="UserIsNotLeaderException">Thrown if the logged-in user is not the leader of their group.</exception>
+        /// <exception cref="NotExistentCompetitionException">Thrown if the specified competition does not exist.</exception>
+        /// <exception cref="AlreadyInCompetitionException">Thrown if the group is already registered in the specified competition.</exception>
+        /// <exception cref="NotValidCompetitionException">Thrown if the competition is not currently open for inscriptions.</exception>
+        /// <exception cref="MaxMembersExceededException">Thrown if the group's member count exceeds the competition's maximum allowed members.</exception>
+        Task<GroupInCompetition> InscribeGroupInCompetition(
+            InscribeGroupToCompetitionRequest request
+        );
+
+        /// <summary>
+        /// Blocks a group's submissions in a competition.
+        /// </summary>
+        /// <param name="request">The requested group and competition information.</param>
+        /// <returns>A <see cref="Boolean"/> indicating the success of the operation.</returns>
+        Task<bool> BlockGroupInCompetition(BlockGroupSubmissionRequest request);
+
+        /// <summary>
+        /// Retrieves all questions for a specific competition.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition.</param>
+        /// <returns>A collection of <see cref="Question"/> objects for the competition.</returns>
+        Task<ICollection<Question>> GetAllCompetitionQuestionsAsync(int competitionId);
+
+        /// <summary>
+        /// Retrieves the complete ranking for a specific competition, including exercise attempts.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition.</param>
+        /// <returns>A collection of <see cref="CompetitionRankingResponse"/> objects with full ranking data.</returns>
+        Task<ICollection<CompetitionRankingResponse>> GetCompetitionRankingAsync(int competitionId);
+
+        /// <summary>
+        /// Retrieves all exercise submissions for a specific competition.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition.</param>
+        /// <returns>A collection of <see cref="GroupExerciseAttempt"/> objects representing all submissions.</returns>
+        Task<ICollection<GroupExerciseAttempt>> GetCompetitionSubmissionsAsync(int competitionId);
+
+        /// <summary>
+        /// Updates competition settings. Time values are received in seconds and converted to TimeSpan internally.
+        /// </summary>
+        /// <param name="request">The request containing competition settings. All time values are in seconds.</param>
+        /// <returns>True if the update was successful, false otherwise.</returns>
+        Task<bool> UpdateCompetitionSettingsAsync(UpdateCompetitionSettingsRequest request);
+
+        /// <summary>
+        /// Stops a competition immediately by setting its EndTime to now and status to Finished.
+        /// </summary>
+        /// <param name="competitionId">The ID of the competition to stop.</param>
+        /// <returns>True if the competition was stopped successfully, false otherwise.</returns>
+        Task<bool> StopCompetitionAsync(int competitionId);
     }
 }

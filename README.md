@@ -1,101 +1,119 @@
-# Projeto TCC - Backend
+# Projeto TCC - FalconAPI
 
-Este repositÛrio contÈm o backend da aplicaÁ„o de competiÁ„o de programaÁ„o para o Trabalho de Conclus„o de Curso (TCC). O sistema È desenvolvido em .NET 8, utiliza MariaDB como banco de dados e segue arquitetura baseada em repositÛrios, serviÁos, controllers e comunicaÁ„o em tempo real via SignalR.
+Este reposit√≥rio cont√©m o backend da aplica√ß√£o de competi√ß√£o de programa√ß√£o para o Trabalho de Conclus√£o de Curso (TCC). O sistema √© desenvolvido em .NET 8, utiliza MariaDB como banco de dados e segue arquitetura baseada em reposit√≥rios, servi√ßos, controllers e comunica√ß√£o em tempo real via SignalR.
 
 ## Tecnologias Utilizadas
 
 - .NET 8 (ASP.NET Core)
 - Entity Framework Core
 - MariaDB
-- SignalR (para comunicaÁ„o em tempo real)
+- SignalR (para comunica√ß√£o em tempo real)
 - Docker e Docker Compose
-- Swagger/OpenAPI para documentaÁ„o
-- JWT para autenticaÁ„o
+- Swagger/OpenAPI para documenta√ß√£o
+- JWT para autentica√ß√£o
 
 ## Estrutura do Projeto
 
-- **Controllers**: Endpoints da API REST (ex: Auth, User, Competition, Exercise, Log, Group).
-- **Models**: Modelos de dados e entidades do banco.
-- **Repositories**: ImplementaÁ„o dos padrıes de acesso a dados.
-- **Services**: Regras de negÛcio e lÛgica da aplicaÁ„o.
-- **Hubs**: ComunicaÁ„o em tempo real via SignalR (CompetitionHub).
-- **Middlewares**: Tratamento de exceÁıes e funcionalidades globais.
-- **Enums**: Tipos e status utilizados em entidades e regras de negÛcio.
-- **Swagger**: Exemplos e filtros para documentaÁ„o dos endpoints.
-- **Migrations**: Controle de vers„o do banco de dados via Entity Framework.
-- **Testes de IntegraÁ„o**: Projeto separado para testes automatizados dos principais fluxos da API.
+- **Controllers/**: Endpoints da API REST (ex: Auth, User, Competition, Exercise, Log, Group)
+- **Models/**: Modelos de dados e entidades do banco
+- **Repositories/**: Implementa√ß√£o dos padr√µes de acesso a dados
+- **Services/**: Regras de neg√≥cio e l√≥gica da aplica√ß√£o
+- **Hubs/**: Comunica√ß√£o em tempo real via SignalR (CompetitionHub)
+- **Middlewares/**: Tratamento de exce√ß√µes e funcionalidades globais
+- **Enums/**: Tipos e status utilizados em entidades e regras de neg√≥cio
+- **Swagger/**: Exemplos e filtros para documenta√ß√£o dos endpoints
+- **Migrations/**: Controle de vers√£o do banco de dados via Entity Framework
+- **Workers/**: Implementa√ß√£o de workers para processamento ass√≠ncrono e sistema de fila
+- **ProjetoTccBackend.Integration.Test/**: Testes de integra√ß√£o automatizados dos principais fluxos da API
+- **ProjetoTCCBackend.Unit.Test/**: Testes unit√°rios
 
 ## Funcionalidades Principais
 
-- **AutenticaÁ„o e AutorizaÁ„o**: Usu·rios podem se registrar, autenticar e renovar tokens JWT. Roles suportadas: Admin, Teacher, Student.
-- **Gest„o de Usu·rios**: CRUD de usu·rios, filtragem por role, atualizaÁ„o de perfil.
-- **Gest„o de CompetiÁıes**: CriaÁ„o, consulta e controle de competiÁıes.
-- **Gest„o de ExercÌcios**: CRUD de exercÌcios, inputs/outputs, tipos e submissıes.
-- **Gest„o de Grupos**: CriaÁ„o e gerenciamento de grupos de estudantes.
-- **Log de AÁıes**: Registro de aÁıes relevantes (login, logout, tentativas, etc) com endpoints para consulta paginada por usu·rio, grupo ou competiÁ„o.
-- **ComunicaÁ„o em Tempo Real**: SignalR Hub para envio de tentativas, perguntas e respostas durante a competiÁ„o, com separaÁ„o por roles e grupos.
-- **Tratamento de Erros**: Middleware para tratamento global de exceÁıes e validaÁ„o de modelos.
-- **DocumentaÁ„o via Swagger**: Endpoints documentados e exemplos de payloads disponÌveis em `/swagger`.
+- **Autentica√ß√£o e Autoriza√ß√£o**: Usu√°rios podem se registrar, autenticar e renovar tokens JWT. Roles suportadas: Admin, Teacher, Student
+- **Gest√£o de Usu√°rios**: CRUD de usu√°rios, filtragem por role, atualiza√ß√£o de perfil
+- **Gest√£o de Competi√ß√µes**: Cria√ß√£o, consulta e controle de competi√ß√µes
+- **Gest√£o de Exerc√≠cios**: CRUD de exerc√≠cios, inputs/outputs, tipos e submiss√µes
+- **Gest√£o de Grupos**: Cria√ß√£o e gerenciamento de grupos de estudantes
+- **Log de A√ß√µes**: Registro de a√ß√µes relevantes (login, logout, tentativas, etc) com endpoints para consulta paginada por usu√°rio, grupo ou competi√ß√£o
+- **Comunica√ß√£o em Tempo Real**: SignalR Hub para envio de tentativas, perguntas e respostas durante a competi√ß√£o, com separa√ß√£o por roles e grupos
+- **Processamento Ass√≠ncrono e Sistema de Fila**: Utiliza√ß√£o de workers para processamento de tarefas em segundo plano, como avalia√ß√£o de exerc√≠cios, envio de notifica√ß√µes e outras rotinas que exigem escalabilidade e n√£o bloqueiam o fluxo principal da API. O sistema de fila garante que tarefas sejam processadas de forma eficiente e resiliente.
+- **Tratamento de Erros**: Middleware para tratamento global de exce√ß√µes e valida√ß√£o de modelos
+- **Documenta√ß√£o via Swagger**: Endpoints documentados e exemplos de payloads dispon√≠veis em `/swagger`
+## Workers e Sistema de Fila
+
+O projeto implementa um sistema de fila para processamento ass√≠ncrono de tarefas, utilizando a pasta `Workers/`. Os workers s√£o respons√°veis por executar rotinas que n√£o devem bloquear o fluxo principal da API, como:
+
+- Avalia√ß√£o autom√°tica de exerc√≠cios submetidos pelos usu√°rios
+- Envio de notifica√ß√µes e atualiza√ß√µes em tempo real
+- Processamento de logs e auditoria
+
+O sistema de fila pode ser implementado com bibliotecas como `BackgroundService` do .NET ou integra√ß√µes com sistemas externos (ex: RabbitMQ, Redis, etc), conforme a necessidade do projeto. Os workers consomem tarefas da fila e executam o processamento em segundo plano, garantindo escalabilidade e melhor desempenho.
+
+Exemplo de uso:
+- Ao submeter uma resposta de exerc√≠cio, a API adiciona uma tarefa na fila para avalia√ß√£o autom√°tica.
+- O worker consome essa tarefa, executa a avalia√ß√£o e atualiza o status do exerc√≠cio, podendo notificar o usu√°rio via SignalR.
+
+Consulte a pasta `Workers/` para detalhes de implementa√ß√£o e exemplos de workers dispon√≠veis.
 
 ## Como executar localmente
 
-### PrÈ-requisitos
+### Pr√©-requisitos
 
 - Docker e Docker Compose instalados
 - .NET 8 SDK instalado (opcional para desenvolvimento fora do container)
 
 ### Subindo o ambiente com Docker Compose
 
-1. Clone o repositÛrio e acesse a pasta do projeto backend.
-2. Configure o arquivo `.env.development` com as vari·veis de ambiente necess·rias, por exemplo:
+1. Clone o reposit√≥rio e acesse a pasta do projeto backend.
+2. Configure o arquivo `.env.development` com as vari√°veis de ambiente necess√°rias, por exemplo:
    ```
    MARIADB_ROOT_PASSWORD=suasenha
    MARIADB_DATABASE=projetotcc
    ```
-
 3. Execute o comando para subir os containers:
    ```
    docker compose -f docker-compose.development.yml up --build
    ```
-
 4. Acesse o Swagger da API para testar os endpoints:
    - HTTP: [http://localhost:8080/swagger](http://localhost:8080/swagger)
    - HTTPS (se configurado): [https://localhost:7163/swagger](https://localhost:7163/swagger)
 
 ### Executando migrations do banco
 
-As migrations s„o aplicadas automaticamente ao iniciar a API (veja `Program.cs`). Para aplicar manualmente:
+As migrations s√£o aplicadas automaticamente ao iniciar a API (veja `Program.cs`). Para aplicar manualmente:
    ```
    dotnet ef database update
    ```
 
 ## Principais Endpoints
 
-- `/api/Auth` - AutenticaÁ„o de usu·rios (login, registro, renovaÁ„o de token, logout)
-- `/api/User` - Gerenciamento de usu·rios (consulta, atualizaÁ„o, filtragem por role)
-- `/api/Competition` - Gerenciamento de competiÁıes
-- `/api/Exercise` - Gerenciamento de exercÌcios
-- `/api/Log` - Consulta de logs de aÁıes
+- `/api/Auth` - Autentica√ß√£o de usu√°rios (login, registro, renova√ß√£o de token, logout)
+- `/api/User` - Gerenciamento de usu√°rios (consulta, atualiza√ß√£o, filtragem por role)
+- `/api/Competition` - Gerenciamento de competi√ß√µes
+- `/api/Exercise` - Gerenciamento de exerc√≠cios
+- `/api/Log` - Consulta de logs de a√ß√µes
 - `/api/Group` - Gerenciamento de grupos
-- `/hub/competition` - ComunicaÁ„o em tempo real via SignalR
+- `/hub/competition` - Comunica√ß√£o em tempo real via SignalR
 
-## IntegraÁ„o e Testes
+## Integra√ß√£o e Testes
 
-- O projeto inclui testes de integraÁ„o em `ProjetoTccBackend.Integration.Test` para validaÁ„o dos principais fluxos da API.
+- O projeto inclui testes de integra√ß√£o em `ProjetoTccBackend.Integration.Test` para valida√ß√£o dos principais fluxos da API.
 - Para rodar os testes:
    ```
    dotnet test ProjetoTccBackend.Integration.Test/ProjetoTccBackend.Integration.Test.csproj
    ```
+- Tamb√©m h√° testes unit√°rios em `ProjetoTCCBackend.Unit.Test`.
 
-## ObservaÁıes Importantes
+## Observa√ß√µes Importantes
 
-- O ambiente de desenvolvimento È definido pela vari·vel `ASPNETCORE_ENVIRONMENT=Development` no Docker Compose.
-- O backend est· preparado para rodar em ambiente Docker, mas pode ser executado localmente via Visual Studio ou CLI do .NET.
-- O banco de dados È inicializado automaticamente e as migrations podem ser aplicadas na inicializaÁ„o da API.
-- O sistema implementa separaÁ„o de roles (Admin, Teacher, Student) tanto nos endpoints quanto no SignalR Hub.
-- O log de aÁıes permite auditoria detalhada das operaÁıes dos usu·rios.
-- O Swagger est· disponÌvel apenas em ambiente de desenvolvimento.
-- O projeto utiliza JWT para autenticaÁ„o e cookies para integraÁ„o com o frontend.
-- O backend implementa tratamento global de erros e validaÁ„o de modelos.
-- O sistema possui endpoints para consulta paginada e filtrada de usu·rios, logs, exercÌcios e competiÁıes.
- Request
+- O ambiente de desenvolvimento √© definido pela vari√°vel `ASPNETCORE_ENVIRONMENT=Development` no Docker Compose.
+- O backend est√° preparado para rodar em ambiente Docker, mas pode ser executado localmente via Visual Studio ou CLI do .NET.
+- O banco de dados √© inicializado automaticamente e as migrations podem ser aplicadas na inicializa√ß√£o da API.
+- O sistema implementa separa√ß√£o de roles (Admin, Teacher, Student) tanto nos endpoints quanto no SignalR Hub.
+- O log de a√ß√µes permite auditoria detalhada das opera√ß√µes dos usu√°rios.
+- O Swagger est√° dispon√≠vel apenas em ambiente de desenvolvimento.
+- O projeto utiliza JWT para autentica√ß√£o e cookies para integra√ß√£o com o frontend.
+- O backend implementa tratamento global de erros e valida√ß√£o de modelos.
+- O sistema possui endpoints para consulta paginada e filtrada de usu√°rios, logs, exerc√≠cios e competi√ß√µes.
+
+---

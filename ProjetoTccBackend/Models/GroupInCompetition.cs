@@ -19,7 +19,12 @@
         /// <summary>
         /// The date and time when the group was added to the competition.
         /// </summary>
-        public DateTime CreatedOn { get; set; }
+        public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Indicates whether the group is blocked from participating in the competition.
+        /// </summary>
+        public bool Blocked { get; set; } = false;
 
         /// <summary>
         /// Reference to the group entity.

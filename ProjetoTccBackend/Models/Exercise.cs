@@ -28,7 +28,19 @@ namespace ProjetoTccBackend.Models
         /// Detailed description of the exercise.
         /// </summary>
         [DataType(DataType.MultilineText)]
-        public required string Description { get; set; }
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// Gets or sets the identifier of the attached file.
+        /// </summary>
+        public int? AttachedFileId { get; set; }
+
+        /// <summary>
+        /// Gets the file attached to the current entity.
+        /// </summary>
+        /// <remarks>The <see cref="AttachedFile"/> property provides access to the file associated with
+        /// the entity.  If no file is attached, this property may return <see langword="null"/>.</remarks>
+        public AttachedFile? AttachedFile { get; set; } = null;
 
         /// <summary>
         /// Estimated time to solve the exercise.

@@ -23,7 +23,7 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// Gets or sets the request details for a group exercise attempt.
         /// </summary>
-        public GroupExerciseAttemptRequest Request { get; set; }
+        public GroupExerciseAttemptWorkerRequest Request { get; set; }
 
         /// <summary>
         /// Gets or sets the unique identifier for the connection.
@@ -37,14 +37,20 @@ namespace ProjetoTccBackend.Models
         /// <param name="groupExerciseAttemptRequest">The request object containing details about the group exercise attempt. This parameter cannot be null.</param>
         /// <param name="connectionId">The unique identifier for the connection associated with this submission. This parameter cannot be null or
         /// empty.</param>
-        public ExerciseSubmissionQueueItem(GroupExerciseAttemptRequest groupExerciseAttemptRequest, string connectionId)
+        public ExerciseSubmissionQueueItem(GroupExerciseAttemptWorkerRequest groupExerciseAttemptRequest, string connectionId)
         {
             this.Request = groupExerciseAttemptRequest;
             this.ConnectionId = connectionId;
         }
 
-
-        public ExerciseSubmissionQueueItem(Guid id, GroupExerciseAttemptRequest groupExerciseAttemptRequest, string connectionId)
+        /// <summary>
+        /// Represents an item in the exercise submission queue, containing details about a group exercise attempt
+        /// request and its associated connection.
+        /// </summary>
+        /// <param name="id">The unique identifier for the queue item.</param>
+        /// <param name="groupExerciseAttemptRequest">The request object containing details about the group exercise attempt. Cannot be null.</param>
+        /// <param name="connectionId">The connection identifier associated with the request. Cannot be null or empty.</param>
+        public ExerciseSubmissionQueueItem(Guid id, GroupExerciseAttemptWorkerRequest groupExerciseAttemptRequest, string connectionId)
         {
             this.Id = id;
             this.Request = groupExerciseAttemptRequest;

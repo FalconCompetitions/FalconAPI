@@ -55,7 +55,7 @@ namespace ProjetoTccBackend.Integration.Test
             {
                 Title = "Teste",
                 Description = "Descrição",
-                EstimatedTime = TimeSpan.FromMinutes(20),
+                //EstimatedTime = TimeSpan.FromMinutes(20),
                 Inputs = new List<CreateExerciseInputRequest>()
                 {
                     new CreateExerciseInputRequest()
@@ -114,7 +114,7 @@ namespace ProjetoTccBackend.Integration.Test
             {
                 Title = "Teste",
                 Description = "Descrição",
-                EstimatedTime = TimeSpan.FromMinutes(20),
+                //EstimatedTime = TimeSpan.FromMinutes(20),
                 Inputs = new List<CreateExerciseInputRequest>()
                 {
                     new CreateExerciseInputRequest()

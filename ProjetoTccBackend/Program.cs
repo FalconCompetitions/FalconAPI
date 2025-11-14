@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.SqlServer;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Filters;
@@ -20,16 +22,18 @@ using ProjetoTccBackend.Swagger.Extensions;
 using ProjetoTccBackend.Swagger.Filters;
 using ProjetoTccBackend.Workers;
 using ProjetoTccBackend.Workers.Queues;
+using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace ProjetoTccBackend
 {
     public class ProjetoTccBackend
     {
         /// <summary>
-        /// Cria as funções padrão no sistema se elas não existirem.
+        /// Cria as funï¿½ï¿½es padrï¿½o no sistema se elas nï¿½o existirem.
         /// </summary>
-        /// <param name="serviceProvider">Provedor de serviços para obter os gerenciadores de função e usuário.</param>
-        /// <returns>Uma tarefa assíncrona.</returns>
+        /// <param name="serviceProvider">Provedor de serviï¿½os para obter os gerenciadores de funï¿½ï¿½o e usuï¿½rio.</param>
+        /// <returns>Uma tarefa assï¿½ncrona.</returns>
         public static async Task CreateRoles(IServiceProvider serviceProvider)
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -49,6 +53,162 @@ namespace ProjetoTccBackend
             }
         }
 
+        public static async Task CreateAdminUser(IServiceProvider serviceProvider)
+        {
+            var dbContext = serviceProvider.GetRequiredService<TccDbContext>();
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
+            var signInManager = serviceProvider.GetRequiredService<SignInManager<User>>();
+
+            List<User> adminUser = new List<User>()
+            {
+                new User()
+                {
+                    RA = "999999",
+                    Email = "admin@gmail.com",
+                    Name = "admin",
+                    UserName = "admin",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+            };
+
+            List<User> teacherUsers = new List<User>()
+            {
+                new User()
+                {
+                    RA = "222222",
+                    Email = "professor1@gmail.com",
+                    Name = "Joï¿½o",
+                    UserName = "professor1@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "222223",
+                    Email = "professor2@gmail.com",
+                    Name = "ï¿½lvaro",
+                    UserName = "professor2@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "222224",
+                    Email = "professor3@gmail.com",
+                    Name = "Manuel",
+                    UserName = "professor3@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "222225",
+                    Email = "professor4@gmail.com",
+                    Name = "Renato Coach",
+                    UserName = "professor4@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+            };
+
+            List<User> studentUsers = new List<User>()
+            {
+                new User()
+                {
+                    RA = "111111",
+                    Email = "aluno1@gmail.com",
+                    Name = "Diego Jï¿½nior",
+                    UserName = "aluno1@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "111112",
+                    Email = "aluno2@gmail.com",
+                    Name = "Canï¿½rio Arregaï¿½ado",
+                    UserName = "aluno2@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "111113",
+                    Email = "aluno3@gmail.com",
+                    Name = "Roberto",
+                    UserName = "aluno3@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+                new User()
+                {
+                    RA = "111114",
+                    Email = "aluno4@gmail.com",
+                    Name = "Coach Jï¿½nior",
+                    UserName = "aluno4@gmail.com",
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false,
+                    TwoFactorEnabled = false,
+                },
+            };
+
+            foreach (User user in adminUser)
+            {
+                User? existentUser = await userManager.FindByEmailAsync(user.Email!);
+                if (existentUser is null)
+                {
+                    var result = await userManager.CreateAsync(user, "00000000#Ra");
+                    if (result.Succeeded)
+                    {
+                        var createdUser = await userManager.FindByEmailAsync(user.Email!);
+                        await userManager.AddToRoleAsync(createdUser, "Admin");
+                    }
+                }
+            }
+
+            foreach (User user in teacherUsers)
+            {
+                User? existentUser = await userManager.FindByEmailAsync(user.Email!);
+                if (existentUser is null)
+                {
+                    var result = await userManager.CreateAsync(user, "00000000#Ra");
+
+                    if (result.Succeeded)
+                    {
+                        var createdUser = await userManager.FindByEmailAsync(user.Email!);
+                        await userManager.AddToRoleAsync(createdUser, "Teacher");
+                    }
+                }
+            }
+
+            foreach (User user in studentUsers)
+            {
+                User? existentUser = await userManager.FindByEmailAsync(user.Email!);
+                if (existentUser is null)
+                {
+                    var result = await userManager.CreateAsync(user, "00000000#Ra");
+
+                    if (result.Succeeded)
+                    {
+                        var createdUser = await userManager.FindByEmailAsync(user.Email!);
+                        await userManager.AddToRoleAsync(createdUser, "Student");
+                    }
+                }
+            }
+
+            await dbContext.SaveChangesAsync();
+        }
+
         public static void ExecuteMigrations(WebApplication app)
         {
             using (var scope = app.Services.CreateScope())
@@ -63,7 +223,7 @@ namespace ProjetoTccBackend
             var options = new WebSocketOptions()
             {
                 KeepAliveInterval = TimeSpan.FromMinutes(2),
-                AllowedOrigins = { "http://localhost:3000" },
+                AllowedOrigins = { "http://localhost:3000", "https://localhost:3000" },
             };
 
             app.UseWebSockets(options);
@@ -78,7 +238,20 @@ namespace ProjetoTccBackend
 
             // Add services to the container.
             //builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-            builder.Services.AddDbContext<TccDbContext>();
+            builder.Services.AddDbContext<TccDbContext>(options =>
+            {
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    options =>
+                    {
+                        options.EnableRetryOnFailure(
+                            maxRetryCount: 5,
+                            maxRetryDelay: TimeSpan.FromSeconds(30),
+                            errorNumbersToAdd: null
+                        );
+                    }
+                );
+            });
             builder
                 .Services.AddIdentity<User, IdentityRole>(options =>
                 {
@@ -96,7 +269,9 @@ namespace ProjetoTccBackend
 
             // Repositories
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            builder.Services.AddScoped<IAttachedFileRepository, AttachedFileRepository>();
             builder.Services.AddScoped<IGroupRepository, GroupRepository>();
+            builder.Services.AddScoped<IGroupInviteRepository, GroupInviteRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<ILogRepository, LogRepository>(); // Adicionado para Log
             builder.Services.AddScoped<IExerciseInputRepository, ExerciseInputRepository>();
@@ -104,8 +279,16 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<IExerciseRepository, ExerciseRepository>();
             builder.Services.AddScoped<ICompetitionRepository, CompetitionRepository>();
             builder.Services.AddScoped<
+                IGroupInCompetitionRepository,
+                GroupInCompetitionRepository
+            >();
+            builder.Services.AddScoped<
                 ICompetitionRankingRepository,
                 CompetitionRankingRepository
+            >();
+            builder.Services.AddScoped<
+                IExerciseInCompetitionRepository,
+                ExerciseInCompetitionRepository
             >();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
             builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
@@ -120,23 +303,39 @@ namespace ProjetoTccBackend
 
             builder.Services.AddHttpContextAccessor();
 
-            builder.Services.AddHttpClient(
-                "JudgeAPI",
-                client =>
+            builder
+                .Services.AddHttpClient(
+                    "JudgeAPI",
+                    client =>
+                    {
+                        client.BaseAddress = new Uri(builder.Configuration["JudgeApi:Url"]!);
+                        //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
+                        //client.DefaultRequestHeaders.Add("Accept", "application/json");
+                        client.Timeout = TimeSpan.FromSeconds(40);
+                    }
+                )
+                .ConfigurePrimaryHttpMessageHandler(() =>
                 {
-                    client.BaseAddress = new Uri(builder.Configuration["JudgeApiUrl"]!);
-                    //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-                    //client.DefaultRequestHeaders.Add("Accept", "application/json");
-                    client.Timeout = TimeSpan.FromSeconds(20);
-                }
-            );
+                    return new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = (
+                            message,
+                            cert,
+                            chain,
+                            errors
+                        ) => true,
+                    };
+                });
 
             // Services
             builder.Services.AddSingleton<ICompetitionStateService, CompetitionStateService>();
+            builder.Services.AddScoped<IAttachedFileService, AttachedFileService>();
             builder.Services.AddScoped<IJudgeService, JudgeService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IGroupInviteService, GroupInviteService>();
             builder.Services.AddScoped<IGroupService, GroupService>();
+            builder.Services.AddScoped<IGroupInCompetitionService, GroupInCompetitionService>();
             builder.Services.AddScoped<ILogService, LogService>(); // Adicionado para Log
             builder.Services.AddScoped<ICompetitionRankingService, CompetitionRankingService>();
             builder.Services.AddScoped<IExerciseService, ExerciseService>();
@@ -163,7 +362,7 @@ namespace ProjetoTccBackend
                 })
                 .AddJsonOptions(options =>
                 {
-                    options.JsonSerializerOptions.MaxDepth = 4;
+                    options.JsonSerializerOptions.MaxDepth = 8;
                     options.JsonSerializerOptions.ReferenceHandler = System
                         .Text
                         .Json
@@ -216,7 +415,6 @@ namespace ProjetoTccBackend
                             var cookieName = "CompetitionAuthToken";
 
                             var token = context.Request.Cookies[cookieName];
-                            Console.WriteLine(token);
 
                             if (!string.IsNullOrEmpty(token))
                             {
@@ -224,8 +422,8 @@ namespace ProjetoTccBackend
                             }
                             else
                             {
-                                // Mantém a lógica para SignalR
-                                var accessToken = context.Request.Query["token"];
+                                // Mantï¿½m a lï¿½gica para SignalR
+                                var accessToken = context.Request.Query["access_token"];
                                 var path = context.HttpContext.Request.Path;
                                 if (
                                     !string.IsNullOrEmpty(accessToken)
@@ -241,6 +439,11 @@ namespace ProjetoTccBackend
                     };
                 });
 
+            builder.Services.Configure<KestrelServerOptions>(options =>
+            {
+                options.Limits.MaxRequestBodySize = 40 * 1024 * 1024; // 40MB
+            });
+
             /*
             builder.Services.AddAuthorization(options =>
             {
@@ -248,28 +451,65 @@ namespace ProjetoTccBackend
             });
             */
 
-            /*
+            builder.Host.UseSerilog(
+                (ctx, lc) =>
+                    lc
+                        .WriteTo.Console(
+                            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}",
+                            theme: AnsiConsoleTheme.Code // ou SystemConsoleTheme.Literate para um visual mais clÃ¡ssico
+                        )
+                        .ReadFrom.Configuration(ctx.Configuration)
+            );
+
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("FrontendAppPolicy", policy =>
-                {
-                    policy.WithOrigins("https://localhost:3000")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
-                });
+                options.AddPolicy(
+                    "FrontendAppPolicy",
+                    policy =>
+                    {
+                        policy
+                            .WithOrigins("https://localhost:3000")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials()
+                            .WithExposedHeaders("Content-Disposition");
+                    }
+                );
+
+                options.AddPolicy(
+                    "ApiTestingPolicy",
+                    policy =>
+                    {
+                        policy
+                            .WithOrigins("https://localhost:2000", "http://localhost:2000")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    }
+                );
+
+                options.AddPolicy(
+                    "JudgeApiPolicy",
+                    policy =>
+                    {
+                        policy
+                            .WithOrigins("https://localhost:8000")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    }
+                );
             });
-            */
 
             var app = builder.Build();
 
-            ExecuteMigrations(app);
-
             CreateRoles(app.Services.CreateScope().ServiceProvider!).GetAwaiter().GetResult();
+            CreateAdminUser(app.Services.CreateScope().ServiceProvider!).GetAwaiter().GetResult();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
+                ExecuteMigrations(app);
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {
@@ -284,20 +524,36 @@ namespace ProjetoTccBackend
                     );
                 });
                 app.UseDeveloperExceptionPage();
-
-                // Adicione no pipeline logo após app.UseRouting();
             }
+
+            app.UseMiddleware<RequestBodyLoggingMiddleware>();
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.MessageTemplate =
+                    "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+                options.GetLevel = (httpContext, elapsed, ex) =>
+                    ex != null || httpContext.Response.StatusCode >= 500
+                        ? Serilog.Events.LogEventLevel.Error
+                        : Serilog.Events.LogEventLevel.Information;
+                options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+                {
+                    diagnosticContext.Set("UserName", httpContext.User.Identity?.Name);
+                    diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+                    diagnosticContext.Set("RequestHeaders", httpContext.Request.Headers.ToString());
+                    diagnosticContext.Set("RequestQuery", httpContext.Request.QueryString.Value);
+                    diagnosticContext.Set(
+                        "RemoteIpAddress",
+                        httpContext.Connection.RemoteIpAddress?.ToString()
+                    );
+                };
+                options.IncludeQueryInRequestPath = true;
+            });
 
             app.UseRouting();
 
-            //app.UseCors("FrontendAppPolicy");
-            app.UseCors(builder =>
-                builder
-                    .WithOrigins("http://localhost:3000")
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials()
-            );
+            app.UseCors("FrontendAppPolicy");
+            //app.UseCors("JudgeApiPolicy");
+            //app.UseCors("ApiTestingPolicy");
 
             ConfigureWebSocketOptions(app);
 
@@ -317,11 +573,11 @@ namespace ProjetoTccBackend
     }
 
     //
-    // Plano em pseudocódigo:
-    // 1. Antes de iniciar o pipeline, adicionar um middleware que apague todos os cookies da requisição.
-    // 2. O middleware será executado no início de cada execução do app (a cada requisição).
-    // 3. Para cada cookie presente, definir o mesmo nome com valor vazio e expiração no passado.
-    // 4. Adicionar esse middleware antes de qualquer autenticação ou autorização.
+    // Plano em pseudocï¿½digo:
+    // 1. Antes de iniciar o pipeline, adicionar um middleware que apague todos os cookies da requisiï¿½ï¿½o.
+    // 2. O middleware serï¿½ executado no inï¿½cio de cada execuï¿½ï¿½o do app (a cada requisiï¿½ï¿½o).
+    // 3. Para cada cookie presente, definir o mesmo nome com valor vazio e expiraï¿½ï¿½o no passado.
+    // 4. Adicionar esse middleware antes de qualquer autenticaï¿½ï¿½o ou autorizaï¿½ï¿½o.
 
     // Middleware para resetar cookies
 

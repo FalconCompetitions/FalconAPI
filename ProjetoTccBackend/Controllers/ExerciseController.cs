@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoTccBackend.Database.Requests.Exercise;
+using ProjetoTccBackend.Database.Responses.Exercise;
+using ProjetoTccBackend.Database.Responses.Form;
+using ProjetoTccBackend.Database.Responses.Global;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
 
@@ -10,15 +14,17 @@ namespace ProjetoTccBackend.Controllers
     [ApiController]
     public class ExerciseController : ControllerBase
     {
-        private readonly ILogger<ExerciseController> _logger;
         private readonly IExerciseService _exerciseService;
+        private readonly ILogger<ExerciseController> _logger;
 
-        public ExerciseController(ILogger<ExerciseController> logger, IExerciseService exerciseService)
+        public ExerciseController(
+            IExerciseService exerciseService,
+            ILogger<ExerciseController> logger
+        )
         {
-            this._logger = logger;
             this._exerciseService = exerciseService;
+            this._logger = logger;
         }
-
 
         /// <summary>
         /// Retrieves a specific exercise by its ID.
@@ -62,16 +68,61 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="200">Returns the paginated list of exercises.</response>
         [HttpGet()]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetExercises([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        public async Task<IActionResult> GetExercises(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null,
+            [FromQuery(Name = "exerciseType")] int? exerciseType = null
+        )
         {
-            var result = await this._exerciseService.GetExercisesAsync(page, pageSize, search);
-            return Ok(result);
+            var result = await this._exerciseService.GetExercisesAsync(
+                page,
+                pageSize,
+                search,
+                exerciseType
+            );
+
+            var response = new PagedResult<ExerciseResponse>()
+            {
+                Items = result.Items.Select(x => new ExerciseResponse()
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Description = x.Description,
+                    ExerciseTypeId = x.ExerciseTypeId,
+                    AttachedFileId = x.AttachedFile.Id,
+                    Inputs = x
+                        .ExerciseInputs.Select(input => new ExerciseInputResponse()
+                        {
+                            Id = input.Id,
+                            ExerciseId = input.ExerciseId,
+                            Input = input.Input,
+                        })
+                        .ToList(),
+                    Outputs = x
+                        .ExerciseOutputs.Select(output => new ExerciseOutputResponse()
+                        {
+                            Id = output.Id,
+                            Output = output.Output,
+                            ExerciseId = output.ExerciseId,
+                            ExerciseInputId = output.ExerciseInputId,
+                        })
+                        .ToList(),
+                }),
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount,
+                TotalPages = result.TotalPages,
+            };
+
+            return Ok(response);
         }
 
         /// <summary>
         /// Creates a new exercise based on the provided request data.
         /// </summary>
-        /// <param name="request">The request object containing the details of the exercise to be created. This must include all required fields for creating an exercise.</param>
+        /// <param name="file">The attached file with details of the exercise.</param>
+        /// <param name="requestMetadata">The request object containing the details of the exercise to be created. This must include all required fields for creating an exercise.</param>
         /// <returns>An <see cref="IActionResult"/> indicating the result of the operation. Returns <see cref="CreatedAtActionResult"/> with the created exercise if successful, or <see cref="BadRequestResult"/> if the creation fails.</returns>
         /// <remarks>
         /// This action is restricted to users with the "Admin" or "Teacher" roles.<br/>
@@ -94,31 +145,94 @@ namespace ProjetoTccBackend.Controllers
         [HttpPost()]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateNewExercise([FromBody] CreateExerciseRequest request)
+        public async Task<IActionResult> CreateNewExercise(
+            IFormFile file,
+            [FromForm(Name = "metadata")] string requestMetadata
+        )
         {
-            Exercise? exercise = await this._exerciseService.CreateExerciseAsync(request);
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(
+                    new InvalidFormResponse() { Target = "file", Error = "Arquivo é obrigatório!" }
+                );
+            }
+
+            if (String.IsNullOrEmpty(requestMetadata))
+            {
+                return BadRequest(
+                    new InvalidFormResponse()
+                    {
+                        Target = "metadata",
+                        Error = "Dados da requisição ausentes!",
+                    }
+                );
+            }
+
+            CreateExerciseRequest? request = null;
+
+            try
+            {
+                request = JsonSerializer.Deserialize<CreateExerciseRequest>(requestMetadata);
+            }
+            catch (JsonException ex)
+            {
+                return BadRequest(
+                    new InvalidFormResponse() { Target = "metadata", Error = ex.Message }
+                );
+            }
+
+            this.TryValidateModel(request);
+
+            if (this.ModelState.IsValid is false)
+            {
+                return ValidationProblem(modelStateDictionary: this.ModelState, statusCode: 400);
+            }
+
+            Exercise? exercise = await this._exerciseService.CreateExerciseAsync(request, file);
 
             if (exercise == null)
             {
-                this._logger.LogDebug("Exercise not created", new
-                {
-                    bodyContent = exercise
-                });
+                this._logger.LogCritical("Exercise not created", new { bodyContent = exercise });
                 return this.BadRequest();
             }
 
             return this.CreatedAtAction(
                 nameof(this.GetExerciseById),
                 new { id = exercise.Id },
-                exercise
+                new ExerciseResponse()
+                {
+                    Id = exercise.Id,
+                    Title = exercise.Title,
+                    Description = exercise.Description,
+                    ExerciseTypeId = exercise.ExerciseTypeId,
+                    Inputs = exercise
+                        .ExerciseInputs.Select(x => new ExerciseInputResponse()
+                        {
+                            Id = x.Id,
+                            ExerciseId = x.Id,
+                            Input = x.Input,
+                        })
+                        .ToList(),
+                    Outputs = exercise
+                        .ExerciseOutputs.Select(x => new ExerciseOutputResponse()
+                        {
+                            Id = x.Id,
+                            ExerciseId = x.ExerciseId,
+                            Output = x.Output,
+                            ExerciseInputId = x.ExerciseInputId,
+                        })
+                        .ToList(),
+                    AttachedFileId = (int)exercise.AttachedFileId!,
+                }
             );
         }
 
         /// <summary>
         /// Updates an existing exercise with the specified ID using the provided update request.
         /// </summary>
+        /// <param name="file">The attached file of the exercise</param>
         /// <param name="id">The unique identifier of the exercise to update.</param>
-        /// <param name="request">The request object containing the updated exercise details.</param>
+        /// <param name="requestMetadata">The request object containing the updated exercise details.</param>
         /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
         /// <remarks>
         /// This action requires the caller to be authenticated and authorized with either the "Admin" or "Teacher" role.<br/>
@@ -140,10 +254,79 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="404">If the exercise is not found.</response>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateExercise(int id, [FromBody] UpdateExerciseRequest request)
+        public async Task<IActionResult> UpdateExercise(
+            int id,
+            IFormFile file,
+            [FromForm(Name = "metadata")] string requestMetadata
+        )
         {
-            await this._exerciseService.UpdateExerciseAsync(id, request);
-            return Ok();
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(
+                    new InvalidFormResponse() { Target = "file", Error = "Arquivo é obrigatório!" }
+                );
+            }
+
+            if (String.IsNullOrEmpty(requestMetadata))
+            {
+                return BadRequest(
+                    new InvalidFormResponse()
+                    {
+                        Target = "metadata",
+                        Error = "Dados da requisição ausentes!",
+                    }
+                );
+            }
+
+            UpdateExerciseRequest? request = null;
+
+            try
+            {
+                request = JsonSerializer.Deserialize<UpdateExerciseRequest>(requestMetadata);
+            }
+            catch (JsonException ex)
+            {
+                return BadRequest(
+                    new InvalidFormResponse() { Target = "metadata", Error = ex.Message }
+                );
+            }
+
+            this.TryValidateModel(request);
+
+            if (this.ModelState.IsValid is false)
+            {
+                return ValidationProblem(modelStateDictionary: this.ModelState, statusCode: 400);
+            }
+
+            Exercise updatedExercise = await this._exerciseService.UpdateExerciseAsync(id, file, request);
+
+            ExerciseResponse response = new ExerciseResponse()
+            {
+                Id = updatedExercise.Id,
+                Title = updatedExercise.Title,
+                Description = updatedExercise.Description,
+                ExerciseTypeId = updatedExercise.ExerciseTypeId,
+                Inputs = updatedExercise
+                    .ExerciseInputs.Select(x => new ExerciseInputResponse()
+                    {
+                        Id = x.Id,
+                        ExerciseId = x.Id,
+                        Input = x.Input,
+                    })
+                    .ToList(),
+                Outputs = updatedExercise
+                    .ExerciseOutputs.Select(x => new ExerciseOutputResponse()
+                    {
+                        Id = x.Id,
+                        Output = x.Output,
+                        ExerciseId = x.ExerciseId,
+                        ExerciseInputId = updatedExercise.Id,
+                    })
+                    .ToList(),
+                AttachedFileId = (int)updatedExercise.AttachedFileId!,
+            };
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -158,15 +341,15 @@ namespace ProjetoTccBackend.Controllers
         ///     DELETE /api/exercise/1
         /// </code>
         /// </remarks>
-        /// <response code="204">If the deletion is successful.</response>
+        /// <response code="200">If the deletion is successful.</response>
         /// <response code="404">If the exercise is not found.</response>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteExercise(int id)
         {
             await this._exerciseService.DeleteExerciseAsync(id);
-            return NoContent();
+            return Ok();
         }
     }
 }

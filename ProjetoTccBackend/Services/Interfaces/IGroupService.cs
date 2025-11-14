@@ -7,6 +7,10 @@ using System.Collections.Generic;
 
 namespace ProjetoTccBackend.Services.Interfaces
 {
+    /// <summary>
+    /// Service responsible for managing group-related operations, including creation, update, retrieval, and membership management.
+    /// Handles business logic for group entities and coordinates with repositories and user services.
+    /// </summary>
     public interface IGroupService
     {
         /// <summary>
