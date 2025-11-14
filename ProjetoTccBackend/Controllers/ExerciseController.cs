@@ -256,17 +256,10 @@ namespace ProjetoTccBackend.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateExercise(
             int id,
-            IFormFile file,
+            IFormFile? file,
             [FromForm(Name = "metadata")] string requestMetadata
         )
         {
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest(
-                    new InvalidFormResponse() { Target = "file", Error = "Arquivo é obrigatório!" }
-                );
-            }
-
             if (String.IsNullOrEmpty(requestMetadata))
             {
                 return BadRequest(
@@ -291,6 +284,17 @@ namespace ProjetoTccBackend.Controllers
                 );
             }
 
+            if (request == null)
+            {
+                return BadRequest(
+                    new InvalidFormResponse()
+                    {
+                        Target = "metadata",
+                        Error = "Invalid request data",
+                    }
+                );
+            }
+
             this.TryValidateModel(request);
 
             if (this.ModelState.IsValid is false)
@@ -298,13 +302,17 @@ namespace ProjetoTccBackend.Controllers
                 return ValidationProblem(modelStateDictionary: this.ModelState, statusCode: 400);
             }
 
-            Exercise updatedExercise = await this._exerciseService.UpdateExerciseAsync(id, file, request);
+            Exercise updatedExercise = await this._exerciseService.UpdateExerciseAsync(
+                id,
+                file,
+                request
+            );
 
             ExerciseResponse response = new ExerciseResponse()
             {
                 Id = updatedExercise.Id,
                 Title = updatedExercise.Title,
-                Description = updatedExercise.Description,
+                Description = updatedExercise.Description ?? "",
                 ExerciseTypeId = updatedExercise.ExerciseTypeId,
                 Inputs = updatedExercise
                     .ExerciseInputs.Select(x => new ExerciseInputResponse()

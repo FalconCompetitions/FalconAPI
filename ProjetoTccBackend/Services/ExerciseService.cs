@@ -189,7 +189,7 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public async Task<Exercise> UpdateExerciseAsync(
             int id,
-            IFormFile file,
+            IFormFile? file,
             UpdateExerciseRequest request
         )
         {
@@ -198,24 +198,29 @@ namespace ProjetoTccBackend.Services
             if (exercise == null)
                 throw new ErrorException($"Exercício com id {id} não encontrado.");
 
-            bool isFileValid = this._attachedFileService.IsSubmittedFileValid(file);
-
-            if (isFileValid is false)
+            // Only update the file if a new one is provided
+            if (file != null && file.Length > 0)
             {
-                throw new InvalidAttachedFileException("Formato de arquivo inválido!");
-            }
+                bool isFileValid = this._attachedFileService.IsSubmittedFileValid(file);
 
-            AttachedFile newAttachedFile =
-                await this._attachedFileService.DeleteAndReplaceExistentFile(
-                    (int)exercise.AttachedFileId!,
-                    file
-                );
+                if (isFileValid is false)
+                {
+                    throw new InvalidAttachedFileException("Formato de arquivo inválido!");
+                }
+
+                AttachedFile newAttachedFile =
+                    await this._attachedFileService.DeleteAndReplaceExistentFile(
+                        (int)exercise.AttachedFileId!,
+                        file
+                    );
+
+                exercise.AttachedFileId = newAttachedFile.Id;
+            }
 
             exercise.Title = request.Title;
             exercise.Description = request.Description;
             exercise.EstimatedTime = TimeSpan.FromMinutes(20);
             exercise.ExerciseTypeId = request.ExerciseTypeId;
-            exercise.AttachedFileId = newAttachedFile.Id;
 
             // Current inputs and outputs in the database
 
@@ -295,6 +300,29 @@ namespace ProjetoTccBackend.Services
             }
 
             this._exerciseOutputRepository.AddRange(createdOutputs);
+            await this._dbContext.SaveChangesAsync();
+
+            // Update existing inputs and outputs
+            foreach (var inputRequest in request.Inputs.Where(x => x.Id is not null))
+            {
+                var existingInput = currentInputs.FirstOrDefault(x => x.Id == inputRequest.Id);
+                if (existingInput != null)
+                {
+                    existingInput.Input = inputRequest.Input;
+                    this._exerciseInputRepository.Update(existingInput);
+                }
+            }
+
+            foreach (var outputRequest in request.Outputs.Where(x => x.Id is not null))
+            {
+                var existingOutput = currentOutputs.FirstOrDefault(x => x.Id == outputRequest.Id);
+                if (existingOutput != null)
+                {
+                    existingOutput.Output = outputRequest.Output;
+                    this._exerciseOutputRepository.Update(existingOutput);
+                }
+            }
+
             await this._dbContext.SaveChangesAsync();
 
             List<ExerciseInput> inputsToDelete = new List<ExerciseInput>();
