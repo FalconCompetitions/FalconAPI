@@ -41,9 +41,60 @@ jobs:
           name: .net-app
           path: ${{env.DOTNET_ROOT}}/app
 
-  deploy:
+  migrate:
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+      
+      - name: Install dotnet-ef tool
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_90EC6893C26F436290C20C409BC1E815 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9A7681853C2B4986BCB82C56AAB8B33F }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_75457BBD4A6B44458871015BB8157DAA }}
+        
+      - name: Get Runner IP Address
+        id: get_ip
+        run: echo "RUNNER_IP=$(curl https://api.ipify.org)" >> $GITHUB_OUTPUT
+        
+      - name: Add Firewall Rule for Runner
+        run: |
+          az sql server firewall-rule create \
+            --resource-group FalconAPIDevelopment \ 
+            --server falcon-api-db \ 
+            --name "GitHubRunner-${{ github.run_id }}" \
+            --start-ip-address ${{ steps.get_ip.outputs.RUNNER_IP }} \ 
+            --end-ip-address ${{ steps.get_ip.outputs.RUNNER_IP }}
+      - name: 'Run EF Migrations'
+        run: |
+          dotnet ef database update --project ProjetoTccBackend/ProjetoTccBackend.csproj --startup-project ProjetoTccBackend/ProjetoTccBackend.csproj
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+      
+      - name: Remove Firewall Rule for Runner
+        if: always()
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group FalconAPIDevelopment \ 
+            --server falcon-api-db \ 
+            --name "GitHubRunner-${{ github.run_id }}"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: migrate
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
