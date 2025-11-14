@@ -56,8 +56,11 @@ jobs:
         with:
           dotnet-version: '8.x'
       
+      - name: Create local tool manifest
+        run: dotnet new tool-manifest
+      
       - name: Install dotnet-ef tool
-        run: dotnet tool install --global dotnet-ef
+        run: dotnet tool install dotnet-ef
 
       - name: Login to Azure
         uses: azure/login@v2
