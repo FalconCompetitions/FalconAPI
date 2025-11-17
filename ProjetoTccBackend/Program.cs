@@ -464,19 +464,28 @@ namespace ProjetoTccBackend
                     lc
                         .WriteTo.Console(
                             outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}",
-                            theme: AnsiConsoleTheme.Code // ou SystemConsoleTheme.Literate para um visual mais clássico
+                            theme: AnsiConsoleTheme.Code
                         )
                         .ReadFrom.Configuration(ctx.Configuration)
             );
 
             builder.Services.AddCors(options =>
             {
+                string? frontendUrl = builder.Configuration["Cors:FrontendURL"];
+
+                string[] allowedOrigins = new string[] { };
+
+                if (!String.IsNullOrEmpty(frontendUrl))
+                {
+                    allowedOrigins.Append(frontendUrl);
+                }
+
                 options.AddPolicy(
                     "FrontendAppPolicy",
                     policy =>
                     {
                         policy
-                            .WithOrigins("https://localhost:3000")
+                            .WithOrigins(allowedOrigins)
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials()
@@ -501,7 +510,7 @@ namespace ProjetoTccBackend
                     policy =>
                     {
                         policy
-                            .WithOrigins("https://localhost:8000")
+                            .WithOrigins("https://localhost:3000")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials();
