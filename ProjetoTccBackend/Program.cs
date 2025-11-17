@@ -473,11 +473,22 @@ namespace ProjetoTccBackend
             {
                 string? frontendUrl = builder.Configuration["Cors:FrontendURL"];
 
-                string[] allowedOrigins = new string[] { };
+                // Use List to properly add origins
+                List<string> allowedOrigins = new List<string>();
 
                 if (!String.IsNullOrEmpty(frontendUrl))
                 {
-                    allowedOrigins.Append(frontendUrl);
+                    allowedOrigins.Add(frontendUrl);
+                }
+
+                // Explicitly add localhost:3000 for development WebSocket connections
+                if (!allowedOrigins.Contains("https://localhost:3000"))
+                {
+                    allowedOrigins.Add("https://localhost:3000");
+                }
+                if (!allowedOrigins.Contains("http://localhost:3000"))
+                {
+                    allowedOrigins.Add("http://localhost:3000");
                 }
 
                 options.AddPolicy(
@@ -485,7 +496,7 @@ namespace ProjetoTccBackend
                     policy =>
                     {
                         policy
-                            .WithOrigins(allowedOrigins)
+                            .WithOrigins(allowedOrigins.ToArray())
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials()

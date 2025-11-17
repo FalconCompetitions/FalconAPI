@@ -258,7 +258,7 @@ namespace ProjetoTccBackend.Controllers
         {
             var loggedUserId = User.Claims.FirstOrDefault(c => c.Type.Equals("id"))?.Value;
             var userRoles = User
-                .Claims.Where(c => c.Type.Equals("role"))
+                .Claims.Where(c => c.Type.Equals(ClaimTypes.Role))
                 .Select(c => c.Value)
                 .ToList();
             try

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Group;
@@ -25,6 +26,7 @@ namespace ProjetoTccBackend.Services
         private readonly IGroupInviteService _groupInviteService;
         private readonly ILogger<GroupService> _logger;
         private readonly TccDbContext _dbContext;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private const int MAX_MEMBERS_PER_GROUP = 3;
 
         public GroupService(
@@ -33,7 +35,8 @@ namespace ProjetoTccBackend.Services
             IGroupRepository groupRepository,
             IGroupInviteService groupInviteService,
             TccDbContext dbContext,
-            ILogger<GroupService> logger
+            ILogger<GroupService> logger,
+            IHttpContextAccessor httpContextAccessor
         )
         {
             this._userService = userService;
@@ -42,6 +45,20 @@ namespace ProjetoTccBackend.Services
             this._groupInviteService = groupInviteService;
             this._dbContext = dbContext;
             this._logger = logger;
+            this._httpContextAccessor = httpContextAccessor;
+        }
+
+        /// <summary>
+        /// Verifica se o usuário logado é Admin ou Teacher
+        /// </summary>
+        private bool IsAdminOrTeacher()
+        {
+            var userRoles = this._httpContextAccessor.HttpContext?.User
+                .Claims.Where(c => c.Type.Equals(ClaimTypes.Role))
+                .Select(c => c.Value)
+                .ToList();
+
+            return userRoles != null && (userRoles.Contains("Admin") || userRoles.Contains("Teacher"));
         }
 
         /// <inheritdoc/>
@@ -115,7 +132,11 @@ namespace ProjetoTccBackend.Services
                 return null;
             }
 
-            if (loggedUser.GroupId != group.Id)
+            bool isAdminOrTeacher = this.IsAdminOrTeacher();
+            bool isLeader = group.LeaderId == loggedUser.Id;
+
+            // Admin, Teacher ou líder do grupo podem alterar o nome
+            if (!isAdminOrTeacher && !isLeader)
             {
                 throw new UnauthorizedAccessException(
                     "Usuário não pode mudar o nome do grupo requisitado"
@@ -134,8 +155,10 @@ namespace ProjetoTccBackend.Services
         public Group? GetGroupById(int id)
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
+            bool isAdminOrTeacher = this.IsAdminOrTeacher();
 
-            if (loggedUser.GroupId != id)
+            // Admin e Teacher podem acessar qualquer grupo, Student só pode acessar o próprio
+            if (!isAdminOrTeacher && loggedUser.GroupId != id)
             {
                 throw new UnauthorizedAccessException("Não possui acesso ao grupo requisitado");
             }
@@ -225,17 +248,20 @@ namespace ProjetoTccBackend.Services
             IList<string> userRoles
         )
         {
+            bool isAdmin = userRoles.Contains("Admin");
+            bool isTeacher = userRoles.Contains("Teacher");
+            
             var group = await this
                 ._groupRepository.Query()
                 .Include(g => g.Users)
-                .Where(g => g.Id == groupId && g.LeaderId == userId)
+                .Where(g => g.Id == groupId)
                 .FirstOrDefaultAsync();
 
             if (group == null)
                 return null;
-            bool isAdmin = userRoles.Contains("Admin");
+            
             bool isLeader = group.LeaderId == userId;
-            if (!isAdmin && !isLeader)
+            if (!isAdmin && !isTeacher && !isLeader)
                 return null;
 
             group.Name = request.Name;
