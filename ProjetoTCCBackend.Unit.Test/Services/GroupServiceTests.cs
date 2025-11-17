@@ -641,7 +641,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 
             var service = CreateService();
 
-            // Act
+            // Acty
             var result = await service.UpdateGroupAsync(1, request, userId, userRoles);
 
             // Assert
