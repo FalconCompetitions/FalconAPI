@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 using MockQueryable.Moq;
 using Moq;
 using ProjetoTccBackend.Database;
@@ -39,13 +40,20 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         private GroupService CreateService()
         {
             _dbContext = DbContextTestFactory.Create($"TestDb_{Guid.NewGuid()}");
+
+            // Novo mock obrigatório para o construtor
+            var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+            httpContextAccessorMock.Setup(x => x.HttpContext)
+                .Returns(new DefaultHttpContext());
+
             return new GroupService(
                 _userServiceMock.Object,
                 _userRepositoryMock.Object,
                 _groupRepositoryMock.Object,
                 _groupInviteServiceMock.Object,
                 _dbContext,
-                _loggerMock.Object
+                _loggerMock.Object,
+                httpContextAccessorMock.Object // <- adicionado
             );
         }
 

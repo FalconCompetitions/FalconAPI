@@ -405,7 +405,7 @@ namespace ProjetoTccBackend.Services
             )
             {
                 throw new AlreadyInCompetitionException();
-            }
+                ProjetoTCCBackend.Unit.Test /            }
 
             DateTime now = DateTime.UtcNow;
 
