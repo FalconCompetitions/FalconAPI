@@ -61,6 +61,9 @@ namespace ProjetoTccBackend.Controllers
                     FileAccess.Read
                 );
 
+                // Explicitly set Content-Disposition header for CORS
+                Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+
                 return new FileStreamResult(fileStream, fileType)
                 {
                     FileDownloadName = fileName,
