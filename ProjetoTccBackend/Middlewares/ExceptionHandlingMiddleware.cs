@@ -1,7 +1,7 @@
-﻿using ProjetoTccBackend.Exceptions;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
+using ProjetoTccBackend.Exceptions;
 
 namespace ProjetoTccBackend.Middlewares
 {
@@ -19,7 +19,10 @@ namespace ProjetoTccBackend.Middlewares
         /// </summary>
         /// <param name="next">The next middleware in the pipeline.</param>
         /// <param name="logger">The logger instance for logging errors.</param>
-        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+        public ExceptionHandlingMiddleware(
+            RequestDelegate next,
+            ILogger<ExceptionHandlingMiddleware> logger
+        )
         {
             this._next = next;
             this._logger = logger;
@@ -42,7 +45,7 @@ namespace ProjetoTccBackend.Middlewares
             {
                 await _next(context);
 
-                if(context.Response.HasStarted)
+                if (context.Response.HasStarted)
                 {
                     return;
                 }
@@ -53,7 +56,6 @@ namespace ProjetoTccBackend.Middlewares
                     response = context.Items["ModelStateErrors"];
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                     context.Response.ContentType = "application/json";
-                    
                 }
             }
             catch (ErrorException ex) // Generic error thrown manually in the code
@@ -71,7 +73,7 @@ namespace ProjetoTccBackend.Middlewares
                     errors = ex.FormData.Select(x =>
                     {
                         return new { target = x.Key, error = x.Value };
-                    })
+                    }),
                 };
             }
             catch (Exception ex)
@@ -79,7 +81,7 @@ namespace ProjetoTccBackend.Middlewares
                 this._logger.LogError(ex, "Unexpected error");
 
                 // If it is a ModelState invalid error
-                if(context.Request.HasFormContentType || IsJsonRequest(context))
+                if (context.Request.HasFormContentType || IsJsonRequest(context))
                 {
                     isFormException = true;
                     response = HandleValidationException(ex);
@@ -91,22 +93,27 @@ namespace ProjetoTccBackend.Middlewares
                     {
                         errors = new[]
                         {
-                            new { target = "general", error = "An unexpected error occurred. Please try again later." }
-                        }
+                            new
+                            {
+                                target = "general",
+                                error = "An unexpected error occurred. Please try again later.",
+                            },
+                        },
                     };
                 }
             }
 
-            if(context.Response.HasStarted)
+            if (context.Response.HasStarted)
             {
                 return;
             }
 
             context.Response.ContentType = "application/json";
-            if(isFormException is true)
+            if (isFormException is true)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            } else if(isUnexpectedError is true)
+            }
+            else if (isUnexpectedError is true)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
@@ -121,11 +128,29 @@ namespace ProjetoTccBackend.Middlewares
         /// <returns>True if the request is JSON, otherwise false.</returns>
         private bool IsJsonRequest(HttpContext context)
         {
-            if (context.Request.ContentType is null) return false;
+            // Verificar Content-Type do request
+            if (
+                context.Request.ContentType != null
+                && context.Request.ContentType.Contains(
+                    "application/json",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                return true;
+            }
 
-            if (context.Response.ContentType is null) return false;
+            // Verificar Accept header do request
+            if (context.Request.Headers.ContainsKey("Accept"))
+            {
+                var acceptHeader = context.Request.Headers["Accept"].ToString();
+                if (acceptHeader.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
 
-            return context.Response.ContentType!.Contains("application/json", StringComparison.OrdinalIgnoreCase);
+            return false;
         }
 
         /// <summary>
@@ -137,26 +162,34 @@ namespace ProjetoTccBackend.Middlewares
         {
             var errors = new List<object>();
 
-            if(ex is ValidationException validationEx) // Manual validation was thrown
+            if (ex is ValidationException validationEx) // Manual validation was thrown
             {
-                
-                errors.AddRange(validationEx.ValidationResult.MemberNames.Select(target => new
-                {
-                    target,
-                    error = validationEx.ValidationResult.ErrorMessage
-                }));
+                errors.AddRange(
+                    validationEx.ValidationResult.MemberNames.Select(target => new
+                    {
+                        target,
+                        error = validationEx.ValidationResult.ErrorMessage,
+                    })
+                );
             }
-            else if(ex is ArgumentException argEx) // Specific error
+            else if (ex is ArgumentException argEx) // Specific error
             {
                 errors.Add(new { target = "general", error = argEx.Message });
             }
             else // Unexpected error
             {
                 this._logger.LogInformation(JsonSerializer.Serialize(errors));
-                errors.Add(new { target = "general", error = "An unexpected error occurred. Please try again later." });
+                errors.Add(
+                    new
+                    {
+                        target = "general",
+                        error = "An unexpected error occurred. Please try again later.",
+                    }
+                );
             }
 
             return new { errors };
         }
     }
 }
+

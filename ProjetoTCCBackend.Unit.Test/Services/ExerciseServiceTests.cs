@@ -399,7 +399,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var service = CreateService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ErrorException>(() => service.DeleteExerciseAsync(999));
+            await Assert.ThrowsAsync<FormException>(() => service.DeleteExerciseAsync(999));
         }
 
         [Fact]
@@ -505,7 +505,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var service = CreateService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ErrorException>(() =>
+            await Assert.ThrowsAsync<FormException>(() =>
                 service.UpdateExerciseAsync(999, fileMock.Object, request)
             );
         }

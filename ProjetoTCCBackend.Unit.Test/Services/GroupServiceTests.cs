@@ -10,6 +10,7 @@ using Moq;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Group;
 using ProjetoTccBackend.Database.Responses.Group;
+using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Exceptions.Group;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
@@ -41,7 +42,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         {
             _dbContext = DbContextTestFactory.Create($"TestDb_{Guid.NewGuid()}");
 
-            // Novo mock obrigatório para o construtor
+            // Novo mock obrigatï¿½rio para o construtor
             var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
             httpContextAccessorMock.Setup(x => x.HttpContext)
                 .Returns(new DefaultHttpContext());
@@ -282,7 +283,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var service = CreateService();
 
             // Act & Assert
-            Assert.Throws<UnauthorizedAccessException>(() => service.ChangeGroupName(request));
+            Assert.Throws<FormException>(() => service.ChangeGroupName(request));
         }
 
         [Fact]
@@ -327,7 +328,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var service = CreateService();
 
             // Act & Assert
-            Assert.Throws<UnauthorizedAccessException>(() => service.GetGroupById(1));
+            Assert.Throws<FormException>(() => service.GetGroupById(1));
         }
 
         [Fact]

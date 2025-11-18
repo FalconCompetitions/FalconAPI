@@ -4,7 +4,7 @@
     {
         public JudgeSubmissionException(string message) : base(message)
         {
-            
+
         }
     }
 }

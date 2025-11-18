@@ -202,7 +202,9 @@ namespace ProjetoTccBackend.Services
 
             if (questionToAnswer is null)
             {
-                throw new Exception("Questão não encontrada");
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", "Questão não encontrada" } }
+                );
             }
 
             // Create and save the answer first to generate its ID

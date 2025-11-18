@@ -53,7 +53,7 @@ namespace ProjetoTccBackend.Services
         public async Task<GroupInvite?> SendGroupInviteToUser(InviteUserToGroupRequest request)
         {
             const int MAX_GROUP_MEMBERS = 3;
-            
+
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
             User? user = await this
@@ -90,7 +90,7 @@ namespace ProjetoTccBackend.Services
 
             int currentMembersCount = group.Users.Count;
             int pendingInvitesCount = group.GroupInvites.Count(inv => !inv.Accepted);
-            
+
             if (currentMembersCount + pendingInvitesCount >= MAX_GROUP_MEMBERS)
             {
                 throw new MaxMembersExceededException($"O grupo já possui {currentMembersCount} membros e {pendingInvitesCount} convites pendentes. Limite máximo: {MAX_GROUP_MEMBERS}");

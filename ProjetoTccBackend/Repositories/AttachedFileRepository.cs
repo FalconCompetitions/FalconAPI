@@ -8,7 +8,7 @@ namespace ProjetoTccBackend.Repositories
     {
         public AttachedFileRepository(TccDbContext dbContext) : base(dbContext)
         {
-            
+
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace ProjetoTccBackend.Models
 {
-    
+
     /// <summary>  
     /// Representa um grupo no sistema.  
     /// </summary>  

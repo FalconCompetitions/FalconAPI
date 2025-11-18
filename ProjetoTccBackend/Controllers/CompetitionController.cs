@@ -87,26 +87,26 @@ namespace ProjetoTccBackend.Controllers
                 await this._competitionService.GetOpenSubscriptionCompetitionsAsync();
 
             List<CompetitionResponse> response = res.Select(x => new CompetitionResponse()
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    BlockSubmissions = x.BlockSubmissions,
-                    CompetitionRankings = null,
-                    Description = x.Description,
-                    Duration = x.Duration,
-                    StartInscriptions = x.StartInscriptions,
-                    EndInscriptions = x.EndInscriptions,
-                    StartTime = x.StartTime,
-                    EndTime = x.EndTime,
-                    ExerciseIds = [],
-                    Exercises = [],
-                    MaxExercises = x.MaxExercises,
-                    MaxMembers = x.MaxMembers,
-                    MaxSubmissionSize = x.MaxSubmissionSize,
-                    Status = x.Status,
-                    StopRanking = x.StopRanking,
-                    SubmissionPenalty = x.SubmissionPenalty,
-                })
+            {
+                Id = x.Id,
+                Name = x.Name,
+                BlockSubmissions = x.BlockSubmissions,
+                CompetitionRankings = null,
+                Description = x.Description,
+                Duration = x.Duration,
+                StartInscriptions = x.StartInscriptions,
+                EndInscriptions = x.EndInscriptions,
+                StartTime = x.StartTime,
+                EndTime = x.EndTime,
+                ExerciseIds = [],
+                Exercises = [],
+                MaxExercises = x.MaxExercises,
+                MaxMembers = x.MaxMembers,
+                MaxSubmissionSize = x.MaxSubmissionSize,
+                Status = x.Status,
+                StopRanking = x.StopRanking,
+                SubmissionPenalty = x.SubmissionPenalty,
+            })
                 .ToList();
 
             return Ok(response);

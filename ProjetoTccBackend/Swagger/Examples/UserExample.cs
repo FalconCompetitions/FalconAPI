@@ -13,6 +13,6 @@ namespace ProjetoTccBackend.Swagger.Examples
             PasswordHash = "##############",
             GroupId = 1,
         };
-    
+
     }
 }

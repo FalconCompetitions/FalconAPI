@@ -8,7 +8,7 @@ namespace ProjetoTccBackend.Repositories
     {
         public GroupExerciseAttemptRepository(TccDbContext dbContext) : base(dbContext) { }
 
-        
+
         /// <inheritdoc />
         public GroupExerciseAttempt? GetLastGroupCompetitionAttempt(int groupId, int competitionId)
         {

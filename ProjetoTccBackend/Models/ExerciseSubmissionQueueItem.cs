@@ -59,7 +59,7 @@ namespace ProjetoTccBackend.Models
 
         public ExerciseSubmissionQueueItem()
         {
-            
+
         }
     }
 }

@@ -33,7 +33,7 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc />
         public string? FetchPrivateAccessToken()
         {
-            if(this._memoryCache.TryGetValue(_tokenKey, out string? token))
+            if (this._memoryCache.TryGetValue(_tokenKey, out string? token))
             {
                 return token!;
             }

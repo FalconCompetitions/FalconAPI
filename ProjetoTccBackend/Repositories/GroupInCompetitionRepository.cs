@@ -9,7 +9,7 @@ namespace ProjetoTccBackend.Repositories
     {
         public GroupInCompetitionRepository(TccDbContext dbContext) : base(dbContext)
         {
-            
+
         }
 
         /// <summary>
@@ -29,8 +29,8 @@ namespace ProjetoTccBackend.Repositories
                     .ThenInclude(c => c.CompetitionRankings)
                 .Include(gic => gic.Group)
                     .ThenInclude(g => g.Users)
-                .Where(gic => 
-                    gic.GroupId == groupId && 
+                .Where(gic =>
+                    gic.GroupId == groupId &&
                     !gic.Blocked &&
                     gic.Competition.StartTime <= now &&
                     (gic.Competition.EndTime == null || gic.Competition.EndTime >= now))

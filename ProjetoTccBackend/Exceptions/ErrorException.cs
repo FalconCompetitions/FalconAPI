@@ -11,7 +11,7 @@
 
         public ErrorException(string message) : base(message)
         {
-            
+
         }
     }
 }

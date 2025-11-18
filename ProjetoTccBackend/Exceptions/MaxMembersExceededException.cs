@@ -5,9 +5,27 @@ namespace ProjetoTccBackend.Exceptions
     /// <summary>
     /// Exception thrown when the group exceeds the maximum number of members allowed in the competition.
     /// </summary>
-    public class MaxMembersExceededException : Exception
+    public class MaxMembersExceededException : FormException
     {
-        public MaxMembersExceededException() : base("O grupo excedeu o n˙mero m·ximo de membros permitido na competiÁ„o.") { }
-        public MaxMembersExceededException(string message) : base(message) { }
+        public MaxMembersExceededException() : base(
+            new Dictionary<string, string> { { "form", "O grupo excedeu o n√∫mero m√°ximo de membros permitido" } },
+            "O grupo excedeu o n√∫mero m√°ximo de membros permitido"
+        )
+        {
+        }
+
+        public MaxMembersExceededException(string message) : base(
+            new Dictionary<string, string> { { "form", message } },
+            message
+        )
+        {
+        }
+
+        public MaxMembersExceededException(string field, string message) : base(
+            new Dictionary<string, string> { { field, message } },
+            message
+        )
+        {
+        }
     }
 }

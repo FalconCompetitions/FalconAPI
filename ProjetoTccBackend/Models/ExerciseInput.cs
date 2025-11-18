@@ -5,7 +5,7 @@ namespace ProjetoTccBackend.Models
     public class ExerciseInput
     {
         [Key]
-        public int  Id { get; set; }
+        public int Id { get; set; }
 
         public int ExerciseId { get; set; }
 

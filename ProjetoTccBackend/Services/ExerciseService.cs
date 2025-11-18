@@ -60,7 +60,9 @@ namespace ProjetoTccBackend.Services
             /*
             if (judgeUuid == null)
             {
-                throw new ErrorException(new { Message = "Não foi possível criar o exercício" });
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", "Não foi possível criar o exercício no sistema de avaliação" } }
+                );
             }
             */
 
@@ -196,7 +198,9 @@ namespace ProjetoTccBackend.Services
             var exercise = this._exerciseRepository.GetById(id);
 
             if (exercise == null)
-                throw new ErrorException($"Exercício com id {id} não encontrado.");
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", $"Exercício com id {id} não encontrado" } }
+                );
 
             // Only update the file if a new one is provided
             if (file != null && file.Length > 0)
@@ -378,7 +382,9 @@ namespace ProjetoTccBackend.Services
                 .FirstOrDefault();
 
             if (exercise == null)
-                throw new ErrorException($"Exercício com id {id} não encontrado.");
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", $"Exercício com id {id} não encontrado" } }
+                );
 
             var outputs = this._exerciseOutputRepository.Find(x => x.ExerciseId == id).ToList();
             var inputs = this._exerciseInputRepository.Find(x => x.ExerciseId == id).ToList();

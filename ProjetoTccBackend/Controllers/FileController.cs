@@ -20,7 +20,7 @@ namespace ProjetoTccBackend.Controllers
             this._attachedFileService = attachedFileService;
             this._logger = logger;
         }
-        
+
         /// <summary>
         /// Retrieves a file by its unique identifier and returns it as a downloadable file stream.
         /// </summary>
@@ -46,7 +46,7 @@ namespace ProjetoTccBackend.Controllers
                 Tuple<string, string, string>? fileInfoTuple =
                     await this._attachedFileService.GetFileAsync(fileId);
 
-                if(fileInfoTuple == null)
+                if (fileInfoTuple == null)
                 {
                     return NotFound(new { FileId = fileId });
                 }

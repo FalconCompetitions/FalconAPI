@@ -6,7 +6,7 @@
 
         public ExerciseNotFoundException()
         {
-            
+
         }
 
         public ExerciseNotFoundException(object obj)

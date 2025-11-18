@@ -5,9 +5,20 @@ namespace ProjetoTccBackend.Exceptions
     /// <summary>
     /// Exception thrown when the user is not the leader of the group.
     /// </summary>
-    public class UserIsNotLeaderException : Exception
+    public class UserIsNotLeaderException : FormException
     {
-        public UserIsNotLeaderException() : base("O usu�rio n�o � o l�der do grupo.") { }
-        public UserIsNotLeaderException(string message) : base(message) { }
+        public UserIsNotLeaderException() : base(
+            new Dictionary<string, string> { { "form", "Você não é o líder do grupo" } },
+            "Você não é o líder do grupo"
+        )
+        {
+        }
+
+        public UserIsNotLeaderException(string message) : base(
+            new Dictionary<string, string> { { "form", message } },
+            message
+        )
+        {
+        }
     }
 }

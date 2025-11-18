@@ -80,11 +80,6 @@ namespace ProjetoTccBackend.Services
 
             this._groupRepository.Add(newGroup);
 
-            if (loggedUser == null)
-            {
-                throw new UnauthorizedAccessException("Usuário não autenticado");
-            }
-
             await this._dbContext.SaveChangesAsync();
 
             loggedUser.GroupId = newGroup.Id;
@@ -138,8 +133,8 @@ namespace ProjetoTccBackend.Services
             // Admin, Teacher ou líder do grupo podem alterar o nome
             if (!isAdminOrTeacher && !isLeader)
             {
-                throw new UnauthorizedAccessException(
-                    "Usuário não pode mudar o nome do grupo requisitado"
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", "Você não tem permissão para alterar o nome deste grupo" } }
                 );
             }
 
@@ -160,7 +155,9 @@ namespace ProjetoTccBackend.Services
             // Admin e Teacher podem acessar qualquer grupo, Student só pode acessar o próprio
             if (!isAdminOrTeacher && loggedUser.GroupId != id)
             {
-                throw new UnauthorizedAccessException("Não possui acesso ao grupo requisitado");
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", "Você não tem permissão para acessar este grupo" } }
+                );
             }
 
             Group? group = this
@@ -250,7 +247,7 @@ namespace ProjetoTccBackend.Services
         {
             bool isAdmin = userRoles.Contains("Admin");
             bool isTeacher = userRoles.Contains("Teacher");
-            
+
             var group = await this
                 ._groupRepository.Query()
                 .Include(g => g.Users)
@@ -259,7 +256,7 @@ namespace ProjetoTccBackend.Services
 
             if (group == null)
                 return null;
-            
+
             bool isLeader = group.LeaderId == userId;
             if (!isAdmin && !isTeacher && !isLeader)
                 return null;

@@ -29,7 +29,7 @@ namespace ProjetoTccBackend.Services
             this._groupExerciseAttemptRepository = groupExerciseAttemptRepository;
         }
 
-        
+
         /// <inheritdoc />
         public async Task<(ExerciseSubmissionResponse submission, CompetitionRankingResponse ranking)> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptWorkerRequest request)
         {
@@ -99,7 +99,7 @@ namespace ProjetoTccBackend.Services
         {
             var groupAttempt = this._groupExerciseAttemptRepository.GetById(attemptId);
 
-            if(groupAttempt is null)
+            if (groupAttempt is null)
             {
                 return false;
             }

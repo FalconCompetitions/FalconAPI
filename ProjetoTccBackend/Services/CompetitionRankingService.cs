@@ -25,7 +25,7 @@ namespace ProjetoTccBackend.Services
         public async Task<CompetitionRankingResponse> UpdateRanking(Competition competition, Models.Group group, Models.GroupExerciseAttempt exerciseAttempt)
         {
             List<Models.GroupExerciseAttempt> attempts = this._groupExerciseAttemptRepository.Find(
-                e => 
+                e =>
                     e.GroupId.Equals(group.Id)
                     && e.CompetitionId.Equals(competition.Id)
                 ).ToList();
@@ -73,7 +73,7 @@ namespace ProjetoTccBackend.Services
             {
                 int primaryComparisonResult = y.Points.CompareTo(x.Points);
 
-                if(primaryComparisonResult == 0)
+                if (primaryComparisonResult == 0)
                 {
                     return x.Penalty.CompareTo(y.Penalty);
                 }
@@ -81,7 +81,7 @@ namespace ProjetoTccBackend.Services
                 return primaryComparisonResult;
             });
 
-            for(int i = 0; i < rankings.Count; i++)
+            for (int i = 0; i < rankings.Count; i++)
             {
                 rankings[i].RankOrder = i + 1;
             }

@@ -94,7 +94,7 @@ namespace ProjetoTccBackend.Repositories
         /// <inheritdoc/>
         public virtual void RemoveRange(IEnumerable<T> entities)
         {
-            
+
             this._dbContext.Set<T>().RemoveRange(entities);
         }
 
