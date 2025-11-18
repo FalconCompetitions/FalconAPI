@@ -8,6 +8,11 @@ O erro `System.ArgumentNullException: Value cannot be null. (Parameter 'uriStrin
 ### 2. CORS Bloqueado
 O erro `Access to fetch at 'https://falconapi.azurewebsites.net/...' from origin 'https://falconcompetitions.azurewebsites.net' has been blocked by CORS policy` ocorre quando a configuração `Cors:FrontendURL` não está definida corretamente.
 
+### 3. WebSocket/SignalR Não Conecta (Linux App Service)
+No Azure App Service com **Linux**, WebSockets está habilitado por padrão. Se o SignalR não estiver conectando com o erro "The connection could not be found on the server", o problema é que o Azure usa múltiplas instâncias e precisa de **session affinity (sticky sessions)**.
+
+**Solução**: Garantir que ARR Affinity esteja habilitado (veja seção de configuração abaixo).
+
 ## Configurações Obrigatórias
 
 Para que a aplicação funcione corretamente no Azure, você deve configurar as seguintes variáveis de ambiente no Azure App Service:
@@ -45,6 +50,33 @@ Para que a aplicação funcione corretamente no Azure, você deve configurar as 
 
 6. Clique em **Save** para salvar as configurações
 7. Clique em **Continue** para confirmar o restart da aplicação
+
+## Configuração Essencial para SignalR (WebSocket)
+
+### Habilitar Session Affinity (ARR Affinity)
+
+Para que o SignalR funcione corretamente no Azure, especialmente com múltiplas instâncias, você **DEVE** habilitar o Session Affinity (também chamado de ARR Affinity).
+
+**Via Portal do Azure:**
+
+1. Acesse o [Azure Portal](https://portal.azure.com)
+2. Navegue até o seu App Service
+3. No menu lateral, vá em **Settings** → **Configuration**
+4. Na aba **General settings**
+5. Procure por **ARR affinity** ou **Session affinity**
+6. Certifique-se de que está **On**
+7. Clique em **Save**
+
+**Via Azure CLI:**
+
+```bash
+az webapp update \
+  --name falconapi-akakfufefhhxgchj \
+  --resource-group seu-resource-group \
+  --client-affinity-enabled true
+```
+
+**Nota**: No Linux App Service, WebSockets já está habilitado por padrão. Você não precisa habilitá-lo manualmente.
 
 ## Como Configurar via Azure CLI
 
