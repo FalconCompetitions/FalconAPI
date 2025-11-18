@@ -471,7 +471,9 @@ namespace ProjetoTccBackend
 
             builder.Services.AddCors(options =>
             {
-                string? frontendUrl = builder.Configuration["Cors:FrontendURL"];
+                // Try both formats: "Cors:FrontendURL" (appsettings) and "Cors__FrontendURL" (Azure env var)
+                string? frontendUrl = builder.Configuration["Cors:FrontendURL"] 
+                    ?? builder.Configuration["Cors__FrontendURL"];
 
                 // Use List to properly add origins
                 List<string> allowedOrigins = new List<string>();
@@ -479,6 +481,13 @@ namespace ProjetoTccBackend
                 if (!String.IsNullOrEmpty(frontendUrl))
                 {
                     allowedOrigins.Add(frontendUrl);
+                    Console.WriteLine($"[CORS] Added FrontendURL from config: {frontendUrl}");
+                }
+                else
+                {
+                    Console.WriteLine("[CORS] WARNING: Cors:FrontendURL not configured, using fallback");
+                    // Fallback to production URL if not configured
+                    allowedOrigins.Add("https://falconcompetitions.azurewebsites.net");
                 }
 
                 // Explicitly add localhost:3000 for development WebSocket connections
@@ -490,6 +499,8 @@ namespace ProjetoTccBackend
                 {
                     allowedOrigins.Add("http://localhost:3000");
                 }
+
+                Console.WriteLine($"[CORS] Configured origins: {string.Join(", ", allowedOrigins)}");
 
                 options.AddPolicy(
                     "FrontendAppPolicy",
