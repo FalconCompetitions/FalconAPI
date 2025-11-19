@@ -75,5 +75,14 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="userRoles">The roles of the user making the request.</param>
         /// <returns>The updated group, or null if not found or not allowed.</returns>
         Task<GroupResponse?> UpdateGroupAsync(int groupId, UpdateGroupRequest request, string userId, IList<string> userRoles);
+
+        /// <summary>
+        /// Deletes a group by its ID, validating permissions.
+        /// </summary>
+        /// <param name="groupId">The ID of the group to delete.</param>
+        /// <param name="userId">The ID of the user making the request.</param>
+        /// <param name="userRoles">The roles of the user making the request.</param>
+        /// <returns>True if successfully deleted, false if not found or not allowed.</returns>
+        Task<bool> DeleteGroupAsync(int groupId, string userId, IList<string> userRoles);
     }
 }

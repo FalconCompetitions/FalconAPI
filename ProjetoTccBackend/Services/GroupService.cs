@@ -303,5 +303,55 @@ namespace ProjetoTccBackend.Services
 
             return response;
         }
+
+        /// <inheritdoc/>
+        public async Task<bool> DeleteGroupAsync(int groupId, string userId, IList<string> userRoles)
+        {
+            bool isAdmin = userRoles.Contains("Admin");
+            bool isTeacher = userRoles.Contains("Teacher");
+
+            var group = await this
+                ._groupRepository.Query()
+                .Include(g => g.Users)
+                .Include(g => g.GroupInvites)
+                .Where(g => g.Id == groupId)
+                .FirstOrDefaultAsync();
+
+            if (group == null)
+                return false;
+
+            bool isLeader = group.LeaderId == userId;
+
+            // Somente Admin, Teacher ou líder do grupo podem deletar
+            if (!isAdmin && !isTeacher && !isLeader)
+                return false;
+
+            // Remove todas as associações de usuários com o grupo
+            foreach (var user in group.Users)
+            {
+                user.GroupId = null;
+                this._userRepository.Update(user);
+            }
+
+            // Remove todos os convites pendentes do grupo
+            if (group.GroupInvites.Any())
+            {
+                this._dbContext.GroupInvites.RemoveRange(group.GroupInvites);
+            }
+
+            // Remove o grupo
+            this._groupRepository.Remove(group);
+
+            try
+            {
+                await this._dbContext.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Erro ao deletar grupo {GroupId}", groupId);
+                return false;
+            }
+        }
     }
 }

@@ -472,5 +472,60 @@ namespace ProjetoTccBackend.Controllers
 
             return Ok(groupInCompetition);
         }
+
+        /// <summary>
+        /// Deletes a group by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the group to delete.</param>
+        /// <returns>
+        /// An <see cref="IActionResult"/> indicating the result of the operation.
+        /// Returns <see cref="OkResult"/> if the deletion is successful,
+        /// <see cref="NotFoundResult"/> if the group does not exist,
+        /// or <see cref="ForbidResult"/> if the user does not have permission.
+        /// </returns>
+        /// <remarks>
+        /// Accessible to users with the roles "Admin", "Teacher", or the group leader (Student).<br/>
+        /// Example:
+        /// <code>
+        ///     DELETE /api/group/1
+        /// </code>
+        /// </remarks>
+        /// <response code="200">If the group is successfully deleted.</response>
+        /// <response code="403">If the user does not have permission to delete the group.</response>
+        /// <response code="404">If the group is not found.</response>
+        [Authorize(Roles = "Admin,Teacher")]
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteGroup(int id)
+        {
+            var loggedUserId = User.Claims.FirstOrDefault(c => c.Type.Equals("id"))?.Value;
+            var userRoles = User
+                .Claims.Where(c => c.Type.Equals(ClaimTypes.Role))
+                .Select(c => c.Value)
+                .ToList();
+
+            if (string.IsNullOrEmpty(loggedUserId))
+            {
+                return Forbid();
+            }
+
+            var deleted = await this._groupService.DeleteGroupAsync(id, loggedUserId, userRoles);
+
+            if (!deleted)
+            {
+                // Verificar se o grupo existe
+                var group = this._groupService.GetGroupById(id);
+                if (group == null)
+                {
+                    return NotFound(new { message = $"Grupo com id {id} não encontrado." });
+                }
+                // Se existe mas não foi deletado, é problema de permissão
+                return Forbid();
+            }
+
+            return Ok(new { message = "Grupo deletado com sucesso." });
+        }
     }
 }
