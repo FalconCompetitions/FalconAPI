@@ -18,6 +18,10 @@ namespace ProjetoTccBackend.Workers.Queues
             Channel.CreateUnbounded<ExerciseSubmissionQueueItem>();
         private readonly IServiceProvider _serviceProvider;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExerciseSubmissionQueue"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">Service provider for creating scoped services.</param>
         public ExerciseSubmissionQueue(IServiceProvider serviceProvider)
         {
             this._serviceProvider = serviceProvider;

@@ -36,6 +36,12 @@ namespace ProjetoTccBackend.Validation
             _targetValue = targetValue;
         }
 
+        /// <summary>
+        /// Validates the specified value against the dependent property's target value.
+        /// </summary>
+        /// <param name="value">The value to validate.</param>
+        /// <param name="validationContext">The validation context.</param>
+        /// <returns>A <see cref="ValidationResult"/> indicating the result of the validation.</returns>
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
             var dependentPropertyInfo = validationContext.ObjectType.GetProperty(_dependentProperty);

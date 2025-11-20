@@ -5,15 +5,27 @@ using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using ProjetoTccBackend.Swagger.Interfaces;
 
+/// <summary>
+/// Swagger operation filter that adds example responses to API documentation.
+/// </summary>
 public class SwaggerResponseExampleFilter : IOperationFilter
 {
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SwaggerResponseExampleFilter"/> class.
+    /// </summary>
+    /// <param name="serviceProvider">Service provider for resolving example providers.</param>
     public SwaggerResponseExampleFilter(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
+    /// <summary>
+    /// Applies example responses to the Swagger operation.
+    /// </summary>
+    /// <param name="operation">The OpenAPI operation.</param>
+    /// <param name="context">The operation filter context.</param>
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
         foreach (var response in operation.Responses)
