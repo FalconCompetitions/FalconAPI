@@ -7,7 +7,15 @@ namespace ProjetoTccBackend.Exceptions
     /// </summary>
     public class AlreadyInCompetitionException : Exception
     {
-        public AlreadyInCompetitionException() : base("O grupo j· est· inscrito na competiÁ„o.") { }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlreadyInCompetitionException"/> class with a default message.
+        /// </summary>
+        public AlreadyInCompetitionException() : base("O grupo j√° est√° inscrito na competi√ß√£o.") { }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlreadyInCompetitionException"/> class with a custom message.
+        /// </summary>
+        /// <param name="message">The custom error message.</param>
         public AlreadyInCompetitionException(string message) : base(message) { }
     }
 }

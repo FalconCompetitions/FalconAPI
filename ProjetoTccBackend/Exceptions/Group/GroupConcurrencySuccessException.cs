@@ -7,7 +7,15 @@ namespace ProjetoTccBackend.Exceptions.Group
     /// </summary>
     public class GroupConcurrencySuccessException : Exception
     {
-        public GroupConcurrencySuccessException() : base("O grupo foi removido ou alterado por outro usu·rio. OperaÁ„o considerada bem-sucedida.") { }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GroupConcurrencySuccessException"/> class with a default message.
+        /// </summary>
+        public GroupConcurrencySuccessException() : base("O grupo foi removido ou alterado por outro usu√°rio. Opera√ß√£o considerada bem-sucedida.") { }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GroupConcurrencySuccessException"/> class with a custom message.
+        /// </summary>
+        /// <param name="message">The custom error message.</param>
         public GroupConcurrencySuccessException(string message) : base(message) { }
     }
 }
