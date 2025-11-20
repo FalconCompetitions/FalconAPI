@@ -4,6 +4,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing access tokens.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "Admin")]
@@ -12,6 +15,11 @@ namespace ProjetoTccBackend.Controllers
         private readonly ITokenService _tokenService;
         private readonly ILogger<TokenController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TokenController"/> class.
+        /// </summary>
+        /// <param name="tokenService">The service responsible for token operations.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public TokenController(ITokenService tokenService, ILogger<TokenController> logger)
         {
             this._tokenService = tokenService;

@@ -279,8 +279,35 @@ namespace ProjetoTccBackend.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves all group invitations for the currently authenticated user.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="IActionResult"/> containing a list of group invitations for the user.
+        /// </returns>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     GET /api/group/invite
+        ///
+        /// Sample response:
+        ///
+        ///     [
+        ///         {
+        ///             "id": 1,
+        ///             "groupId": 1,
+        ///             "userId": "user123",
+        ///             "accepted": false,
+        ///             "createdAt": "2024-01-15T10:30:00Z"
+        ///         }
+        ///     ]
+        /// </remarks>
+        /// <response code="200">Returns the list of group invitations for the user</response>
+        /// <response code="401">If the user is not authenticated</response>
         [HttpGet("invite")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetGroupInvitations()
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();

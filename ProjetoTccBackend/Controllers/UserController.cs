@@ -10,12 +10,19 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing user operations.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
     {
         private IUserService _userService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserController"/> class.
+        /// </summary>
+        /// <param name="userService">The service responsible for user operations.</param>
         public UserController(IUserService userService)
         {
             this._userService = userService;

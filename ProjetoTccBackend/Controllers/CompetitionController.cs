@@ -8,6 +8,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing competitions.
+    /// </summary>
     [Route("/api/[controller]")]
     [ApiController]
     public class CompetitionController : ControllerBase
@@ -15,6 +18,11 @@ namespace ProjetoTccBackend.Controllers
         private readonly ICompetitionService _competitionService;
         private readonly ILogger<CompetitionController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompetitionController"/> class.
+        /// </summary>
+        /// <param name="competitionService">The service responsible for competition operations.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public CompetitionController(
             ICompetitionService competitionService,
             ILogger<CompetitionController> logger
@@ -239,8 +247,38 @@ namespace ProjetoTccBackend.Controllers
             return Ok(response);
         }
 
+        /// <summary>
+        /// Inscribes a group to a competition.
+        /// </summary>
+        /// <param name="request">The request containing the group and competition IDs.</param>
+        /// <returns>
+        /// Returns an <see cref="IActionResult"/> containing the inscription details if successful.
+        /// On success, returns a 200 OK response with the group-competition registration.
+        /// On failure, returns appropriate error responses such as 400 Bad Request.
+        /// </returns>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     POST /api/Competition/inscribe
+        ///     {
+        ///         "groupId": 1,
+        ///         "competitionId": 1
+        ///     }
+        ///
+        /// Sample response:
+        ///
+        ///     {
+        ///         "groupId": 1,
+        ///         "competitionId": 1,
+        ///         "createdOn": "2024-01-15T10:30:00Z"
+        ///     }
+        /// </remarks>
+        /// <response code="200">Returns the group-competition registration details</response>
+        /// <response code="400">If the user is not the group leader, competition doesn't exist, group is already inscribed, competition is not valid for inscription, or group exceeds maximum members allowed</response>
         [Authorize(Roles = "Student")]
         [HttpPost("inscribe")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> InscribeGroupToCompetition(
             [FromBody] InscribeGroupToCompetitionRequest request
         )

@@ -4,12 +4,19 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing questions.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class QuestionController : ControllerBase
     {
         private readonly IQuestionService _questionService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QuestionController"/> class.
+        /// </summary>
+        /// <param name="questionService">The service responsible for question operations.</param>
         public QuestionController(IQuestionService questionService)
         {
             this._questionService = questionService;

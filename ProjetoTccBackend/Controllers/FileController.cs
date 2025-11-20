@@ -4,6 +4,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing file operations.
+    /// </summary>
     [Authorize]
     [Route("/api/[controller]")]
     [ApiController]
@@ -12,6 +15,11 @@ namespace ProjetoTccBackend.Controllers
         private readonly IAttachedFileService _attachedFileService;
         private readonly ILogger<FileController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileController"/> class.
+        /// </summary>
+        /// <param name="attachedFileService">The service responsible for file operations.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public FileController(
             IAttachedFileService attachedFileService,
             ILogger<FileController> logger
