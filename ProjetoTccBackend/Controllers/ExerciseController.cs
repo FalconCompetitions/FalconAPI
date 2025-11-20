@@ -10,6 +10,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing exercises.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class ExerciseController : ControllerBase
@@ -17,6 +20,11 @@ namespace ProjetoTccBackend.Controllers
         private readonly IExerciseService _exerciseService;
         private readonly ILogger<ExerciseController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExerciseController"/> class.
+        /// </summary>
+        /// <param name="exerciseService">The service responsible for exercise operations.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public ExerciseController(
             IExerciseService exerciseService,
             ILogger<ExerciseController> logger

@@ -23,6 +23,14 @@ namespace ProjetoTccBackend.Workers
         private readonly TimeSpan _operationalTime;
         private const string CompetitionCacheKey = "currentCompetition";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompetitionStateWorker"/> class.
+        /// </summary>
+        /// <param name="configuration">Configuration for worker settings.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
+        /// <param name="memoryCache">Memory cache for storing competition data.</param>
+        /// <param name="scopeFactory">Factory for creating service scopes.</param>
+        /// <param name="competitionStateService">Service for managing competition state operations.</param>
         public CompetitionStateWorker(
             IConfiguration configuration,
             ILogger<CompetitionStateWorker> logger,

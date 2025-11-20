@@ -3,8 +3,16 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace ProjetoTccBackend.Swagger.Filters
 {
+    /// <summary>
+    /// Swagger operation filter that forces API endpoints to only accept and return JSON content.
+    /// </summary>
     public class ForceJsonOnlyOperationFilter : IOperationFilter
     {
+        /// <summary>
+        /// Applies the JSON-only constraint to the Swagger operation by removing non-JSON media types.
+        /// </summary>
+        /// <param name="operation">The OpenAPI operation.</param>
+        /// <param name="context">The operation filter context.</param>
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
             // Remove todos os tipos de mídia de entrada que não sejam application/json

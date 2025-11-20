@@ -14,6 +14,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ApiEstoqueASP.Services;
 
+/// <summary>
+/// Service responsible for user management operations.
+/// </summary>
 public class UserService : IUserService
 {
     //private IMapper _mapper;
@@ -25,6 +28,16 @@ public class UserService : IUserService
     private readonly ITokenService _tokenService;
     private readonly ILogger<UserService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UserService"/> class.
+    /// </summary>
+    /// <param name="userManager">Manager for user operations.</param>
+    /// <param name="userRepository">Repository for user data access.</param>
+    /// <param name="groupInviteRepository">Repository for group invite data access.</param>
+    /// <param name="signInManager">Manager for sign-in operations.</param>
+    /// <param name="httpContextAccessor">Accessor for HTTP context.</param>
+    /// <param name="tokenService">Service for token operations.</param>
+    /// <param name="logger">Logger for registering information and errors.</param>
     public UserService(
         UserManager<User> userManager,
         IUserRepository userRepository,
