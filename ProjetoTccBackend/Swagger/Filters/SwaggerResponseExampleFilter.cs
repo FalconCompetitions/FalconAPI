@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using ProjetoTccBackend.Swagger.Interfaces;
+using System.Text.Json.Nodes;
 
 /// <summary>
 /// Swagger operation filter that adds example responses to API documentation.
@@ -53,7 +53,7 @@ public class SwaggerResponseExampleFilter : IOperationFilter
                         if (exampleInstance != null)
                         {
                             var json = JsonSerializer.Serialize(exampleInstance);
-                            response.Value.Content["application/json"].Example = new OpenApiString(json);
+                            response.Value.Content["application/json"].Example = JsonNode.Parse(json);
                         }
                     }
                 }
