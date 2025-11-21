@@ -11,6 +11,7 @@ using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
+using ProjetoTccBackend.Enums.Competition;
 
 namespace ApiEstoqueASP.Services;
 
@@ -23,6 +24,7 @@ public class UserService : IUserService
     private UserManager<User> _userManager;
     private readonly IUserRepository _userRepository;
     private readonly IGroupInviteRepository _groupInviteRepository;
+    private readonly ICompetitionRankingRepository _competitionRankingRepository;
     private SignInManager<User> _signInManager;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ITokenService _tokenService;
@@ -34,6 +36,7 @@ public class UserService : IUserService
     /// <param name="userManager">Manager for user operations.</param>
     /// <param name="userRepository">Repository for user data access.</param>
     /// <param name="groupInviteRepository">Repository for group invite data access.</param>
+    /// <param name="competitionRankingRepository">Repository for competition ranking data access.</param>
     /// <param name="signInManager">Manager for sign-in operations.</param>
     /// <param name="httpContextAccessor">Accessor for HTTP context.</param>
     /// <param name="tokenService">Service for token operations.</param>
@@ -42,6 +45,7 @@ public class UserService : IUserService
         UserManager<User> userManager,
         IUserRepository userRepository,
         IGroupInviteRepository groupInviteRepository,
+        ICompetitionRankingRepository competitionRankingRepository,
         SignInManager<User> signInManager,
         IHttpContextAccessor httpContextAccessor,
         ITokenService tokenService,
@@ -51,6 +55,7 @@ public class UserService : IUserService
         this._userManager = userManager;
         this._userRepository = userRepository;
         this._groupInviteRepository = groupInviteRepository;
+        this._competitionRankingRepository = competitionRankingRepository;
         this._signInManager = signInManager;
         this._tokenService = tokenService;
 
@@ -389,5 +394,58 @@ public class UserService : IUserService
 
         await this._userRepository.DeleteByIdAsync(userId);
         return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<UserCompetitionHistoryResponse>> GetUserCompetitionHistoryAsync(string userId)
+    {
+        var user = await this._userRepository
+            .Query()
+            .Include(u => u.Group)
+                .ThenInclude(g => g.GroupInCompetitions)
+                    .ThenInclude(gic => gic.Competition)
+                        .ThenInclude(c => c.ExercisesInCompetition)
+            .Include(u => u.Group)
+                .ThenInclude(g => g.GroupExerciseAttempts)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user?.Group == null)
+            return new List<UserCompetitionHistoryResponse>();
+
+        var history = new List<UserCompetitionHistoryResponse>();
+
+        // Get all competitions the user's group participated in
+        var participatedCompetitions = user.Group.GroupInCompetitions
+            .Where(gic => gic.Competition != null && 
+                         gic.Competition.Status == CompetitionStatus.Finished)
+            .Select(gic => gic.Competition)
+            .Distinct()
+            .ToList();
+
+        foreach (var competition in participatedCompetitions)
+        {
+            // Get total exercises in the competition
+            var totalExercises = competition.ExercisesInCompetition?.Count ?? 0;
+            
+            // Count solved exercises - exercises with at least one accepted submission
+            var solvedExercises = user.Group.GroupExerciseAttempts
+                .Where(attempt => 
+                    attempt.CompetitionId == competition.Id && 
+                    attempt.Accepted == true)
+                .Select(attempt => attempt.ExerciseId)
+                .Distinct()
+                .Count();
+
+            history.Add(new UserCompetitionHistoryResponse
+            {
+                Year = competition.StartTime.Year,
+                GroupName = user.Group.Name,
+                Questions = $"{solvedExercises}/{totalExercises}",
+                CompetitionId = competition.Id,
+                CompetitionName = competition.Name
+            });
+        }
+
+        return history.OrderByDescending(h => h.Year).ToList();
     }
 }

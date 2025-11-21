@@ -191,6 +191,8 @@ namespace ProjetoTccBackend.Services
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Include(x => x.Users)
+                .Include(x => x.GroupInCompetitions)
+                    .ThenInclude(gic => gic.Competition)
                 .ToListAsync();
 
             List<GroupResponse> groupResponses = new List<GroupResponse>();
@@ -217,6 +219,10 @@ namespace ProjetoTccBackend.Services
                     );
                 }
 
+                DateTime? lastCompetitionDate = item.GroupInCompetitions
+                    ?.OrderByDescending(gic => gic.Competition?.StartTime)
+                    ?.FirstOrDefault()?.Competition?.StartTime;
+
                 groupResponses.Add(
                     new GroupResponse()
                     {
@@ -224,6 +230,7 @@ namespace ProjetoTccBackend.Services
                         Name = item.Name,
                         LeaderId = item.LeaderId,
                         Users = userInfoResponses,
+                        LastCompetitionDate = lastCompetitionDate,
                     }
                 );
             }

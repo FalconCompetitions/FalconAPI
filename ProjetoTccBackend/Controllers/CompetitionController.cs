@@ -326,5 +326,22 @@ namespace ProjetoTccBackend.Controllers
                 return BadRequest(new { message = "Erro desconhecido" });
             }
         }
+
+        /// <summary>
+        /// Retrieves all champion teams from finished competitions.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint returns a list of champion teams (first place) from all completed competitions,
+        /// ordered by year in descending order. Each entry includes the year, team name, competition details, and points scored.
+        /// </remarks>
+        /// <returns>A list of champion team records.</returns>
+        /// <response code="200">Returns the list of champion teams.</response>
+        [HttpGet("champions")]
+        [ProducesResponseType(typeof(List<ChampionTeamResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetChampionTeams()
+        {
+            var champions = await this._competitionService.GetChampionTeamsAsync();
+            return Ok(champions);
+        }
     }
 }

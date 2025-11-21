@@ -700,5 +700,51 @@ namespace ProjetoTccBackend.Services
                 return false;
             }
         }
+
+        /// <inheritdoc />
+        public async Task<List<ChampionTeamResponse>> GetChampionTeamsAsync()
+        {
+            try
+            {
+                // Get all finished competitions with their rankings
+                var finishedCompetitions = await this
+                    ._competitionRepository.Query()
+                    .Where(c => c.Status == CompetitionStatus.Finished)
+                    .Include(c => c.CompetitionRankings)
+                        .ThenInclude(cr => cr.Group)
+                    .OrderByDescending(c => c.StartTime)
+                    .ToListAsync();
+
+                var champions = new List<ChampionTeamResponse>();
+
+                foreach (var competition in finishedCompetitions)
+                {
+                    // Get the top ranked group (champion) for each competition
+                    var champion = competition.CompetitionRankings
+                        .OrderByDescending(cr => cr.Points)
+                        .ThenBy(cr => cr.Penalty)
+                        .FirstOrDefault();
+
+                    if (champion?.Group != null)
+                    {
+                        champions.Add(new ChampionTeamResponse
+                        {
+                            Year = competition.StartTime.Year,
+                            TeamName = champion.Group.Name,
+                            CompetitionId = competition.Id,
+                            CompetitionName = competition.Name,
+                            Points = champion.Points
+                        });
+                    }
+                }
+
+                return champions.OrderByDescending(c => c.Year).ToList();
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Error retrieving champion teams");
+                return new List<ChampionTeamResponse>();
+            }
+        }
     }
 }

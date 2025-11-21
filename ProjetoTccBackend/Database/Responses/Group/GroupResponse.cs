@@ -1,7 +1,6 @@
-﻿using ProjetoTccBackend.Database.Responses.Competition;
+﻿using System.Text.Json.Serialization;
+using ProjetoTccBackend.Database.Responses.Competition;
 using ProjetoTccBackend.Database.Responses.User;
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace ProjetoTccBackend.Database.Responses.Group
 {
@@ -21,5 +20,8 @@ namespace ProjetoTccBackend.Database.Responses.Group
 
         [JsonPropertyName("users")]
         public ICollection<GenericUserInfoResponse> Users { get; set; } = [];
+
+        [JsonPropertyName("lastCompetitionDate")]
+        public DateTime? LastCompetitionDate { get; set; }
     }
 }

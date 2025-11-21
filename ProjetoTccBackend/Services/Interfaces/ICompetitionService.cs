@@ -192,5 +192,11 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="competitionId">The ID of the competition to stop.</param>
         /// <returns>True if the competition was stopped successfully, false otherwise.</returns>
         Task<bool> StopCompetitionAsync(int competitionId);
+
+        /// <summary>
+        /// Retrieves all champion teams from finished competitions.
+        /// </summary>
+        /// <returns>A list of champion team records ordered by year descending.</returns>
+        Task<List<ChampionTeamResponse>> GetChampionTeamsAsync();
     }
 }

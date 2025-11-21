@@ -88,5 +88,12 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="userId">The ID of the user to be deleted.</param>
         /// <returns>True if successfully deleted, false if not found.</returns>
         Task<bool> DeleteUserAsync(string userId);
+
+        /// <summary>
+        /// Retrieves the competition history for a specific user.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <returns>A list of competition history records.</returns>
+        Task<List<UserCompetitionHistoryResponse>> GetUserCompetitionHistoryAsync(string userId);
     }
 }
