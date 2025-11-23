@@ -53,7 +53,6 @@ namespace ProjetoTccBackend
             }
         }
 
-
         /// <summary>
         /// Creates an admin user and optionally test teacher and student users in the database.
         /// <para>
@@ -244,7 +243,12 @@ namespace ProjetoTccBackend
             var options = new WebSocketOptions()
             {
                 KeepAliveInterval = TimeSpan.FromMinutes(2),
-                AllowedOrigins = { "http://localhost:3000", "https://localhost:3000" },
+                AllowedOrigins =
+                {
+                    "http://localhost:3000",
+                    "https://localhost:3000",
+                    "https://falconcompetitions.azurewebsites.net",
+                },
             };
 
             app.UseWebSockets(options);
