@@ -22,9 +22,9 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public async Task<CompetitionRankingResponse> UpdateRanking(Competition competition, Models.Group group, Models.GroupExerciseAttempt exerciseAttempt)
+        public async Task<CompetitionRankingResponse> UpdateRanking(Competition competition, Group group, GroupExerciseAttempt exerciseAttempt)
         {
-            List<Models.GroupExerciseAttempt> attempts = this._groupExerciseAttemptRepository.Find(
+            List<GroupExerciseAttempt> attempts = this._groupExerciseAttemptRepository.Find(
                 e =>
                     e.GroupId.Equals(group.Id)
                     && e.CompetitionId.Equals(competition.Id)
@@ -35,9 +35,22 @@ namespace ProjetoTccBackend.Services
                     c.CompetitionId.Equals(competition.Id)
                 ).ToList();
 
-            int totalPenaltys = attempts.Count;
-            double totalPenalty = totalPenaltys * competition.SubmissionPenalty.TotalMinutes;
+            // Calculate total points (number of exercises solved)
             int totalPoints = attempts.Count(x => x.Accepted);
+
+            // Get the list of exercise IDs that were accepted at some point
+            var acceptedExerciseIds = attempts
+                .Where(x => x.Accepted)
+                .Select(x => x.ExerciseId)
+                .Distinct()
+                .ToList();
+
+            // Calculate penalty: count ALL attempts for exercises that were accepted
+            int totalPenaltys = attempts
+                .Where(x => acceptedExerciseIds.Contains(x.ExerciseId))
+                .Count();
+            
+            double totalPenalty = totalPenaltys * competition.SubmissionPenalty.TotalMinutes;
 
             int groupRankingIndex = rankings.FindIndex(x => x.GroupId.Equals(group.Id));
 
@@ -94,7 +107,7 @@ namespace ProjetoTccBackend.Services
             // Group attempts by exercise to get the count per exercise
             var exerciseAttemptsGrouped = attempts
                 .GroupBy(a => a.ExerciseId)
-                .Select(g => new Database.Responses.Competition.GroupExerciseAttemptResponse()
+                .Select(g => new GroupExerciseAttemptResponse()
                 {
                     GroupId = group.Id,
                     ExerciseId = g.Key,
