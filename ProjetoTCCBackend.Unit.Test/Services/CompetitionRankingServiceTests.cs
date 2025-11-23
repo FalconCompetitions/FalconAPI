@@ -291,7 +291,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 
             Assert.NotNull(result);
             Assert.Equal(1, result.Points);
-            Assert.Equal(100, result.Penalty);
+            Assert.Equal(60, result.Penalty); // 3 attempts for exercise 1 * 20 min penalty
         }
 
         [Fact]
@@ -374,7 +374,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 
             Assert.NotNull(result);
             Assert.Equal(0, result.Points);
-            Assert.Equal(30, result.Penalty);
+            Assert.Equal(0, result.Penalty); // No penalty when no exercises are accepted
         }
 
         [Fact]

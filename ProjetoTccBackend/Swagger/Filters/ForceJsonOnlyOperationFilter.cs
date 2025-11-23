@@ -15,6 +15,9 @@ namespace ProjetoTccBackend.Swagger.Filters
         /// <param name="context">The operation filter context.</param>
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
+            if (operation == null)
+                return;
+
             // Remove todos os tipos de mídia de entrada que não sejam application/json
             if (operation.RequestBody?.Content != null)
             {
@@ -27,14 +30,23 @@ namespace ProjetoTccBackend.Swagger.Filters
             }
 
             // Remove todos os tipos de mídia de saída que não sejam application/json
-            foreach (var response in operation.Responses)
+            if (operation.Responses != null)
             {
-                var keysToRemove = response.Value.Content.Keys
-                    .Where(k => !k.Equals("application/json", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                foreach (var response in operation.Responses)
+                {
+                    // Verificar se response.Value e Content existem antes de acessar
+                    if (response.Value?.Content == null)
+                        continue;
 
-                foreach (var key in keysToRemove)
-                    response.Value.Content.Remove(key);
+                    var keysToRemove = response.Value.Content.Keys
+                        .Where(
+                            k => !k.Equals("application/json", StringComparison.OrdinalIgnoreCase)
+                        )
+                        .ToList();
+
+                    foreach (var key in keysToRemove)
+                        response.Value.Content.Remove(key);
+                }
             }
         }
     }

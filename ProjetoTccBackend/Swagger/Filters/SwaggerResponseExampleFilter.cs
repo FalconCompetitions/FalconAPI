@@ -28,33 +28,64 @@ public class SwaggerResponseExampleFilter : IOperationFilter
     /// <param name="context">The operation filter context.</param>
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
+        if (operation?.Responses == null)
+            return;
+
         foreach (var response in operation.Responses)
         {
-            if (response.Value.Content.ContainsKey("application/json"))
+            // Verificar se response.Value e Content existem
+            if (
+                response.Value?.Content == null
+                || !response.Value.Content.ContainsKey("application/json")
+            )
+                continue;
+
+            var returnType = context
+                .MethodInfo.GetCustomAttributes(typeof(ProducesResponseTypeAttribute), false)
+                .Cast<ProducesResponseTypeAttribute>()
+                .FirstOrDefault(r => r.StatusCode.ToString() == response.Key)
+                ?.Type;
+
+            if (
+                returnType == null
+                || returnType == typeof(void)
+                || returnType == typeof(Task)
+                || returnType == typeof(IActionResult)
+            )
+                continue;
+
+            var exampleType = typeof(ISwaggerExampleProvider<>).MakeGenericType(returnType);
+            var exampleProvider = _serviceProvider.GetService(exampleType);
+
+            if (exampleProvider != null)
             {
-                var returnType = context.MethodInfo
-                    .GetCustomAttributes(typeof(ProducesResponseTypeAttribute), false)
-                    .Cast<ProducesResponseTypeAttribute>()
-                    .FirstOrDefault(r => r.StatusCode.ToString() == response.Key)?
-                    .Type;
+                var method = exampleType.GetMethod("GetExample");
+                var exampleInstance = method?.Invoke(exampleProvider, null);
 
-                if (returnType == null || returnType == typeof(void) || returnType == typeof(Task) || returnType == typeof(IActionResult))
-                    continue;
-
-
-                if (returnType != null)
+                if (exampleInstance != null)
                 {
-                    var exampleType = typeof(ISwaggerExampleProvider<>).MakeGenericType(returnType);
-                    var exampleProvider = _serviceProvider.GetService(exampleType);
-                    if (exampleProvider != null)
+                    try
                     {
-                        var method = exampleType.GetMethod("GetExample");
-                        var exampleInstance = method?.Invoke(exampleProvider, null);
-                        if (exampleInstance != null)
+                        var json = JsonSerializer.Serialize(exampleInstance);
+                        var parsedExample = JsonNode.Parse(json);
+
+                        // Verificar se o content existe antes de atribuir
+                        if (
+                            response.Value.Content.TryGetValue(
+                                "application/json",
+                                out var mediaType
+                            )
+                        )
                         {
-                            var json = JsonSerializer.Serialize(exampleInstance);
-                            response.Value.Content["application/json"].Example = JsonNode.Parse(json);
+                            mediaType.Example = parsedExample;
                         }
+                    }
+                    catch (JsonException ex)
+                    {
+                        // Log do erro mas não quebrar a geração do Swagger
+                        Console.WriteLine(
+                            $"Erro ao serializar exemplo para {returnType.Name}: {ex.Message}"
+                        );
                     }
                 }
             }

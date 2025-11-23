@@ -383,6 +383,13 @@ namespace ProjetoTccBackend
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+                {
+                    Version = "openapi: 3.1.0",
+                    Title = "Falcon Competition API",
+                    Description = "API para gerenciamento de competições de programação",
+                });
+
                 string xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 string xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
 
