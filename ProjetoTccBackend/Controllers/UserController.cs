@@ -103,15 +103,19 @@ namespace ProjetoTccBackend.Controllers
             var loggedUser = User;
             var isAdmin = loggedUser.IsInRole("Admin");
             var loggedUserId = loggedUser.Claims.FirstOrDefault(c => c.Type.Equals("id"))?.Value;
+            
             if (!isAdmin && loggedUserId != userId)
             {
                 return Forbid();
             }
+            
             var updatedUser = await this._userService.UpdateUserAsync(userId, request);
+            
             if (updatedUser == null)
             {
                 return NotFound(userId);
             }
+            
             return Ok(updatedUser);
         }
 

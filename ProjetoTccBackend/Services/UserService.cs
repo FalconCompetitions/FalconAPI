@@ -371,11 +371,14 @@ public class UserService : IUserService
         var user = this._userRepository.GetById(userId);
         if (user == null)
             return null;
+        
         user.Name = request.Name;
         user.Email = request.Email;
         user.UserName = request.Email;
         user.PhoneNumber = request.PhoneNumber;
         user.JoinYear = request.JoinYear;
+        user.Department = request.Department;
+        
         await this._userManager.UpdateAsync(user);
 
         return user;
