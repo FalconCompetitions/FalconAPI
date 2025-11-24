@@ -9,6 +9,7 @@ using Moq;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Enums.Competition;
+using ProjetoTccBackend.Enums.Log;
 using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
@@ -576,6 +577,274 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 
             // Assert
             Assert.False(result);
+        }
+
+        [Fact]
+        public async Task GetFinishedCompetitionsAsync_ReturnsFinishedCompetitions()
+        {
+            // Arrange
+            var finishedCompetition1 = new Competition
+            {
+                Id = 1,
+                Name = "Competition 1",
+                Description = "Desc 1",
+                Status = CompetitionStatus.Finished,
+                StartTime = DateTime.UtcNow.AddDays(-10),
+                EndTime = DateTime.UtcNow.AddDays(-5),
+                Duration = TimeSpan.FromHours(5),
+                SubmissionPenalty = TimeSpan.FromMinutes(20),
+                MaxMembers = 3,
+                Exercices = new List<Exercise>
+                {
+                    new Exercise { Id = 1, Title = "Ex1", ExerciseTypeId = 1 }
+                },
+                CompetitionRankings = new List<CompetitionRanking>
+                {
+                    new CompetitionRanking
+                    {
+                        GroupId = 1,
+                        Group = new Group { Id = 1, Name = "Team A", LeaderId = "user1" },
+                        Points = 100,
+                        Penalty = 20
+                    }
+                }
+            };
+
+            var finishedCompetition2 = new Competition
+            {
+                Id = 2,
+                Name = "Competition 2",
+                Description = "Desc 2",
+                Status = CompetitionStatus.Finished,
+                StartTime = DateTime.UtcNow.AddDays(-3),
+                EndTime = DateTime.UtcNow.AddDays(-1),
+                Duration = TimeSpan.FromHours(3),
+                SubmissionPenalty = TimeSpan.FromMinutes(10),
+                MaxMembers = 4,
+                Exercices = new List<Exercise>(),
+                CompetitionRankings = new List<CompetitionRanking>()
+            };
+
+            var ongoingCompetition = new Competition
+            {
+                Id = 3,
+                Name = "Ongoing Competition",
+                Status = CompetitionStatus.Ongoing,
+            };
+
+            var competitions = new List<Competition>
+            {
+                finishedCompetition1,
+                finishedCompetition2,
+                ongoingCompetition
+            }.AsQueryable().BuildMock();
+
+            _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetFinishedCompetitionsAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count);
+            Assert.All(result, c => Assert.Equal(CompetitionStatus.Finished, c.Status));
+            Assert.Contains(result, c => c.Name == "Competition 1");
+            Assert.Contains(result, c => c.Name == "Competition 2");
+            Assert.DoesNotContain(result, c => c.Name == "Ongoing Competition");
+        }
+
+        [Fact]
+        public async Task GetFinishedCompetitionsAsync_ReturnsEmpty_WhenNoFinishedCompetitions()
+        {
+            // Arrange
+            var competitions = new List<Competition>
+            {
+                new Competition { Id = 1, Status = CompetitionStatus.Ongoing },
+                new Competition { Id = 2, Status = CompetitionStatus.Pending }
+            }.AsQueryable().BuildMock();
+
+            _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetFinishedCompetitionsAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetCompetitionByIdAsync_ReturnsCompetition_WhenExists()
+        {
+            // Arrange
+            var competition = new Competition
+            {
+                Id = 1,
+                Name = "Test Competition",
+                Description = "Test Description",
+                Status = CompetitionStatus.Finished,
+                Exercices = new List<Exercise>
+                {
+                    new Exercise
+                    {
+                        Id = 1,
+                        Title = "Exercise 1",
+                        ExerciseTypeId = 1,
+                        ExerciseInputs = new List<ExerciseInput>(),
+                        ExerciseOutputs = new List<ExerciseOutput>()
+                    }
+                },
+                Groups = new List<Group>
+                {
+                    new Group
+                    {
+                        Id = 1,
+                        Name = "Team A",
+                        LeaderId = "user1",
+                        Users = new List<User>()
+                    }
+                },
+                CompetitionRankings = new List<CompetitionRanking>(),
+                GroupExerciseAttempts = new List<GroupExerciseAttempt>(),
+                Questions = new List<Question>(),
+                Logs = new List<Log>()
+            };
+
+            var competitions = new List<Competition> { competition }
+                .AsQueryable()
+                .BuildMock();
+
+            _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetCompetitionByIdAsync(1);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.Id);
+            Assert.Equal("Test Competition", result.Name);
+            Assert.Single(result.Exercices);
+            Assert.Single(result.Groups);
+        }
+
+        [Fact]
+        public async Task GetCompetitionByIdAsync_ReturnsNull_WhenNotExists()
+        {
+            // Arrange
+            var competitions = new List<Competition>()
+                .AsQueryable()
+                .BuildMock();
+
+            _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetCompetitionByIdAsync(999);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetCompetitionByIdAsync_IncludesAllRelatedEntities()
+        {
+            // Arrange
+            var competition = new Competition
+            {
+                Id = 1,
+                Name = "Full Competition",
+                Status = CompetitionStatus.Finished,
+                Exercices = new List<Exercise>
+                {
+                    new Exercise
+                    {
+                        Id = 1,
+                        Title = "Ex1",
+                        ExerciseTypeId = 1,
+                        ExerciseInputs = new List<ExerciseInput>
+                        {
+                            new ExerciseInput { Id = 1, ExerciseId = 1, JudgeUuid = "uuid1", Input = "input1" }
+                        },
+                        ExerciseOutputs = new List<ExerciseOutput>
+                        {
+                            new ExerciseOutput { Id = 1, ExerciseId = 1, JudgeUuid = "uuid1", Output = "output1" }
+                        }
+                    }
+                },
+                Groups = new List<Group>
+                {
+                    new Group
+                    {
+                        Id = 1,
+                        Name = "Team",
+                        LeaderId = "user1",
+                        Users = new List<User>
+                        {
+                            new User { Id = "user1", Name = "User 1", RA = "123" }
+                        }
+                    }
+                },
+                CompetitionRankings = new List<CompetitionRanking>
+                {
+                    new CompetitionRanking
+                    {
+                        GroupId = 1,
+                        Group = new Group
+                        {
+                            Id = 1,
+                            Name = "Team",
+                            LeaderId = "user1",
+                            Users = new List<User>()
+                        }
+                    }
+                },
+                GroupExerciseAttempts = new List<GroupExerciseAttempt>(),
+                Questions = new List<Question>
+                {
+                    new Question
+                    {
+                        Id = 1,
+                        CompetitionId = 1,
+                        UserId = "user1",
+                        Content = "Question 1",
+                        Answer = new Answer { Id = 1, UserId = "user1", Content = "Answer 1" }
+                    }
+                },
+                Logs = new List<Log>
+                {
+                    new Log { Id = 1, ActionType = LogType.UserAction, IpAddress = "127.0.0.1" }
+                }
+            };
+
+            var competitions = new List<Competition> { competition }
+                .AsQueryable()
+                .BuildMock();
+
+            _competitionRepositoryMock.Setup(r => r.Query()).Returns(competitions);
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetCompetitionByIdAsync(1);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Exercices);
+            Assert.Single(result.Exercices.First().ExerciseInputs);
+            Assert.Single(result.Exercices.First().ExerciseOutputs);
+            Assert.Single(result.Groups);
+            Assert.Single(result.Groups.First().Users);
+            Assert.Single(result.CompetitionRankings);
+            Assert.Single(result.Questions);
+            Assert.NotNull(result.Questions.First().Answer);
+            Assert.Single(result.Logs);
         }
     }
 }

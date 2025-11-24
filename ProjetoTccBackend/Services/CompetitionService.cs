@@ -2,6 +2,8 @@
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Competition;
 using ProjetoTccBackend.Database.Responses.Competition;
+using ProjetoTccBackend.Database.Responses.Exercise;
+using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Enums.Competition;
 using ProjetoTccBackend.Exceptions;
@@ -711,7 +713,7 @@ namespace ProjetoTccBackend.Services
                     ._competitionRepository.Query()
                     .Where(c => c.Status == CompetitionStatus.Finished)
                     .Include(c => c.CompetitionRankings)
-                        .ThenInclude(cr => cr.Group)
+                    .ThenInclude(cr => cr.Group)
                     .OrderByDescending(c => c.StartTime)
                     .ToListAsync();
 
@@ -720,21 +722,23 @@ namespace ProjetoTccBackend.Services
                 foreach (var competition in finishedCompetitions)
                 {
                     // Get the top ranked group (champion) for each competition
-                    var champion = competition.CompetitionRankings
-                        .OrderByDescending(cr => cr.Points)
+                    var champion = competition
+                        .CompetitionRankings.OrderByDescending(cr => cr.Points)
                         .ThenBy(cr => cr.Penalty)
                         .FirstOrDefault();
 
                     if (champion?.Group != null)
                     {
-                        champions.Add(new ChampionTeamResponse
-                        {
-                            Year = competition.StartTime.Year,
-                            TeamName = champion.Group.Name,
-                            CompetitionId = competition.Id,
-                            CompetitionName = competition.Name,
-                            Points = champion.Points
-                        });
+                        champions.Add(
+                            new ChampionTeamResponse
+                            {
+                                Year = competition.StartTime.Year,
+                                TeamName = champion.Group.Name,
+                                CompetitionId = competition.Id,
+                                CompetitionName = competition.Name,
+                                Points = champion.Points,
+                            }
+                        );
                     }
                 }
 
@@ -744,6 +748,111 @@ namespace ProjetoTccBackend.Services
             {
                 this._logger.LogError(ex, "Error retrieving champion teams");
                 return new List<ChampionTeamResponse>();
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<ICollection<CompetitionResponse>> GetFinishedCompetitionsAsync()
+        {
+            try
+            {
+                List<Competition> finishedCompetitions = await this
+                    ._competitionRepository.Query()
+                    .Where(c => c.Status == CompetitionStatus.Finished)
+                    .Include(c => c.Exercices)
+                    .Include(c => c.CompetitionRankings)
+                    .ThenInclude(cr => cr.Group)
+                    .Include(c => c.Groups)
+                    .Include(c => c.Questions)
+                    .OrderByDescending(c => c.EndTime ?? c.StartTime)
+                    .ToListAsync();
+
+                List<CompetitionResponse> response = finishedCompetitions
+                    .Select(c => new CompetitionResponse()
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Description = c.Description,
+                        BlockSubmissions = c.BlockSubmissions,
+                        Duration = c.Duration,
+                        StartInscriptions = c.StartInscriptions,
+                        EndInscriptions = c.EndInscriptions,
+                        StartTime = c.StartTime,
+                        EndTime = c.EndTime,
+                        ExerciseIds = c.Exercices.Select(e => e.Id).ToList(),
+                        Exercises = c
+                            .Exercices.Select(e => new ExerciseResponse()
+                            {
+                                Id = e.Id,
+                                Title = e.Title,
+                                Description = e.Description ?? "",
+                                ExerciseTypeId = e.ExerciseTypeId,
+                                AttachedFileId = e.AttachedFileId ?? 0,
+                            })
+                            .ToList(),
+                        MaxExercises = c.MaxExercises,
+                        MaxSubmissionSize = c.MaxSubmissionSize,
+                        Status = c.Status,
+                        StopRanking = c.StopRanking,
+                        SubmissionPenalty = c.SubmissionPenalty,
+                        MaxMembers = c.MaxMembers,
+                        CompetitionRankings = c
+                            .CompetitionRankings.Select(cr => new CompetitionRankingResponse()
+                            {
+                                Group = new GroupResponse()
+                                {
+                                    Id = cr.Group.Id,
+                                    Name = cr.Group.Name,
+                                    LeaderId = cr.Group.LeaderId,
+                                },
+                                Points = cr.Points,
+                                Penalty = cr.Penalty,
+                            })
+                            .ToList(),
+                    })
+                    .ToList();
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Error retrieving finished competitions");
+                return new List<CompetitionResponse>();
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<Competition?> GetCompetitionByIdAsync(int id)
+        {
+            try
+            {
+                Competition? competition = await this
+                    ._competitionRepository.Query()
+                    .Where(c => c.Id == id)
+                    .Include(c => c.Exercices)
+                    .ThenInclude(e => e.ExerciseInputs)
+                    .Include(c => c.Exercices)
+                    .ThenInclude(e => e.ExerciseOutputs)
+                    .Include(c => c.Groups)
+                    .ThenInclude(g => g.Users)
+                    .Include(c => c.CompetitionRankings)
+                    .ThenInclude(cr => cr.Group)
+                    .ThenInclude(g => g.Users)
+                    .Include(c => c.GroupExerciseAttempts)
+                    .Include(c => c.Questions)
+                    .ThenInclude(q => q.Answer)
+                    .Include(c => c.Questions)
+                    .ThenInclude(q => q.User)
+                    .Include(c => c.Logs)
+                    .AsSplitQuery()
+                    .FirstOrDefaultAsync();
+
+                return competition;
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Error retrieving competition by ID {CompetitionId}", id);
+                return null;
             }
         }
     }

@@ -343,5 +343,65 @@ namespace ProjetoTccBackend.Controllers
             var champions = await this._competitionService.GetChampionTeamsAsync();
             return Ok(champions);
         }
+
+        /// <summary>
+        /// Retrieves all finished competitions with their complete data.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is accessible only to Admin and Teacher roles.
+        /// Returns competitions with status "Finished", ordered by end date (most recent first).
+        /// Includes rankings, exercises, groups, and questions for each competition.
+        /// Useful for viewing archived competitions.
+        /// </remarks>
+        /// <returns>A collection of finished competitions.</returns>
+        /// <response code="200">Returns the list of finished competitions.</response>
+        /// <response code="401">If the user is not authenticated.</response>
+        /// <response code="403">If the user does not have Admin or Teacher role.</response>
+        [HttpGet("finished")]
+        [Authorize(Roles = "Admin,Teacher")]
+        [ProducesResponseType(typeof(ICollection<CompetitionResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetFinishedCompetitions()
+        {
+            var finishedCompetitions = await this._competitionService.GetFinishedCompetitionsAsync();
+            return Ok(finishedCompetitions);
+        }
+
+        /// <summary>
+        /// Retrieves a specific competition by its ID.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is accessible only to Admin and Teacher roles.
+        /// Returns the complete competition data including all related entities:
+        /// - Rankings with groups and users
+        /// - Exercises with inputs and outputs
+        /// - Questions with answers
+        /// - Logs
+        /// - Exercise attempts
+        /// </remarks>
+        /// <param name="id">The unique identifier of the competition.</param>
+        /// <returns>The competition details if found.</returns>
+        /// <response code="200">Returns the competition details.</response>
+        /// <response code="404">If the competition is not found.</response>
+        /// <response code="401">If the user is not authenticated.</response>
+        /// <response code="403">If the user does not have Admin or Teacher role.</response>
+        [HttpGet("{id:int}")]
+        [Authorize(Roles = "Admin,Teacher")]
+        [ProducesResponseType(typeof(Competition), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetCompetitionById(int id)
+        {
+            var competition = await this._competitionService.GetCompetitionByIdAsync(id);
+            
+            if (competition == null)
+            {
+                return NotFound(new { message = $"Competição com ID {id} não encontrada." });
+            }
+
+            return Ok(competition);
+        }
     }
 }

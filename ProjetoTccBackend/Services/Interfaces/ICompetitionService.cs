@@ -198,5 +198,28 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// </summary>
         /// <returns>A list of champion team records ordered by year descending.</returns>
         Task<List<ChampionTeamResponse>> GetChampionTeamsAsync();
+
+        /// <summary>
+        /// Retrieves all competitions that have finished.
+        /// </summary>
+        /// <remarks>
+        /// This method returns competitions with status <see cref="CompetitionStatus.Finished"/>,
+        /// ordered by end time descending (most recent first).
+        /// Includes related data: rankings, exercises, groups, and questions.
+        /// </remarks>
+        /// <returns>A collection of <see cref="CompetitionResponse"/> objects representing finished competitions.</returns>
+        Task<ICollection<CompetitionResponse>> GetFinishedCompetitionsAsync();
+
+        /// <summary>
+        /// Retrieves a specific competition by its ID with all related data.
+        /// </summary>
+        /// <remarks>
+        /// This method fetches a competition regardless of its status,
+        /// including all related entities: rankings, exercises, groups, questions, and logs.
+        /// Useful for viewing archived/finished competitions.
+        /// </remarks>
+        /// <param name="id">The unique identifier of the competition.</param>
+        /// <returns>The <see cref="Competition"/> object if found; otherwise, null.</returns>
+        Task<Competition?> GetCompetitionByIdAsync(int id);
     }
 }
