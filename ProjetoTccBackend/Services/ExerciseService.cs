@@ -11,6 +11,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing exercise operations.
+    /// </summary>
     public class ExerciseService : IExerciseService
     {
         private readonly IExerciseRepository _exerciseRepository;
@@ -21,6 +24,16 @@ namespace ProjetoTccBackend.Services
         private readonly TccDbContext _dbContext;
         private readonly ILogger<ExerciseService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExerciseService"/> class.
+        /// </summary>
+        /// <param name="exerciseRepository">The repository for exercise data access.</param>
+        /// <param name="exerciseInputRepository">The repository for exercise input data access.</param>
+        /// <param name="exerciseOutputRepository">The repository for exercise output data access.</param>
+        /// <param name="judgeService">The service for judge operations.</param>
+        /// <param name="attachedFileService">The service for attached file operations.</param>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public ExerciseService(
             IExerciseRepository exerciseRepository,
             IExerciseInputRepository exerciseInputRepository,
@@ -50,7 +63,7 @@ namespace ProjetoTccBackend.Services
 
             if (isFileFormatValid is false)
             {
-                throw new InvalidAttachedFileException("Formato de arquivo inválido!");
+                throw new InvalidAttachedFileException("Invalid file format!");
             }
 
             AttachedFile attachedFile = await this._attachedFileService.ProcessAndSaveFile(file);

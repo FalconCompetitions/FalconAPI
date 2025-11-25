@@ -17,7 +17,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Service responsible for managing group operations.
+    /// </summary>
     public class GroupService : IGroupService
     {
         private readonly IUserService _userService;
@@ -29,6 +31,16 @@ namespace ProjetoTccBackend.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private const int MAX_MEMBERS_PER_GROUP = 3;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GroupService"/> class.
+        /// </summary>
+        /// <param name="userService">The service for user operations.</param>
+        /// <param name="userRepository">The repository for user data access.</param>
+        /// <param name="groupRepository">The repository for group data access.</param>
+        /// <param name="groupInviteService">The service for group invite operations.</param>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
+        /// <param name="httpContextAccessor">The HTTP context accessor.</param>
         public GroupService(
             IUserService userService,
             IUserRepository userRepository,
@@ -49,8 +61,9 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <summary>
-        /// Verifica se o usuário logado é Admin ou Teacher
+        /// Checks if the logged-in user is an Admin or Teacher.
         /// </summary>
+        /// <returns>True if the user has Admin or Teacher role, false otherwise.</returns>
         private bool IsAdminOrTeacher()
         {
             var userRoles = this._httpContextAccessor.HttpContext?.User

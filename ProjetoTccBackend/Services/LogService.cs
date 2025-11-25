@@ -9,17 +9,26 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing log operations.
+    /// </summary>
     public class LogService : ILogService
     {
         private readonly ILogRepository _logRepository;
         private readonly TccDbContext _dbContext;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LogService"/> class.
+        /// </summary>
+        /// <param name="logRepository">The repository for log data access.</param>
+        /// <param name="dbContext">The database context.</param>
         public LogService(ILogRepository logRepository, TccDbContext dbContext)
         {
             _logRepository = logRepository;
             _dbContext = dbContext;
         }
 
+        /// <inheritdoc />
         public async Task<LogResponse> CreateLogAsync(CreateLogRequest request)
         {
             var log = new Log
