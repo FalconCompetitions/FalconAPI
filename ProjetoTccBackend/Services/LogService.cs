@@ -45,6 +45,7 @@ namespace ProjetoTccBackend.Services
             return await Task.FromResult(ToResponse(log));
         }
 
+        /// <inheritdoc />
         public async Task<LogResponse?> GetLogByIdAsync(int id)
         {
             var log = _logRepository.GetById(id);
@@ -52,6 +53,7 @@ namespace ProjetoTccBackend.Services
             return await Task.FromResult(ToResponse(log));
         }
 
+        /// <inheritdoc />
         public async Task<PagedResult<LogResponse>> GetLogsAsync(int page, int pageSize, string? search = null)
         {
             var query = _logRepository.GetAll().AsQueryable();
@@ -71,6 +73,7 @@ namespace ProjetoTccBackend.Services
             });
         }
 
+        /// <inheritdoc />
         public async Task<PagedResult<LogResponse>> GetLogsByCompetitionAsync(int competitionId, int page, int pageSize, string? search = null)
         {
             var query = _logRepository.GetByCompetitionId(competitionId).AsQueryable();
@@ -90,6 +93,7 @@ namespace ProjetoTccBackend.Services
             });
         }
 
+        /// <inheritdoc />
         public async Task<PagedResult<LogResponse>> GetLogsByUserAsync(string userId, int page, int pageSize, string? search = null)
         {
             var query = _logRepository.GetByUserId(userId).AsQueryable();
@@ -109,6 +113,7 @@ namespace ProjetoTccBackend.Services
             });
         }
 
+        /// <inheritdoc />
         public async Task<PagedResult<LogResponse>> GetLogsByGroupAsync(int groupId, int page, int pageSize, string? search = null)
         {
             var query = _logRepository.GetByGroupId(groupId).AsQueryable();

@@ -3,6 +3,9 @@ using ProjetoTccBackend.Database.Responses.Question;
 
 namespace ProjetoTccBackend.Services.Interfaces
 {
+    /// <summary>
+    /// Service interface for managing questions.
+    /// </summary>
     public interface IQuestionService
     {
         /// <summary>
