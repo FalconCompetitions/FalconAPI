@@ -56,11 +56,11 @@ namespace ProjetoTccBackend.Controllers
         /// </returns>
         /// <remarks>
         /// Accessible to users with the roles "Admin", "Teacher", or "Student".<br/>
-        /// Exemplo de request:
+        /// Example request:
         /// <code>
         ///     POST /api/group
         ///     {
-        ///         "name": "Grupo 1"
+        ///         "name": "Group 1"
         ///     }
         /// </code>
         /// </remarks>
@@ -135,7 +135,7 @@ namespace ProjetoTccBackend.Controllers
         /// </returns>
         /// <remarks>
         /// Accessible to users with the roles "Admin", "Teacher", or "Student".<br/>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
         ///     GET /api/group/1
         /// </code>
@@ -210,9 +210,9 @@ namespace ProjetoTccBackend.Controllers
         /// <returns>An <see cref="IActionResult"/> containing a paginated list of groups.</returns>
         /// <remarks>
         /// Accessible to users with the roles "Admin" or "Teacher".<br/>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
-        ///     GET /api/group?page=1&pageSize=10&search=grupo
+        ///     GET /api/group?page=1&amp;pageSize=10&amp;search=group
         /// </code>
         /// </remarks>
         /// <response code="200">Returns the paginated list of groups.</response>
@@ -236,12 +236,12 @@ namespace ProjetoTccBackend.Controllers
         /// <param name="request">The update request data, including the new name and the list of user IDs to associate with the group.</param>
         /// <returns>The updated group if successful. Returns <see cref="ForbidResult"/> if the user does not have permission, or <see cref="NotFoundResult"/> if the group does not exist.</returns>
         /// <remarks>
-        /// Accessible to users with the roles "Admin", "Teacher" ou membros do grupo.<br/>
-        /// Exemplo de request:
+        /// Accessible to users with the roles "Admin", "Teacher" or group members.<br/>
+        /// Example request:
         /// <code>
         ///     PUT /api/group/1
         ///     {
-        ///         "name": "Novo Nome do Grupo",
+        ///         "name": "New Group Name",
         ///         "userIds": ["userId1", "userId2"]
         ///     }
         /// </code>

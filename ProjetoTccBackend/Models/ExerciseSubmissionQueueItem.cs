@@ -57,6 +57,9 @@ namespace ProjetoTccBackend.Models
             this.ConnectionId = connectionId;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExerciseSubmissionQueueItem"/> class.
+        /// </summary>
         public ExerciseSubmissionQueueItem()
         {
 

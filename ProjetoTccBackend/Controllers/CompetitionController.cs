@@ -37,7 +37,7 @@ namespace ProjetoTccBackend.Controllers
         /// </summary>
         /// <returns>The existing <see cref="Competition"/> object if found, or <see cref="NoContentResult"/> if not found.</returns>
         /// <remarks>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
         ///     GET /api/competition
         /// </code>
@@ -127,7 +127,7 @@ namespace ProjetoTccBackend.Controllers
         /// <returns>The created <see cref="Competition"/> object in <see cref="CompetitionResponse"/> format.</returns>
         /// <remarks>
         /// Accessible only to users with the "Admin" role.<br/>
-        /// Exemplo de request:
+        /// Example request:
         /// <code>
         ///     POST /api/competition
         ///     {
@@ -204,7 +204,7 @@ namespace ProjetoTccBackend.Controllers
         /// <returns>The updated <see cref="Competition"/> object in <see cref="CompetitionResponse"/> format.</returns>
         /// <remarks>
         /// Accessible only to users with the "Admin" role.<br/>
-        /// Exemplo de request:
+        /// Example request:
         /// <code>
         ///     PUT /api/competition/1
         ///     {
