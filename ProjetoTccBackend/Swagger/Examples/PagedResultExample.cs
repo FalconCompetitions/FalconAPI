@@ -6,8 +6,15 @@ using System.Collections.Generic;
 
 namespace ProjetoTccBackend.Swagger.Examples
 {
+    /// <summary>
+    /// Provides example instances of <see cref="PagedResult{GroupResponse}"/> for Swagger documentation.
+    /// </summary>
     public class PagedResultGroupResponseExample : ISwaggerExampleProvider<PagedResult<GroupResponse>>
     {
+        /// <summary>
+        /// Gets an example instance of <see cref="PagedResult{GroupResponse}"/>.
+        /// </summary>
+        /// <returns>An example paged result of group responses.</returns>
         public PagedResult<GroupResponse> GetExample() => new PagedResult<GroupResponse>
         {
             Items = new List<GroupResponse>
@@ -15,18 +22,18 @@ namespace ProjetoTccBackend.Swagger.Examples
                 new GroupResponse
                 {
                     Id = 1,
-                    Name = "Grupo Exemplo",
+                    Name = "Example Group",
                     LeaderId = "GUID",
                     Users = new List<GenericUserInfoResponse>
                     {
                         new GenericUserInfoResponse
                         {
                             Id = "user-uuid",
-                            Name = "Usuário Exemplo",
-                            Email = "exemplo@email.com",
+                            Name = "Example User",
+                            Email = "example@email.com",
                             JoinYear = 2024,
                             CreatedAt = DateTime.UtcNow,
-                            Department = "Departamento",
+                            Department = "Department",
                             LastLoggedAt = DateTime.UtcNow,
                             Ra = "000000"
                         }
@@ -40,8 +47,15 @@ namespace ProjetoTccBackend.Swagger.Examples
         };
     }
 
+    /// <summary>
+    /// Provides example instances of <see cref="PagedResult{GenericUserInfoResponse}"/> for Swagger documentation.
+    /// </summary>
     public class PagedResultUserInfoResponseExample : ISwaggerExampleProvider<PagedResult<GenericUserInfoResponse>>
     {
+        /// <summary>
+        /// Gets an example instance of <see cref="PagedResult{GenericUserInfoResponse}"/>.
+        /// </summary>
+        /// <returns>An example paged result of user info responses.</returns>
         public PagedResult<GenericUserInfoResponse> GetExample() => new PagedResult<GenericUserInfoResponse>
         {
             Items = new List<GenericUserInfoResponse>
@@ -49,11 +63,11 @@ namespace ProjetoTccBackend.Swagger.Examples
                 new GenericUserInfoResponse
                 {
                     Id = "user-uuid",
-                    Name = "Usuário Exemplo",
-                    Email = "exemplo@email.com",
+                    Name = "Example User",
+                    Email = "example@email.com",
                     JoinYear = 2024,
                     CreatedAt = DateTime.UtcNow,
-                    Department = "Departamento",
+                    Department = "Department",
                     Ra = "0000000",
                     LastLoggedAt = DateTime.UtcNow,
                 }
