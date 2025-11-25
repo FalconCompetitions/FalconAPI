@@ -22,6 +22,7 @@ using ProjetoTccBackend.Swagger.Extensions;
 using ProjetoTccBackend.Swagger.Filters;
 using ProjetoTccBackend.Workers;
 using ProjetoTccBackend.Workers.Queues;
+using ProjetoTccBackend.Converters;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 
@@ -402,6 +403,8 @@ namespace ProjetoTccBackend
                         .Serialization
                         .ReferenceHandler
                         .IgnoreCycles;
+                    // Adiciona conversor customizado para interpretar DateTimes sem timezone como horário local
+                    options.JsonSerializerOptions.Converters.Add(new LocalDateTimeConverter());
                 });
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

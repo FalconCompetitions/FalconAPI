@@ -103,6 +103,17 @@ namespace ProjetoTccBackend.Services
                 .Where(c => c.Status == CompetitionStatus.ModelTemplate)
                 .ToListAsync();
 
+            // DEBUG: Verificar o Kind do DateTime ao ler do banco
+            foreach (var comp in templateCompetitions)
+            {
+                this._logger.LogInformation(
+                    "🔍 Template {Name}: StartTime = {StartTime}, Kind = {Kind}", 
+                    comp.Name, 
+                    comp.StartTime, 
+                    comp.StartTime.Kind
+                );
+            }
+
             List<CompetitionResponse> response = templateCompetitions
                 .Select(c => new CompetitionResponse()
                 {

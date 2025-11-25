@@ -58,7 +58,7 @@ namespace ProjetoTccBackend.Services
             var signInCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                expires: DateTime.Now.AddDays(5),
+                expires: DateTime.UtcNow.AddDays(5),
                 claims: claims,
                 issuer: this._issuer,
                 audience: this._audience,
@@ -141,7 +141,7 @@ namespace ProjetoTccBackend.Services
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                expires: DateTime.Now.AddDays(1),
+                expires: DateTime.UtcNow.AddDays(1),
                 claims: claims,
                 issuer: this._issuer,
                 audience: this._audience,

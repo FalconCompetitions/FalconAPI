@@ -12,7 +12,7 @@ namespace ProjetoTccBackend.Models
         public LogType ActionType { get; set; }
 
         [Required]
-        public DateTime ActionTime { get; set; } = DateTime.Now;
+        public DateTime ActionTime { get; set; } = DateTime.UtcNow;
 
         [Required]
         [StringLength(128)]

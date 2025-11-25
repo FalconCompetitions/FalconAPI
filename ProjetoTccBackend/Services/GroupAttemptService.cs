@@ -56,7 +56,7 @@ namespace ProjetoTccBackend.Services
                     ? currentCompetition.StartTime
                     : lastGroupAttempt.SubmissionTime;
 
-                TimeSpan duration = DateTime.Now.Subtract(time);
+                TimeSpan duration = DateTime.UtcNow.Subtract(time);
 
 
                 GroupExerciseAttempt attempt = new GroupExerciseAttempt()
@@ -68,7 +68,7 @@ namespace ProjetoTccBackend.Services
                     GroupId = request.GroupId,
                     JudgeResponse = response,
                     Language = request.LanguageType,
-                    SubmissionTime = DateTime.Now,
+                    SubmissionTime = DateTime.UtcNow,
                     Time = duration,
                 };
 

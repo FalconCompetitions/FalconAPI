@@ -25,7 +25,7 @@ namespace ProjetoTccBackend.Services
             var log = new Log
             {
                 ActionType = request.ActionType,
-                ActionTime = DateTime.Now,
+                ActionTime = DateTime.UtcNow,
                 IpAddress = request.IpAddress,
                 UserId = request.UserId,
                 GroupId = request.GroupId,

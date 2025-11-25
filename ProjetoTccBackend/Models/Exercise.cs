@@ -57,7 +57,7 @@ namespace ProjetoTccBackend.Models
         /// Date and time when the exercise was created.
         /// </summary>
         [DataType(DataType.DateTime)]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Collection of input examples for the exercise.

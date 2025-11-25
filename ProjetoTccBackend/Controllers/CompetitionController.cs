@@ -145,6 +145,13 @@ namespace ProjetoTccBackend.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> CreateNewCompetition([FromBody] CompetitionRequest request)
         {
+            // DEBUG: Verificar o que está chegando do frontend
+            this._logger.LogInformation(
+                "🔍 CreateCompetition recebeu: StartTime = {StartTime}, Kind = {Kind}",
+                request.StartTime,
+                request.StartTime.Kind
+            );
+            
             Competition? newCompetition = null;
 
             try
