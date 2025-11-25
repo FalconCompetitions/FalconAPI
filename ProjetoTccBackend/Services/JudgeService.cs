@@ -289,21 +289,21 @@ namespace ProjetoTccBackend.Services
 
             switch (randomStatus)
             {
-                case "ACCEPTED":
+                case "Accepted":
                     return JudgeSubmissionResponseEnum.Accepted;
-                case "PRESENTATION ERROR":
+                case "PresentationError":
                     return JudgeSubmissionResponseEnum.PresentationError;
-                case "WRONG ANSWER":
+                case "WrongAnswer":
                     return JudgeSubmissionResponseEnum.WrongAnswer;
-                case "COMPILATION ERROR":
+                case "CompilationError":
                     return JudgeSubmissionResponseEnum.CompilationError;
-                case "TIME LIMIT EXCEEDED":
+                case "TimeLimitExceeded":
                     return JudgeSubmissionResponseEnum.TimeLimitExceeded;
-                case "MEMORY LIMIT EXCEEDED":
+                case "MemoryLimit Exceeded":
                     return JudgeSubmissionResponseEnum.MemoryLimitExceeded;
-                case "RUNTIME ERROR":
+                case "RuntimeError":
                     return JudgeSubmissionResponseEnum.RuntimeError;
-                case "SECURITY ERROR":
+                case "SecurityError":
                     return JudgeSubmissionResponseEnum.SecurityError;
                 default:
                     return JudgeSubmissionResponseEnum.WrongAnswer;
