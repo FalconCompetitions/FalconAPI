@@ -16,7 +16,7 @@ using ProjetoTccBackend.Services.Interfaces;
 namespace ProjetoTccBackend.Controllers
 {
     /// <summary>
-    /// Controlador responsável pela autenticação de usuários.
+    /// Controller responsible for user authentication.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
@@ -27,11 +27,11 @@ namespace ProjetoTccBackend.Controllers
         private readonly ILogger<AuthController> _logger;
 
         /// <summary>
-        /// Construtor do AuthController.
+        /// Initializes a new instance of the <see cref="AuthController"/> class.
         /// </summary>
-        /// <param name="tokenService">Serviço de geração de token.</param>
-        /// <param name="userService">Serviço de gerenciamento de usuários.</param>
-        /// <param name="logger">Logger para registrar informações e erros.</param>
+        /// <param name="tokenService">The service for token generation.</param>
+        /// <param name="userService">The service for user management.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public AuthController(
             ITokenService tokenService,
             IUserService userService,
@@ -281,7 +281,7 @@ namespace ProjetoTccBackend.Controllers
         /// Returns an <see cref="IActionResult"/> containing a boolean indicating whether the token is valid.
         /// </returns>
         /// <remarks>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
         ///     GET /api/auth/validate
         /// </code>
@@ -346,7 +346,7 @@ namespace ProjetoTccBackend.Controllers
         /// </summary>
         /// <remarks>
         /// This method terminates the user's session by performing the necessary logout operations and deleting the authentication token cookie. The user must be authenticated to call this method.<br/>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
         ///     GET /api/auth/logout
         /// </code>

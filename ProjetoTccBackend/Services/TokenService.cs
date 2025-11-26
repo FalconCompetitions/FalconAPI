@@ -8,6 +8,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for JWT token generation and validation.
+    /// </summary>
     public class TokenService : ITokenService
     {
         private readonly string _secretKey;
@@ -17,6 +20,12 @@ namespace ProjetoTccBackend.Services
         private const string _tokenKey = "privateAccessToken";
         private readonly ILogger<TokenService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TokenService"/> class.
+        /// </summary>
+        /// <param name="configuration">The application configuration containing JWT settings.</param>
+        /// <param name="memoryCache">The memory cache for storing tokens.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public TokenService(
             IConfiguration configuration,
             IMemoryCache memoryCache,
@@ -125,7 +134,7 @@ namespace ProjetoTccBackend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Token JWT inválido.");
+                _logger.LogWarning(ex, "Invalid JWT token.");
                 return false;
             }
         }

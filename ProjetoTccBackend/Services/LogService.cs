@@ -9,17 +9,26 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing log operations.
+    /// </summary>
     public class LogService : ILogService
     {
         private readonly ILogRepository _logRepository;
         private readonly TccDbContext _dbContext;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LogService"/> class.
+        /// </summary>
+        /// <param name="logRepository">The repository for log data access.</param>
+        /// <param name="dbContext">The database context.</param>
         public LogService(ILogRepository logRepository, TccDbContext dbContext)
         {
             _logRepository = logRepository;
             _dbContext = dbContext;
         }
 
+        /// <inheritdoc />
         public async Task<LogResponse> CreateLogAsync(CreateLogRequest request)
         {
             var log = new Log
@@ -36,6 +45,7 @@ namespace ProjetoTccBackend.Services
             return await Task.FromResult(ToResponse(log));
         }
 
+        /// <inheritdoc />
         public async Task<LogResponse?> GetLogByIdAsync(int id)
         {
             var log = _logRepository.GetById(id);
@@ -43,6 +53,7 @@ namespace ProjetoTccBackend.Services
             return await Task.FromResult(ToResponse(log));
         }
 
+        /// <inheritdoc />
         public async Task<PagedResult<LogResponse>> GetLogsAsync(int page, int pageSize, string? search = null)
         {
             var query = _logRepository.GetAll().AsQueryable();
@@ -62,6 +73,7 @@ namespace ProjetoTccBackend.Services
             });
         }
 
+        /// <inheritdoc />
         public async Task<PagedResult<LogResponse>> GetLogsByCompetitionAsync(int competitionId, int page, int pageSize, string? search = null)
         {
             var query = _logRepository.GetByCompetitionId(competitionId).AsQueryable();
@@ -81,6 +93,7 @@ namespace ProjetoTccBackend.Services
             });
         }
 
+        /// <inheritdoc />
         public async Task<PagedResult<LogResponse>> GetLogsByUserAsync(string userId, int page, int pageSize, string? search = null)
         {
             var query = _logRepository.GetByUserId(userId).AsQueryable();
@@ -100,6 +113,7 @@ namespace ProjetoTccBackend.Services
             });
         }
 
+        /// <inheritdoc />
         public async Task<PagedResult<LogResponse>> GetLogsByGroupAsync(int groupId, int page, int pageSize, string? search = null)
         {
             var query = _logRepository.GetByGroupId(groupId).AsQueryable();

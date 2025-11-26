@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing attached file operations.
+    /// </summary>
     public class AttachedFileService : IAttachedFileService
     {
         private readonly IUserService _userService;
@@ -16,6 +19,13 @@ namespace ProjetoTccBackend.Services
         private readonly ILogger<AttachedFileService> _logger;
         private readonly string _privateFilesPath;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AttachedFileService"/> class.
+        /// </summary>
+        /// <param name="userService">The service for user operations.</param>
+        /// <param name="attachedFileRepository">The repository for attached file data access.</param>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public AttachedFileService(
             IUserService userService,
             IAttachedFileRepository attachedFileRepository,

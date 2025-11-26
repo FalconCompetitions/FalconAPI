@@ -17,6 +17,9 @@ using ProjetoTccBackend.Workers.Queues;
 
 namespace ProjetoTccBackend.Hubs
 {
+    /// <summary>
+    /// SignalR hub for managing real-time competition communications and operations.
+    /// </summary>
     [Authorize]
     public class CompetitionHub : Hub
     {
@@ -32,6 +35,18 @@ namespace ProjetoTccBackend.Hubs
         private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
         private const string CompetitionCacheKey = "currentCompetition";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompetitionHub"/> class.
+        /// </summary>
+        /// <param name="groupAttemptService">The service for group attempt operations.</param>
+        /// <param name="groupInCompetitionService">The service for group-in-competition operations.</param>
+        /// <param name="competitionService">The service for competition operations.</param>
+        /// <param name="userService">The service for user operations.</param>
+        /// <param name="logService">The service for log operations.</param>
+        /// <param name="httpContextAcessor">The HTTP context accessor.</param>
+        /// <param name="memoryCache">The memory cache for storing competition data.</param>
+        /// <param name="exerciseSubmissionQueue">The queue for exercise submissions.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public CompetitionHub(
             IGroupAttemptService groupAttemptService,
             IGroupInCompetitionService groupInCompetitionService,
@@ -93,6 +108,11 @@ namespace ProjetoTccBackend.Hubs
             this._memoryCache.Remove(CompetitionCacheKey);
         }
 
+        /// <summary>
+        /// Gets the current HTTP context from the hub.
+        /// </summary>
+        /// <returns>The current HTTP context.</returns>
+        /// <exception cref="Exception">Thrown when HTTP context is not available.</exception>
         private HttpContext GetHubHttpContext()
         {
             var httpContext = this._httpContextAcessor.HttpContext;

@@ -8,12 +8,21 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing competition ranking operations.
+    /// </summary>
     public class CompetitionRankingService : ICompetitionRankingService
     {
         private readonly ICompetitionRankingRepository _competitionRankingRepository;
         private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
         private readonly TccDbContext _dbContext;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompetitionRankingService"/> class.
+        /// </summary>
+        /// <param name="competitionRankingRepository">The repository for competition ranking data access.</param>
+        /// <param name="groupExerciseAttemptRepository">The repository for group exercise attempt data access.</param>
+        /// <param name="dbContext">The database context.</param>
         public CompetitionRankingService(ICompetitionRankingRepository competitionRankingRepository, IGroupExerciseAttemptRepository groupExerciseAttemptRepository, TccDbContext dbContext)
         {
             this._competitionRankingRepository = competitionRankingRepository;

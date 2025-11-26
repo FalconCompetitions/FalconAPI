@@ -13,6 +13,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing competition operations.
+    /// </summary>
     public class CompetitionService : ICompetitionService
     {
         private readonly IUserService _userService;
@@ -26,6 +29,19 @@ namespace ProjetoTccBackend.Services
         private readonly TccDbContext _dbContext;
         private readonly ILogger<CompetitionService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompetitionService"/> class.
+        /// </summary>
+        /// <param name="userService">The service for user operations.</param>
+        /// <param name="competitionRepository">The repository for competition data access.</param>
+        /// <param name="groupInCompetitionRepository">The repository for group-in-competition data access.</param>
+        /// <param name="competitionRankingRepository">The repository for competition ranking data access.</param>
+        /// <param name="questionRepository">The repository for question data access.</param>
+        /// <param name="answerRepository">The repository for answer data access.</param>
+        /// <param name="exerciseInCompetitionRepository">The repository for exercise-in-competition data access.</param>
+        /// <param name="competitionStateService">The service for competition state management.</param>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public CompetitionService(
             IUserService userService,
             ICompetitionRepository competitionRepository,

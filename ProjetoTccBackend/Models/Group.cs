@@ -2,21 +2,20 @@
 
 namespace ProjetoTccBackend.Models
 {
-
-    /// <summary>  
-    /// Representa um grupo no sistema.  
-    /// </summary>  
+    /// <summary>
+    /// Represents a group in the system.
+    /// </summary>
     public class Group
     {
-        /// <summary>  
-        /// Identificador único do grupo.  
-        /// </summary>  
+        /// <summary>
+        /// Gets or sets the unique identifier of the group.
+        /// </summary>
         [Key]
         public int Id { get; set; }
 
-        /// <summary>  
-        /// Nome do grupo.  
-        /// </summary>  
+        /// <summary>
+        /// Gets or sets the name of the group.
+        /// </summary>
         [Required]
         public string Name { get; set; }
 
@@ -26,40 +25,43 @@ namespace ProjetoTccBackend.Models
         [Required]
         public string LeaderId { get; set; }
 
-        /// <summary>  
-        /// Lista de usuários associados ao grupo.  
-        /// </summary>  
+        /// <summary>
+        /// Gets or sets the collection of users associated with the group.
+        /// </summary>
         public virtual ICollection<User> Users { get; set; }
 
-        /// <summary>  
-        /// Lista de competições associadas ao grupo.  
-        /// </summary>  
+        /// <summary>
+        /// Gets or sets the collection of competitions associated with the group.
+        /// </summary>
         public virtual ICollection<Competition> Competitions { get; set; }
 
-        /// <summary>  
-        /// Lista de associações entre grupos e competições.  
-        /// </summary>  
+        /// <summary>
+        /// Gets the collection of group-competition associations.
+        /// </summary>
         public virtual ICollection<GroupInCompetition> GroupInCompetitions { get; } = [];
 
-        /// <summary>  
-        /// Lista de rankings de competições associados ao grupo.  
-        /// </summary>  
+        /// <summary>
+        /// Gets the collection of competition rankings associated with the group.
+        /// </summary>
         public virtual ICollection<CompetitionRanking> CompetitionRankings { get; } = [];
 
-        /// <summary>  
-        /// Lista de tentativas de exercícios realizadas pelo grupo.  
-        /// </summary>  
+        /// <summary>
+        /// Gets or sets the collection of exercise attempts made by the group.
+        /// </summary>
         public virtual ICollection<GroupExerciseAttempt> GroupExerciseAttempts { get; set; } = [];
 
+        /// <summary>
+        /// Gets the collection of logs associated with the group.
+        /// </summary>
         public virtual ICollection<Log> Logs { get; } = [];
 
         /// <summary>
-        /// Gets the collection of group invites associated with the current user.
+        /// Gets or sets the collection of group invites associated with the group.
         /// </summary>
         public virtual ICollection<GroupInvite> GroupInvites { get; set; }
 
         /// <summary>
-        /// Campo de controle de concorrência otimista.
+        /// Gets or sets the row version for optimistic concurrency control.
         /// </summary>
         [Timestamp]
         public byte[]? RowVersion { get; set; }

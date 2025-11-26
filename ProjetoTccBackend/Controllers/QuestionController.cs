@@ -29,9 +29,9 @@ namespace ProjetoTccBackend.Controllers
         /// <param name="pageSize">The number of questions per page. Default is 10.</param>
         /// <returns>An <see cref="IActionResult"/> containing a paginated list of questions.</returns>
         /// <remarks>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
-        ///     GET /api/question?page=1&pageSize=10
+        ///     GET /api/question?page=1&amp;pageSize=10
         /// </code>
         /// </remarks>
         /// <response code="200">Returns the paginated list of questions.</response>

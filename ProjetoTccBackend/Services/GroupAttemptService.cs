@@ -10,6 +10,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing group exercise attempt operations.
+    /// </summary>
     public class GroupAttemptService : IGroupAttemptService
     {
         private readonly TccDbContext _dbContext;
@@ -19,6 +22,15 @@ namespace ProjetoTccBackend.Services
         private readonly ICompetitionRankingService _competitionRankingService;
         private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GroupAttemptService"/> class.
+        /// </summary>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="judgeService">The service for judge operations.</param>
+        /// <param name="userService">The service for user operations.</param>
+        /// <param name="groupRepository">The repository for group data access.</param>
+        /// <param name="competitionRankingService">The service for competition ranking operations.</param>
+        /// <param name="groupExerciseAttemptRepository">The repository for group exercise attempt data access.</param>
         public GroupAttemptService(TccDbContext dbContext, IJudgeService judgeService, IUserService userService, IGroupRepository groupRepository, ICompetitionRankingService competitionRankingService, IGroupExerciseAttemptRepository groupExerciseAttemptRepository)
         {
             this._dbContext = dbContext;
