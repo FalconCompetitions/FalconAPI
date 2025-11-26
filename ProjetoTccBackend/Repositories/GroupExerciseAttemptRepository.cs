@@ -19,5 +19,15 @@ namespace ProjetoTccBackend.Repositories
 
             return response;
         }
+
+        /// <inheritdoc />
+        public bool HasGroupAcceptedExercise(int groupId, int competitionId, int exerciseId)
+        {
+            return this._dbContext.GroupExerciseAttempts
+                .Any(x => x.GroupId == groupId 
+                    && x.CompetitionId == competitionId 
+                    && x.ExerciseId == exerciseId 
+                    && x.Accepted == true);
+        }
     }
 }

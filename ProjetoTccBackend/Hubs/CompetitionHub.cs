@@ -11,6 +11,7 @@ using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Enums.Log;
 using ProjetoTccBackend.Models;
+using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Workers.Queues;
 
@@ -28,6 +29,7 @@ namespace ProjetoTccBackend.Hubs
         private readonly ExerciseSubmissionQueue _exerciseSubmissionQueue;
         private readonly ILogger<CompetitionHub> _logger;
         private readonly IGroupInCompetitionService _groupInCompetitionService;
+        private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
         private const string CompetitionCacheKey = "currentCompetition";
 
         public CompetitionHub(
@@ -39,7 +41,8 @@ namespace ProjetoTccBackend.Hubs
             IHttpContextAccessor httpContextAcessor,
             IMemoryCache memoryCache,
             ExerciseSubmissionQueue exerciseSubmissionQueue,
-            ILogger<CompetitionHub> logger
+            ILogger<CompetitionHub> logger,
+            IGroupExerciseAttemptRepository groupExerciseAttemptRepository
         )
         {
             this._groupAttemptService = groupAttemptService;
@@ -51,6 +54,7 @@ namespace ProjetoTccBackend.Hubs
             this._memoryCache = memoryCache;
             this._exerciseSubmissionQueue = exerciseSubmissionQueue;
             this._logger = logger;
+            this._groupExerciseAttemptRepository = groupExerciseAttemptRepository;
         }
 
         /// <summary>
@@ -349,6 +353,25 @@ namespace ProjetoTccBackend.Hubs
                     new
                     {
                         message = "Seu grupo está bloqueado de enviar submissões nesta competição",
+                    }
+                );
+                return;
+            }
+
+            // Check if the group has already solved this exercise
+            bool hasAlreadyAccepted = this._groupExerciseAttemptRepository.HasGroupAcceptedExercise(
+                loggedUser.GroupId.Value,
+                currentCompetition.Id,
+                request.ExerciseId
+            );
+
+            if (hasAlreadyAccepted)
+            {
+                await Clients.Caller.SendAsync(
+                    "ReceiveExerciseAttemptError",
+                    new
+                    {
+                        message = "Este exercício já foi aceito pelo seu grupo. Não é possível enviar novamente.",
                     }
                 );
                 return;
