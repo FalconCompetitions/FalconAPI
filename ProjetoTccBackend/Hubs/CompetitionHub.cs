@@ -441,6 +441,18 @@ namespace ProjetoTccBackend.Hubs
             await Clients.Caller.SendAsync("ReceiveQuestionCreationResponse", response);
             await Clients.Group("Teachers").SendAsync("ReceiveQuestionCreation", response);
             await Clients.Group("Admins").SendAsync("ReceiveQuestionCreation", response);
+
+            // Log the question submission
+            await this._logService.CreateLogAsync(
+                new CreateLogRequest()
+                {
+                    UserId = loggedUser.Id,
+                    ActionType = LogType.QuestionSent,
+                    CompetitionId = competition.Id,
+                    GroupId = loggedUser.GroupId,
+                    IpAddress = this.GetHubHttpContext().Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                }
+            );
         }
 
         /// <summary>
@@ -466,6 +478,18 @@ namespace ProjetoTccBackend.Hubs
             await Clients.Caller.SendAsync("ReceiveQuestionAnswerResponse", answer);
             await Clients.Group("Teachers").SendAsync("ReceiveQuestionAnswer", answer);
             await Clients.Group("Admins").SendAsync("ReceiveQuestionAnswer", answer);
+
+            // Log the answer
+            await this._logService.CreateLogAsync(
+                new CreateLogRequest()
+                {
+                    UserId = loggedUser.Id,
+                    ActionType = LogType.AnswerGiven,
+                    CompetitionId = competition.Id,
+                    GroupId = null,
+                    IpAddress = this.GetHubHttpContext().Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                }
+            );
         }
 
         [Authorize(Roles = "Admin,Teacher")]

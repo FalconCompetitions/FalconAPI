@@ -35,15 +35,15 @@ namespace ProjetoTccBackend.Services
                     c.CompetitionId.Equals(competition.Id)
                 ).ToList();
 
-            // Calculate total points (number of exercises solved)
-            int totalPoints = attempts.Count(x => x.Accepted);
-
             // Get the list of exercise IDs that were accepted at some point
             var acceptedExerciseIds = attempts
                 .Where(x => x.Accepted)
                 .Select(x => x.ExerciseId)
                 .Distinct()
                 .ToList();
+
+            // Calculate total points (number of DISTINCT exercises solved)
+            int totalPoints = acceptedExerciseIds.Count;
 
             // Calculate penalty: count ALL attempts for exercises that were accepted
             int totalPenaltys = attempts
@@ -111,7 +111,8 @@ namespace ProjetoTccBackend.Services
                 {
                     GroupId = group.Id,
                     ExerciseId = g.Key,
-                    Attempts = g.Count()
+                    Attempts = g.Count(),
+                    Accepted = g.Any(a => a.Accepted) // Include whether exercise was solved
                 }).ToList();
 
             var response = new CompetitionRankingResponse()

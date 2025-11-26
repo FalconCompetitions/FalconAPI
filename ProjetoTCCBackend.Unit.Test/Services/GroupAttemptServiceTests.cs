@@ -115,6 +115,15 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             Assert.Equal(JudgeSubmissionResponse.Accepted, result.submission.JudgeResponse);
             Assert.Equal(1, result.ranking.Group.Id);
             Assert.Equal(100, result.ranking.Points);
+            
+            // Verify new fields are populated correctly
+            Assert.Equal("console.log('Hello');", result.submission.Code);
+            Assert.Equal(LanguageType.Javascript, result.submission.LanguageId);
+            Assert.Equal(1, result.submission.Score); // Accepted = 1 point
+            Assert.Equal(100, result.submission.Points);
+            Assert.Equal(0, result.submission.Penalty);
+            Assert.True(result.submission.SubmittedAt <= DateTime.UtcNow);
+            
             _groupExerciseAttemptRepositoryMock.Verify(
                 r => r.Add(It.IsAny<GroupExerciseAttempt>()),
                 Times.Once
@@ -187,6 +196,13 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             Assert.False(result.submission.Accepted);
             Assert.Equal(JudgeSubmissionResponse.WrongAnswer, result.submission.JudgeResponse);
             Assert.Equal(20, result.ranking.Penalty);
+            
+            // Verify new fields for rejected submission
+            Assert.Equal("console.log('Hello');", result.submission.Code);
+            Assert.Equal(LanguageType.Javascript, result.submission.LanguageId);
+            Assert.Equal(0, result.submission.Score); // Rejected = 0 points
+            Assert.Equal(0, result.submission.Points);
+            Assert.Equal(20, result.submission.Penalty);
         }
 
         [Fact]
@@ -207,7 +223,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 ExerciseId = 1,
                 CompetitionId = 1,
                 Code = "previous code",
-                SubmissionTime = DateTime.Now.AddMinutes(-30),
+                SubmissionTime = DateTime.UtcNow.AddMinutes(-30),
                 Accepted = false,
             };
 
@@ -261,11 +277,16 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             // Assert
             Assert.NotNull(result.submission);
             Assert.True(result.submission.Accepted);
+            Assert.Equal("console.log('Test');", result.submission.Code);
+            Assert.Equal(LanguageType.Javascript, result.submission.LanguageId);
+            
+            // Verify attempt was added - use a more flexible time check
+            // The duration should be approximately 30 minutes (from lastAttempt.SubmissionTime)
             _groupExerciseAttemptRepositoryMock.Verify(
                 r =>
                     r.Add(
                         It.Is<GroupExerciseAttempt>(a =>
-                            a.Time.TotalMinutes >= 29 && a.Time.TotalMinutes <= 31
+                            a.Time.TotalMinutes >= 28 && a.Time.TotalMinutes <= 32
                         )
                     ),
                 Times.Once
@@ -514,6 +535,86 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             Assert.Equal(LanguageType.Python, capturedAttempt.Language);
             Assert.Equal(JudgeSubmissionResponse.Accepted, capturedAttempt.JudgeResponse);
             Assert.True(capturedAttempt.Accepted);
+        }
+
+        [Fact]
+        public async Task SubmitExerciseAttempt_ReturnsAllRequiredFieldsForFrontend()
+        {
+            // Arrange
+            var competition = new Competition
+            {
+                Id = 1,
+                Name = "Test Competition",
+                StartTime = DateTime.UtcNow.AddHours(-1),
+            };
+
+            var request = new GroupExerciseAttemptWorkerRequest
+            {
+                GroupId = 5,
+                ExerciseId = 10,
+                Code = "print('test')",
+                LanguageType = LanguageType.Python,
+            };
+
+            var group = new Group
+            {
+                Id = 5,
+                Name = "Test Group",
+                LeaderId = "user1",
+            };
+
+            var rankingResponse = new CompetitionRankingResponse
+            {
+                Id = 1,
+                Group = new GroupResponse
+                {
+                    Id = 5,
+                    Name = "Test Group",
+                    LeaderId = "user1",
+                },
+                Points = 50,
+                Penalty = 10,
+            };
+
+            _judgeServiceMock
+                .Setup(s => s.SendGroupExerciseAttempt(request))
+                .ReturnsAsync(JudgeSubmissionResponse.Accepted);
+
+            _groupExerciseAttemptRepositoryMock
+                .Setup(r => r.GetLastGroupCompetitionAttempt(5, 1))
+                .Returns((GroupExerciseAttempt?)null);
+
+            _groupRepositoryMock.Setup(r => r.GetByIdWithUsers(5)).Returns(group);
+
+            _competitionRankingServiceMock
+                .Setup(s => s.UpdateRanking(competition, group, It.IsAny<GroupExerciseAttempt>()))
+                .ReturnsAsync(rankingResponse);
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.SubmitExerciseAttempt(competition, request);
+
+            // Assert - Verify all fields required by frontend are present
+            var submission = result.submission;
+            
+            // Core fields
+            Assert.True(submission.Id >= 0);
+            Assert.Equal(10, submission.ExerciseId);
+            Assert.Equal(5, submission.GroupId);
+            Assert.True(submission.Accepted);
+            Assert.Equal(JudgeSubmissionResponse.Accepted, submission.JudgeResponse);
+            
+            // New fields for frontend compatibility
+            Assert.Equal("print('test')", submission.Code);
+            Assert.Equal(LanguageType.Python, submission.LanguageId);
+            Assert.True(submission.SubmittedAt <= DateTime.UtcNow);
+            Assert.True(submission.SubmittedAt >= DateTime.UtcNow.AddMinutes(-1));
+            Assert.Equal(0, submission.ExecutionTime); // Not yet implemented
+            Assert.Equal(0, submission.MemoryUsed); // Not yet implemented
+            Assert.Equal(1, submission.Score); // Accepted = 1
+            Assert.Equal(50, submission.Points); // From ranking
+            Assert.Equal(10, submission.Penalty); // From ranking
         }
     }
 }

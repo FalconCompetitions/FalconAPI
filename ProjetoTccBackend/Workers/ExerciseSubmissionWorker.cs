@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
+using ProjetoTccBackend.Database.Requests.Log;
 using ProjetoTccBackend.Database.Responses.Exercise;
 using ProjetoTccBackend.Enums;
+using ProjetoTccBackend.Enums.Log;
 using ProjetoTccBackend.Hubs;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Services.Interfaces;
@@ -198,11 +200,31 @@ namespace ProjetoTccBackend.Workers
             var groupAttemptService =
                 serviceScope.ServiceProvider.GetRequiredService<IGroupAttemptService>();
 
+            var logService =
+                serviceScope.ServiceProvider.GetRequiredService<ILogService>();
+
             var (submissionResponse, rankingResponse) =
                 await groupAttemptService.SubmitExerciseAttempt(
                     currentCompetition,
                     queueItem.Request
                 );
+
+            // Log the exercise submission
+            try
+            {
+                await logService.CreateLogAsync(new CreateLogRequest()
+                {
+                    ActionType = LogType.SubmittedExercise,
+                    CompetitionId = currentCompetition.Id,
+                    GroupId = queueItem.Request.GroupId,
+                    UserId = null, // Worker doesn't have user context
+                    IpAddress = "worker", // Worker-initiated
+                });
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogWarning(ex, "Failed to create log for exercise submission");
+            }
 
             // Send submission response to admins and teachers
             await this

@@ -37,14 +37,6 @@ namespace ProjetoTccBackend.Services
             {
                 var response = await this._judgeService.SendGroupExerciseAttempt(request);
 
-                var exerciseResponse = new ExerciseSubmissionResponse()
-                {
-                    ExerciseId = request.ExerciseId,
-                    Accepted = response.Equals(JudgeSubmissionResponse.Accepted),
-                    JudgeResponse = response,
-                    GroupId = request.GroupId,
-                };
-
                 var lastGroupAttempt = this._groupExerciseAttemptRepository
                     .GetLastGroupCompetitionAttempt(
                         request.GroupId,
@@ -61,7 +53,7 @@ namespace ProjetoTccBackend.Services
 
                 GroupExerciseAttempt attempt = new GroupExerciseAttempt()
                 {
-                    Accepted = exerciseResponse.Accepted,
+                    Accepted = response.Equals(JudgeSubmissionResponse.Accepted),
                     Code = request.Code,
                     ExerciseId = request.ExerciseId,
                     CompetitionId = currentCompetition.Id,
@@ -73,6 +65,9 @@ namespace ProjetoTccBackend.Services
                 };
 
                 this._groupExerciseAttemptRepository.Add(attempt);
+                
+                // Save the attempt BEFORE calculating ranking so it's included in the count
+                await this._dbContext.SaveChangesAsync();
 
                 Group? group = this._groupRepository.GetByIdWithUsers(request.GroupId);
 
@@ -83,7 +78,23 @@ namespace ProjetoTccBackend.Services
 
                 var rankingResponse = await this._competitionRankingService.UpdateRanking(currentCompetition, group, attempt);
 
-                exerciseResponse.Id = attempt.Id;
+                // Build the full submission response with all fields
+                var exerciseResponse = new ExerciseSubmissionResponse()
+                {
+                    Id = attempt.Id,
+                    ExerciseId = request.ExerciseId,
+                    Accepted = attempt.Accepted,
+                    JudgeResponse = response,
+                    GroupId = request.GroupId,
+                    Code = request.Code,
+                    LanguageId = request.LanguageType,
+                    SubmittedAt = attempt.SubmissionTime,
+                    ExecutionTime = 0, // Judge doesn't return this yet
+                    MemoryUsed = 0, // Judge doesn't return this yet
+                    Score = attempt.Accepted ? 1 : 0,
+                    Points = (int)rankingResponse.Points,
+                    Penalty = (int)rankingResponse.Penalty,
+                };
 
                 return (exerciseResponse, rankingResponse);
             }
