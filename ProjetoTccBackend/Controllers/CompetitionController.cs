@@ -35,7 +35,7 @@ namespace ProjetoTccBackend.Controllers
         /// <summary>
         /// Retrieves the existing competition.
         /// </summary>
-        /// <returns>The existing <see cref="Competition"/> object if found, or <see cref="NoContentResult"/> if not found.</returns>
+        /// <returns>The existing <see cref="CompetitionResponse"/> object if found, or <see cref="NoContentResult"/> if not found.</returns>
         /// <remarks>
         /// Example usage:
         /// <code>
@@ -55,7 +55,28 @@ namespace ProjetoTccBackend.Controllers
                 return NoContent();
             }
 
-            return Ok(existentCompetition);
+            // Map to DTO to avoid circular references
+            CompetitionResponse response = new CompetitionResponse()
+            {
+                Id = existentCompetition.Id,
+                Name = existentCompetition.Name,
+                Description = existentCompetition.Description,
+                BlockSubmissions = existentCompetition.BlockSubmissions,
+                Duration = existentCompetition.Duration,
+                StartInscriptions = existentCompetition.StartInscriptions,
+                EndInscriptions = existentCompetition.EndInscriptions,
+                StartTime = existentCompetition.StartTime,
+                EndTime = existentCompetition.EndTime,
+                ExerciseIds = [],
+                MaxExercises = existentCompetition.MaxExercises,
+                MaxMembers = existentCompetition.MaxMembers,
+                MaxSubmissionSize = existentCompetition.MaxSubmissionSize,
+                Status = existentCompetition.Status,
+                StopRanking = existentCompetition.StopRanking,
+                SubmissionPenalty = existentCompetition.SubmissionPenalty,
+            };
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -395,7 +416,7 @@ namespace ProjetoTccBackend.Controllers
         /// <response code="403">If the user does not have Admin or Teacher role.</response>
         [HttpGet("{id:int}")]
         [Authorize(Roles = "Admin,Teacher")]
-        [ProducesResponseType(typeof(Competition), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(CompetitionDetailResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

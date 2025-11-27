@@ -729,7 +729,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             Assert.NotNull(result);
             Assert.Equal(1, result.Id);
             Assert.Equal("Test Competition", result.Name);
-            Assert.Single(result.Exercices);
+            Assert.Single(result.Exercises);
             Assert.Single(result.Groups);
         }
 
@@ -836,9 +836,9 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 
             // Assert
             Assert.NotNull(result);
-            Assert.Single(result.Exercices);
-            Assert.Single(result.Exercices.First().ExerciseInputs);
-            Assert.Single(result.Exercices.First().ExerciseOutputs);
+            Assert.Single(result.Exercises);
+            Assert.Single(result.Exercises.First().Inputs);
+            Assert.Single(result.Exercises.First().Outputs);
             Assert.Single(result.Groups);
             Assert.Single(result.Groups.First().Users);
             Assert.Single(result.CompetitionRankings);

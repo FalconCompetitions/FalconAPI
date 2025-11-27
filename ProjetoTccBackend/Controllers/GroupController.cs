@@ -316,7 +316,31 @@ namespace ProjetoTccBackend.Controllers
                 loggedUser.Id
             );
 
-            return Ok(invitations);
+            // Map to DTO to avoid circular references
+            List<GroupInvitationResponse> response = invitations.Select(invite => new GroupInvitationResponse()
+            {
+                Id = invite.Id,
+                Accepted = invite.Accepted,
+                Group = new GroupResponse()
+                {
+                    Id = invite.Group.Id,
+                    Name = invite.Group.Name,
+                    LeaderId = invite.Group.LeaderId,
+                },
+                User = new GenericUserInfoResponse()
+                {
+                    Id = invite.User.Id,
+                    Name = invite.User.Name,
+                    Email = invite.User.Email,
+                    Ra = invite.User.RA,
+                    JoinYear = invite.User.JoinYear,
+                    Department = invite.User.Department,
+                    CreatedAt = invite.User.CreatedAt,
+                    LastLoggedAt = invite.User.LastLoggedAt,
+                }
+            }).ToList();
+
+            return Ok(response);
         }
 
         /// <summary>

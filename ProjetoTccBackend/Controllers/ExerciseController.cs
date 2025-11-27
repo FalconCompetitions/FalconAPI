@@ -57,7 +57,30 @@ namespace ProjetoTccBackend.Controllers
                 return NotFound(id);
             }
 
-            return Ok(exercise);
+            // Map to DTO to avoid circular references
+            ExerciseResponse response = new ExerciseResponse()
+            {
+                Id = exercise.Id,
+                Title = exercise.Title,
+                Description = exercise.Description ?? "",
+                ExerciseTypeId = exercise.ExerciseTypeId,
+                AttachedFileId = exercise.AttachedFileId ?? 0,
+                Inputs = exercise.ExerciseInputs.Select(i => new ExerciseInputResponse()
+                {
+                    Id = i.Id,
+                    ExerciseId = i.ExerciseId,
+                    Input = i.Input
+                }).ToList(),
+                Outputs = exercise.ExerciseOutputs.Select(o => new ExerciseOutputResponse()
+                {
+                    Id = o.Id,
+                    ExerciseId = o.ExerciseId,
+                    Output = o.Output,
+                    ExerciseInputId = o.ExerciseInputId
+                }).ToList()
+            };
+
+            return Ok(response);
         }
 
         /// <summary>

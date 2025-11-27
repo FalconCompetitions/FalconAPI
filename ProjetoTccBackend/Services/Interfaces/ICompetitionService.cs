@@ -217,9 +217,10 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// This method fetches a competition regardless of its status,
         /// including all related entities: rankings, exercises, groups, questions, and logs.
         /// Useful for viewing archived/finished competitions.
+        /// Returns a DTO to avoid circular reference issues during serialization.
         /// </remarks>
         /// <param name="id">The unique identifier of the competition.</param>
-        /// <returns>The <see cref="Competition"/> object if found; otherwise, null.</returns>
-        Task<Competition?> GetCompetitionByIdAsync(int id);
+        /// <returns>The <see cref="CompetitionDetailResponse"/> object if found; otherwise, null.</returns>
+        Task<CompetitionDetailResponse?> GetCompetitionByIdAsync(int id);
     }
 }

@@ -849,7 +849,7 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public async Task<Competition?> GetCompetitionByIdAsync(int id)
+        public async Task<CompetitionDetailResponse?> GetCompetitionByIdAsync(int id)
         {
             try
             {
@@ -866,15 +866,175 @@ namespace ProjetoTccBackend.Services
                     .ThenInclude(cr => cr.Group)
                     .ThenInclude(g => g.Users)
                     .Include(c => c.GroupExerciseAttempts)
+                    .ThenInclude(a => a.Group)
+                    .Include(c => c.GroupExerciseAttempts)
+                    .ThenInclude(a => a.Exercise)
                     .Include(c => c.Questions)
                     .ThenInclude(q => q.Answer)
+                    .ThenInclude(a => a!.User)
                     .Include(c => c.Questions)
                     .ThenInclude(q => q.User)
+                    .ThenInclude(u => u.Group!)
+                    .Include(c => c.Questions)
+                    .ThenInclude(q => q.Exercise)
                     .Include(c => c.Logs)
+                    .ThenInclude(l => l.User)
+                    .Include(c => c.Logs)
+                    .ThenInclude(l => l.Group)
                     .AsSplitQuery()
                     .FirstOrDefaultAsync();
 
-                return competition;
+                if (competition == null)
+                {
+                    return null;
+                }
+
+                // Map to DTO to avoid circular references
+                var response = new CompetitionDetailResponse
+                {
+                    Id = competition.Id,
+                    Name = competition.Name,
+                    Description = competition.Description,
+                    MaxExercises = competition.MaxExercises,
+                    MaxMembers = competition.MaxMembers,
+                    MaxSubmissionSize = competition.MaxSubmissionSize,
+                    StartInscriptions = competition.StartInscriptions,
+                    EndInscriptions = competition.EndInscriptions,
+                    Status = competition.Status,
+                    StartTime = competition.StartTime,
+                    EndTime = competition.EndTime,
+                    Duration = competition.Duration,
+                    StopRanking = competition.StopRanking,
+                    BlockSubmissions = competition.BlockSubmissions,
+                    SubmissionPenalty = competition.SubmissionPenalty,
+                    Groups = competition.Groups.Select(g => new GroupDetailResponse
+                    {
+                        Id = g.Id,
+                        Name = g.Name,
+                        LeaderId = g.LeaderId,
+                        Users = g.Users.Select(u => new UserSimpleResponse
+                        {
+                            Id = u.Id,
+                            Name = u.Name,
+                            Email = u.Email,
+                            Ra = u.RA,
+                            JoinYear = u.JoinYear,
+                            Department = u.Department
+                        }).ToList()
+                    }).ToList(),
+                    Exercises = competition.Exercices.Select(e => new ExerciseDetailResponse
+                    {
+                        Id = e.Id,
+                        Title = e.Title,
+                        Description = e.Description,
+                        ExerciseTypeId = e.ExerciseTypeId,
+                        EstimatedTime = e.EstimatedTime,
+                        JudgeUuid = e.JudgeUuid,
+                        AttachedFileId = e.AttachedFileId,
+                        CreatedAt = e.CreatedAt,
+                        Inputs = e.ExerciseInputs.Select(i => new ExerciseInputResponse
+                        {
+                            Id = i.Id,
+                            ExerciseId = i.ExerciseId,
+                            Input = i.Input
+                        }).ToList(),
+                        Outputs = e.ExerciseOutputs.Select(o => new ExerciseOutputResponse
+                        {
+                            Id = o.Id,
+                            ExerciseId = o.ExerciseId,
+                            Output = o.Output,
+                            ExerciseInputId = o.ExerciseInputId
+                        }).ToList()
+                    }).ToList(),
+                    GroupExerciseAttempts = competition.GroupExerciseAttempts.Select(a => new GroupExerciseAttemptDetailResponse
+                    {
+                        Id = a.Id,
+                        ExerciseId = a.ExerciseId,
+                        ExerciseTitle = a.Exercise?.Title,
+                        GroupId = a.GroupId,
+                        GroupName = a.Group?.Name,
+                        CompetitionId = a.CompetitionId,
+                        Time = a.Time,
+                        SubmissionTime = a.SubmissionTime,
+                        Language = a.Language,
+                        Code = a.Code,
+                        Accepted = a.Accepted,
+                        JudgeResponse = a.JudgeResponse
+                    }).ToList(),
+                    Questions = competition.Questions.Select(q => new QuestionDetailResponse
+                    {
+                        Id = q.Id,
+                        CompetitionId = q.CompetitionId,
+                        ExerciseId = q.ExerciseId,
+                        ExerciseTitle = q.Exercise?.Title,
+                        UserId = q.UserId,
+                        UserName = q.User?.Name,
+                        UserGroupName = q.User?.Group?.Name,
+                        Content = q.Content,
+                        QuestionType = q.QuestionType,
+                        Answer = q.Answer != null ? new AnswerDetailResponse
+                        {
+                            Id = q.Answer.Id,
+                            Content = q.Answer.Content,
+                            UserId = q.Answer.UserId,
+                            UserName = q.Answer.User?.Name
+                        } : null
+                    }).ToList(),
+                    CompetitionRankings = competition.CompetitionRankings.Select(cr =>
+                    {
+                        // Get exercise attempts for this group
+                        var groupAttempts = competition.GroupExerciseAttempts
+                            .Where(a => a.GroupId == cr.GroupId)
+                            .GroupBy(a => a.ExerciseId)
+                            .Select(g => new GroupExerciseAttemptResponse
+                            {
+                                GroupId = cr.GroupId,
+                                ExerciseId = g.Key,
+                                Attempts = g.Count(),
+                                Accepted = g.Any(a => a.Accepted)
+                            })
+                            .ToList();
+
+                        return new CompetitionRankingDetailResponse
+                        {
+                            Id = cr.Id,
+                            GroupId = cr.GroupId,
+                            Group = new GroupDetailResponse
+                            {
+                                Id = cr.Group.Id,
+                                Name = cr.Group.Name,
+                                LeaderId = cr.Group.LeaderId,
+                                Users = cr.Group.Users.Select(u => new UserSimpleResponse
+                                {
+                                    Id = u.Id,
+                                    Name = u.Name,
+                                    Email = u.Email,
+                                    Ra = u.RA,
+                                    JoinYear = u.JoinYear,
+                                    Department = u.Department
+                                }).ToList()
+                            },
+                            Points = cr.Points,
+                            Penalty = cr.Penalty,
+                            RankOrder = cr.RankOrder,
+                            ExerciseAttempts = groupAttempts
+                        };
+                    }).OrderBy(cr => cr.RankOrder).ToList(),
+                    Logs = competition.Logs.Select(l => new LogDetailResponse
+                    {
+                        Id = l.Id,
+                        ActionType = l.ActionType,
+                        ActionTime = l.ActionTime,
+                        IpAddress = l.IpAddress,
+                        UserId = l.UserId,
+                        UserName = l.User?.Name,
+                        GroupId = l.GroupId,
+                        GroupName = l.Group?.Name,
+                        CompetitionId = l.CompetitionId
+                    }).ToList()
+                };
+
+                return response;
             }
             catch (Exception ex)
             {
