@@ -46,6 +46,7 @@ namespace ProjetoTccBackend.Controllers
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
         [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
         [Produces("application/pdf")]
         public async Task<IActionResult> GetFile(int fileId)
         {
@@ -56,12 +57,20 @@ namespace ProjetoTccBackend.Controllers
 
                 if (fileInfoTuple == null)
                 {
-                    return NotFound(new { FileId = fileId });
+                    this._logger.LogWarning("File with ID {FileId} not found in database", fileId);
+                    return NotFound(new { FileId = fileId, Message = "Arquivo não encontrado" });
                 }
 
                 string fullFilePath = fileInfoTuple.Item1;
                 string fileName = fileInfoTuple.Item2;
                 string fileType = fileInfoTuple.Item3;
+
+                // Check if file exists before trying to open it
+                if (!System.IO.File.Exists(fullFilePath))
+                {
+                    this._logger.LogError("File with ID {FileId} exists in database but not found on disk at path: {FilePath}", fileId, fullFilePath);
+                    return NotFound(new { FileId = fileId, Message = "Arquivo não encontrado no servidor", Path = fullFilePath });
+                }
 
                 FileStream fileStream = new FileStream(
                     fullFilePath,
@@ -70,16 +79,27 @@ namespace ProjetoTccBackend.Controllers
                 );
 
                 // Explicitly set Content-Disposition header for CORS
-                Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+                Response.Headers.Append(
+                    "Content-Disposition",
+                    $"attachment; filename=\"{fileName}\""
+                );
 
-                return new FileStreamResult(fileStream, fileType)
-                {
-                    FileDownloadName = fileName,
-                };
+                return new FileStreamResult(fileStream, fileType) { FileDownloadName = fileName };
             }
             catch (UnauthorizedAccessException exception)
             {
-                return Unauthorized();
+                this._logger.LogError(exception, "Unauthorized access attempting to get file {FileId}", fileId);
+                return Unauthorized(new { Message = "Acesso não autorizado ao arquivo" });
+            }
+            catch (FileNotFoundException exception)
+            {
+                this._logger.LogError(exception, "File {FileId} not found on disk", fileId);
+                return NotFound(new { FileId = fileId, Message = "Arquivo não encontrado no servidor" });
+            }
+            catch (Exception exception)
+            {
+                this._logger.LogError(exception, "Error retrieving file {FileId}", fileId);
+                return StatusCode(500, new { Message = "Erro ao recuperar o arquivo" });
             }
         }
     }
