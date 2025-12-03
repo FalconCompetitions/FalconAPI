@@ -12,6 +12,7 @@ using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Enums.Log;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
+using ProjetoTccBackend.Services;
 using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Workers.Queues;
 
@@ -28,12 +29,11 @@ namespace ProjetoTccBackend.Hubs
         private readonly ILogService _logService;
         private readonly IUserService _userService;
         private readonly IHttpContextAccessor _httpContextAcessor;
-        private readonly IMemoryCache _memoryCache;
+        private readonly ICompetitionCacheService _competitionCacheService;
         private readonly ExerciseSubmissionQueue _exerciseSubmissionQueue;
         private readonly ILogger<CompetitionHub> _logger;
         private readonly IGroupInCompetitionService _groupInCompetitionService;
         private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
-        private const string CompetitionCacheKey = "currentCompetition";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CompetitionHub"/> class.
@@ -44,9 +44,10 @@ namespace ProjetoTccBackend.Hubs
         /// <param name="userService">The service for user operations.</param>
         /// <param name="logService">The service for log operations.</param>
         /// <param name="httpContextAcessor">The HTTP context accessor.</param>
-        /// <param name="memoryCache">The memory cache for storing competition data.</param>
+        /// <param name="competitionCacheService">The competition cache service.</param>
         /// <param name="exerciseSubmissionQueue">The queue for exercise submissions.</param>
         /// <param name="logger">Logger for registering information and errors.</param>
+        /// <param name="groupExerciseAttemptRepository">Repository for group exercise attempts.</param>
         public CompetitionHub(
             IGroupAttemptService groupAttemptService,
             IGroupInCompetitionService groupInCompetitionService,
@@ -54,7 +55,7 @@ namespace ProjetoTccBackend.Hubs
             IUserService userService,
             ILogService logService,
             IHttpContextAccessor httpContextAcessor,
-            IMemoryCache memoryCache,
+            ICompetitionCacheService competitionCacheService,
             ExerciseSubmissionQueue exerciseSubmissionQueue,
             ILogger<CompetitionHub> logger,
             IGroupExerciseAttemptRepository groupExerciseAttemptRepository
@@ -66,7 +67,7 @@ namespace ProjetoTccBackend.Hubs
             this._userService = userService;
             this._logService = logService;
             this._httpContextAcessor = httpContextAcessor;
-            this._memoryCache = memoryCache;
+            this._competitionCacheService = competitionCacheService;
             this._exerciseSubmissionQueue = exerciseSubmissionQueue;
             this._logger = logger;
             this._groupExerciseAttemptRepository = groupExerciseAttemptRepository;
@@ -76,28 +77,13 @@ namespace ProjetoTccBackend.Hubs
         /// Asynchronously retrieves the current competition, either from the cache or by querying the competition
         /// service.
         /// </summary>
-        /// <remarks>If the competition is retrieved from the service, it is cached with an expiration
-        /// time based on the competition's end time.</remarks>
+        /// <remarks>Competition data is cached with short TTL (5s) to ensure quick updates during state transitions.</remarks>
         /// <returns>The current <see cref="Competition"/> if one is available; otherwise, <see langword="null"/>.</returns>
         private async Task<Competition?> FetchCurrentCompetitionAsync()
         {
-            if (_memoryCache.TryGetValue(CompetitionCacheKey, out Competition? competition))
-            {
-                return competition;
-            }
-
-            competition = await this._competitionService.GetCurrentCompetition();
-
-            if (competition is not null)
-            {
-                var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(
-                    competition.EndTime!.Value
-                );
-
-                this._memoryCache.Set(CompetitionCacheKey, competition, cacheEntryOptions);
-            }
-
-            return competition;
+            return await _competitionCacheService.GetOrFetchAsync(
+                async () => await this._competitionService.GetCurrentCompetition()
+            );
         }
 
         /// <summary>
@@ -105,7 +91,7 @@ namespace ProjetoTccBackend.Hubs
         /// </summary>
         private void InvalidateCompetitionCache()
         {
-            this._memoryCache.Remove(CompetitionCacheKey);
+            this._competitionCacheService.InvalidateCache();
         }
 
         /// <summary>

@@ -29,6 +29,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         private Mock<IAnswerRepository> _answerRepositoryMock;
         private Mock<IExerciseInCompetitionRepository> _exerciseInCompetitionRepositoryMock;
         private Mock<ICompetitionStateService> _competitionStateServiceMock;
+        private Mock<ICompetitionCacheService> _competitionCacheServiceMock;
         private Mock<ILogger<CompetitionService>> _loggerMock;
         private TccDbContext? _dbContext;
 
@@ -42,6 +43,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             _answerRepositoryMock = new Mock<IAnswerRepository>();
             _exerciseInCompetitionRepositoryMock = new Mock<IExerciseInCompetitionRepository>();
             _competitionStateServiceMock = new Mock<ICompetitionStateService>();
+            _competitionCacheServiceMock = new Mock<ICompetitionCacheService>();
             _loggerMock = new Mock<ILogger<CompetitionService>>();
         }
 
@@ -57,6 +59,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 _answerRepositoryMock.Object,
                 _exerciseInCompetitionRepositoryMock.Object,
                 _competitionStateServiceMock.Object,
+                _competitionCacheServiceMock.Object,
                 _dbContext,
                 _loggerMock.Object
             );
@@ -481,6 +484,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 _answerRepositoryMock.Object,
                 _exerciseInCompetitionRepositoryMock.Object,
                 _competitionStateServiceMock.Object,
+                _competitionCacheServiceMock.Object,
                 _dbContext,
                 _loggerMock.Object
             );

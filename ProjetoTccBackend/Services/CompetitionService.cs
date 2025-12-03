@@ -26,6 +26,7 @@ namespace ProjetoTccBackend.Services
         private readonly IAnswerRepository _answerRepository;
         private readonly IExerciseInCompetitionRepository _exerciseInCompetitionRepository;
         private readonly ICompetitionStateService _competitionStateService;
+        private readonly ICompetitionCacheService _competitionCacheService;
         private readonly TccDbContext _dbContext;
         private readonly ILogger<CompetitionService> _logger;
 
@@ -40,6 +41,7 @@ namespace ProjetoTccBackend.Services
         /// <param name="answerRepository">The repository for answer data access.</param>
         /// <param name="exerciseInCompetitionRepository">The repository for exercise-in-competition data access.</param>
         /// <param name="competitionStateService">The service for competition state management.</param>
+        /// <param name="competitionCacheService">The service for competition cache management.</param>
         /// <param name="dbContext">The database context.</param>
         /// <param name="logger">Logger for registering information and errors.</param>
         public CompetitionService(
@@ -51,6 +53,7 @@ namespace ProjetoTccBackend.Services
             IAnswerRepository answerRepository,
             IExerciseInCompetitionRepository exerciseInCompetitionRepository,
             ICompetitionStateService competitionStateService,
+            ICompetitionCacheService competitionCacheService,
             TccDbContext dbContext,
             ILogger<CompetitionService> logger
         )
@@ -63,6 +66,7 @@ namespace ProjetoTccBackend.Services
             this._answerRepository = answerRepository;
             this._exerciseInCompetitionRepository = exerciseInCompetitionRepository;
             this._competitionStateService = competitionStateService;
+            this._competitionCacheService = competitionCacheService;
             this._dbContext = dbContext;
             this._logger = logger;
         }
@@ -174,11 +178,30 @@ namespace ProjetoTccBackend.Services
                 .ThenInclude(g => g.Users)
                 .Include(c => c.GroupInCompetitions)
                 .Where(c =>
-                    c.StartInscriptions <= currentTime
+                    c.StartTime <= currentTime
                     && c.EndTime >= currentTime
                     && c.Status == CompetitionStatus.Ongoing
                 )
                 .FirstOrDefaultAsync();
+
+            if (existentCompetition != null)
+            {
+                this._logger.LogInformation(
+                    "Found ongoing competition: {CompetitionId} - {CompetitionName} (Status: {Status}, Start: {Start}, End: {End})",
+                    existentCompetition.Id,
+                    existentCompetition.Name,
+                    existentCompetition.Status,
+                    existentCompetition.StartTime,
+                    existentCompetition.EndTime
+                );
+            }
+            else
+            {
+                this._logger.LogWarning(
+                    "No ongoing competition found at {CurrentTime}",
+                    currentTime
+                );
+            }
 
             return existentCompetition;
         }
@@ -292,6 +315,16 @@ namespace ProjetoTccBackend.Services
             this._competitionRepository.Update(competition);
 
             await this._dbContext.SaveChangesAsync();
+            
+            // Invalidate cache to ensure users immediately see the competition as ongoing
+            this._competitionCacheService.InvalidateCache();
+            
+            this._logger.LogInformation(
+                "Competition {CompetitionId} - {CompetitionName} started and cache invalidated at {Time}",
+                competition.Id,
+                competition.Name,
+                DateTime.UtcNow
+            );
         }
 
         /// <inheritdoc />
@@ -302,7 +335,17 @@ namespace ProjetoTccBackend.Services
 
             await this._dbContext.SaveChangesAsync();
 
+            // Invalidate cache when competition ends
+            this._competitionCacheService.InvalidateCache();
+            
             this._competitionStateService.SignalNoActiveCompetitions();
+            
+            this._logger.LogInformation(
+                "Competition {CompetitionId} - {CompetitionName} ended and cache invalidated at {Time}",
+                competition.Id,
+                competition.Name,
+                DateTime.UtcNow
+            );
         }
 
         /// <inheritdoc />

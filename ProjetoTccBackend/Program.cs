@@ -376,6 +376,9 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<ICompetitionService, CompetitionService>();
             builder.Services.AddScoped<IGroupAttemptService, GroupAttemptService>();
             builder.Services.AddScoped<IQuestionService, QuestionService>();
+            
+            // Competition cache service (singleton to share cache across requests)
+            builder.Services.AddSingleton<ICompetitionCacheService, CompetitionCacheService>();
 
             // Queues
             builder.Services.AddSingleton<ExerciseSubmissionQueue>();
