@@ -43,11 +43,10 @@ namespace ProjetoTccBackend.Controllers
         /// specified <paramref name="fileId"/> does not exist.</description></item> <item><description>A <see
         /// cref="UnauthorizedResult"/> if access to the file is denied.</description></item> </list></returns>
         [HttpGet("{fileId}")]
-        [ProducesResponseType(200)]
+        [ProducesResponseType(typeof(FileStreamResult), 200)]
         [ProducesResponseType(401)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        [Produces("application/pdf")]
         public async Task<IActionResult> GetFile(int fileId)
         {
             try
@@ -72,19 +71,21 @@ namespace ProjetoTccBackend.Controllers
                     return NotFound(new { FileId = fileId, Message = "Arquivo não encontrado no servidor", Path = fullFilePath });
                 }
 
-                FileStream fileStream = new FileStream(
-                    fullFilePath,
-                    FileMode.Open,
-                    FileAccess.Read
-                );
-
-                // Explicitly set Content-Disposition header for CORS
+                // Set headers for file download - critical for CORS and browser handling
                 Response.Headers.Append(
                     "Content-Disposition",
                     $"attachment; filename=\"{fileName}\""
                 );
 
-                return new FileStreamResult(fileStream, fileType) { FileDownloadName = fileName };
+                this._logger.LogInformation(
+                    "Successfully serving file {FileId} - {FileName} with type {FileType}",
+                    fileId,
+                    fileName,
+                    fileType
+                );
+
+                // Return file using PhysicalFile for better performance and proper content negotiation handling
+                return PhysicalFile(fullFilePath, fileType, fileName, enableRangeProcessing: true);
             }
             catch (UnauthorizedAccessException exception)
             {
