@@ -1,86 +1,88 @@
-# Projeto TCC - FalconAPI
+# FalconAPI - TCC Project
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.txt)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)](https://www.docker.com/)
 
-Este repositório contém o backend da aplicação **Falcon Competition**, uma plataforma completa de competições de programação desenvolvida como Trabalho de Conclusão de Curso (TCC). O sistema oferece infraestrutura robusta para competições em tempo real, com avaliação automática de código, comunicação via WebSocket e gerenciamento completo de usuários, grupos e exercícios.
+This repository contains the backend for **Falcon Competition**, a complete programming competition platform developed as a Final Course Project (TCC). The system provides robust infrastructure for real-time competitions, with automatic code evaluation, WebSocket communication, and comprehensive management of users, groups, and exercises.
 
-## 📋 Índice
+**[🇧🇷 Versão em Português](README.pt-br.md)**
 
-- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
-- [Arquitetura do Sistema](#-arquitetura-do-sistema)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Funcionalidades Principais](#-funcionalidades-principais)
-- [Como Executar Localmente](#-como-executar-localmente)
-  - [Configuração de Usuários de Teste](#configuração-de-usuários-de-teste)
-- [Deploy e Configuração Azure](#-deploy-e-configuração-azure)
-- [API e Endpoints](#-api-e-endpoints)
-- [SignalR e Comunicação em Tempo Real](#-signalr-e-comunicação-em-tempo-real)
-- [Sistema de Workers e Filas](#-sistema-de-workers-e-filas)
-- [Testes](#-testes)
-- [Documentação Adicional](#-documentação-adicional)
+## 📋 Table of Contents
 
-## 🚀 Tecnologias Utilizadas
+- [Technologies Used](#-technologies-used)
+- [System Architecture](#-system-architecture)
+- [Project Structure](#-project-structure)
+- [Main Features](#-main-features)
+- [Running Locally](#-running-locally)
+  - [Test Users Configuration](#test-users-configuration)
+- [Azure Deployment and Configuration](#-azure-deployment-and-configuration)
+- [API and Endpoints](#-api-and-endpoints)
+- [SignalR and Real-Time Communication](#-signalr-and-real-time-communication)
+- [Workers and Queue System](#-workers-and-queue-system)
+- [Tests](#-tests)
+- [Additional Documentation](#-additional-documentation)
 
-### Framework e Runtime
-- **.NET 10** (ASP.NET Core) - Framework principal
-- **C# 13** - Linguagem de programação
-- **Entity Framework Core 10.0** - ORM para acesso a dados
+## 🚀 Technologies Used
 
-### Banco de Dados
-- **SQL Server** (Produção - Azure)
-- **MariaDB 11** (Desenvolvimento local)
-- **In-Memory Database** (Testes)
+### Framework and Runtime
+- **.NET 10** (ASP.NET Core) - Main framework
+- **C# 13** - Programming language
+- **Entity Framework Core 10.0** - ORM for data access
 
-### Autenticação e Segurança
-- **ASP.NET Core Identity** - Gerenciamento de usuários e roles
-- **JWT Bearer Authentication** - Autenticação baseada em tokens
-- **Cookie Authentication** - Integração com frontend
+### Database
+- **SQL Server** (Production - Azure)
+- **MariaDB 11** (Local development)
+- **In-Memory Database** (Tests)
 
-### Comunicação em Tempo Real
-- **SignalR** - WebSocket para comunicação bidirecional
-- **JSON Protocol** - Serialização de mensagens
+### Authentication and Security
+- **ASP.NET Core Identity** - User and role management
+- **JWT Bearer Authentication** - Token-based authentication
+- **Cookie Authentication** - Frontend integration
 
-### Infraestrutura
-- **Docker** e **Docker Compose** - Containerização
-- **Azure App Service** - Hospedagem em nuvem
-- **Serilog** - Logging estruturado e rastreamento
+### Real-Time Communication
+- **SignalR** - WebSocket for bidirectional communication
+- **JSON Protocol** - Message serialization
 
-### Documentação e Qualidade
-- **Swagger/OpenAPI 3.1** - Documentação interativa da API
-- **xUnit** - Framework de testes
-- **Moq** - Biblioteca de mocking para testes
+### Infrastructure
+- **Docker** and **Docker Compose** - Containerization
+- **Azure App Service** - Cloud hosting
+- **Serilog** - Structured logging and tracing
 
-### Dependências Principais
+### Documentation and Quality
+- **Swagger/OpenAPI 3.1** - Interactive API documentation
+- **xUnit** - Testing framework
+- **Moq** - Mocking library for tests
+
+### Main Dependencies
 ```xml
 Microsoft.EntityFrameworkCore.SqlServer (10.0.0)
 Microsoft.AspNetCore.Identity.EntityFrameworkCore (10.0.0)
 Microsoft.AspNetCore.Authentication.JwtBearer (10.0.0)
 Microsoft.AspNetCore.SignalR (10.0.0)
 Swashbuckle.AspNetCore (10.0.1)
-Serilog.AspNetCore (9.0.0)
+Serilog.AspNetCore (10.0.0)
 Microsoft.OpenApi (2.3.0)
 ```
 
-## 🏗️ Arquitetura do Sistema
+## 🏗️ System Architecture
 
-O projeto segue uma **arquitetura em camadas** com separação clara de responsabilidades:
+The project follows a **layered architecture** with clear separation of responsibilities:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Controllers Layer                     │
-│          (API REST Endpoints + SignalR Hubs)            │
+│          (REST API Endpoints + SignalR Hubs)            │
 └────────────────────┬────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────┐
 │                    Services Layer                        │
-│        (Lógica de Negócio + Regras de Validação)       │
+│        (Business Logic + Validation Rules)              │
 └────────────────────┬────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────┐
 │                  Repositories Layer                      │
-│           (Acesso a Dados + Abstrações EF)              │
+│           (Data Access + EF Abstractions)               │
 └────────────────────┬────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────┐
@@ -90,52 +92,52 @@ O projeto segue uma **arquitetura em camadas** com separação clara de responsa
 
         ┌──────────────────────────────────┐
         │     Background Workers           │
-        │  (Processamento Assíncrono)     │
+        │  (Asynchronous Processing)      │
         └──────────────────────────────────┘
 ```
 
-### Padrões de Design Utilizados
-- **Repository Pattern** - Abstração de acesso a dados
-- **Dependency Injection** - Inversão de controle
-- **Service Layer Pattern** - Encapsulamento de lógica de negócio
-- **Middleware Pipeline** - Tratamento global de requisições
-- **Background Services** - Processamento assíncrono com filas
+### Design Patterns Used
+- **Repository Pattern** - Data access abstraction
+- **Dependency Injection** - Inversion of control
+- **Service Layer Pattern** - Business logic encapsulation
+- **Middleware Pipeline** - Global request handling
+- **Background Services** - Asynchronous processing with queues
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
 ```
 FalconAPI/
-├── ProjetoTccBackend/                     # Projeto principal da API
-│   ├── Controllers/                       # Endpoints REST
-│   │   ├── AuthController.cs             # Autenticação (login, registro)
-│   │   ├── UserController.cs             # Gerenciamento de usuários
-│   │   ├── CompetitionController.cs      # Competições
-│   │   ├── ExerciseController.cs         # Exercícios e submissões
-│   │   ├── GroupController.cs            # Grupos de estudantes
-│   │   ├── LogController.cs              # Logs e auditoria
-│   │   ├── QuestionController.cs         # Perguntas e respostas
-│   │   ├── FileController.cs             # Upload/download de arquivos
-│   │   └── TokenController.cs            # Renovação de tokens
+├── ProjetoTccBackend/                     # Main API project
+│   ├── Controllers/                       # REST endpoints
+│   │   ├── AuthController.cs             # Authentication (login, register)
+│   │   ├── UserController.cs             # User management
+│   │   ├── CompetitionController.cs      # Competitions
+│   │   ├── ExerciseController.cs         # Exercises and submissions
+│   │   ├── GroupController.cs            # Student groups
+│   │   ├── LogController.cs              # Logs and audit
+│   │   ├── QuestionController.cs         # Questions and answers
+│   │   ├── FileController.cs             # File upload/download
+│   │   └── TokenController.cs            # Token renewal
 │   │
 │   ├── Hubs/                             # SignalR Hubs
-│   │   └── CompetitionHub.cs             # Hub de competições em tempo real
+│   │   └── CompetitionHub.cs             # Real-time competition hub
 │   │
-│   ├── Services/                         # Camada de lógica de negócio
-│   │   ├── Interfaces/                   # Contratos de serviços
+│   ├── Services/                         # Business logic layer
+│   │   ├── Interfaces/                   # Service contracts
 │   │   ├── UserService.cs
 │   │   ├── CompetitionService.cs
 │   │   ├── ExerciseService.cs
 │   │   ├── GroupService.cs
-│   │   ├── JudgeService.cs              # Integração com Judge API
-│   │   ├── TokenService.cs              # Geração e validação JWT
+│   │   ├── JudgeService.cs              # Judge API integration
+│   │   ├── TokenService.cs              # JWT generation and validation
 │   │   ├── LogService.cs
 │   │   ├── CompetitionRankingService.cs
 │   │   ├── GroupAttemptService.cs
 │   │   └── ...
 │   │
-│   ├── Repositories/                     # Camada de acesso a dados
-│   │   ├── Interfaces/                   # Contratos de repositórios
-│   │   ├── GenericRepository.cs          # Repositório base genérico
+│   ├── Repositories/                     # Data access layer
+│   │   ├── Interfaces/                   # Repository contracts
+│   │   ├── GenericRepository.cs          # Generic base repository
 │   │   ├── UserRepository.cs
 │   │   ├── CompetitionRepository.cs
 │   │   ├── ExerciseRepository.cs
@@ -143,12 +145,12 @@ FalconAPI/
 │   │   └── ...
 │   │
 │   ├── Workers/                          # Background Services
-│   │   ├── ExerciseSubmissionWorker.cs  # Processamento de submissões
-│   │   ├── CompetitionStateWorker.cs    # Gerenciamento de estados
-│   │   └── Queues/                      # Sistema de filas
+│   │   ├── ExerciseSubmissionWorker.cs  # Submission processing
+│   │   ├── CompetitionStateWorker.cs    # State management
+│   │   └── Queues/                      # Queue system
 │   │       └── ExerciseSubmissionQueue.cs
 │   │
-│   ├── Models/                           # Entidades do domínio
+│   ├── Models/                           # Domain entities
 │   │   ├── User.cs
 │   │   ├── Competition.cs
 │   │   ├── Exercise.cs
@@ -156,186 +158,187 @@ FalconAPI/
 │   │   ├── GroupExerciseAttempt.cs
 │   │   └── ...
 │   │
-│   ├── Database/                         # DTOs e DbContext
-│   │   ├── TccDbContext.cs              # Contexto do EF Core
-│   │   ├── Requests/                    # DTOs de entrada
-│   │   └── Responses/                   # DTOs de saída
+│   ├── Database/                         # DTOs and DbContext
+│   │   ├── TccDbContext.cs              # EF Core context
+│   │   ├── Requests/                    # Input DTOs
+│   │   └── Responses/                   # Output DTOs
 │   │
-│   ├── Middlewares/                      # Middleware customizados
+│   ├── Middlewares/                      # Custom middlewares
 │   │   ├── ExceptionHandlingMiddleware.cs
 │   │   └── RequestBodyLoggingMiddleware.cs
 │   │
 │   ├── Filters/                          # Action Filters
 │   │   └── ValidateModelStateFilter.cs
 │   │
-│   ├── Swagger/                          # Configuração Swagger
-│   │   ├── Examples/                     # Exemplos de payloads
-│   │   ├── Filters/                      # Filtros customizados
+│   ├── Swagger/                          # Swagger configuration
+│   │   ├── Examples/                     # Payload examples
+│   │   ├── Filters/                      # Custom filters
 │   │   └── Extensions/
 │   │
-│   ├── Enums/                            # Enumerações
+│   ├── Enums/                            # Enumerations
 │   │   ├── Competition/
 │   │   ├── Exercise/
 │   │   ├── Judge/
 │   │   └── ...
 │   │
-│   ├── Exceptions/                       # Exceções customizadas
+│   ├── Exceptions/                       # Custom exceptions
 │   │   ├── Judge/
 │   │   ├── User/
 │   │   ├── Group/
 │   │   └── ...
 │   │
-│   ├── Migrations/                       # Migrações EF Core
-│   ├── Validation/                       # Validadores
-│   ├── UserUploads/                      # Arquivos de usuários
+│   ├── Migrations/                       # EF Core migrations
+│   ├── Validation/                       # Validators
+│   ├── UserUploads/                      # User files
 │   │
-│   ├── Program.cs                        # Entry point da aplicação
+│   ├── Program.cs                        # Application entry point
 │   ├── ProjetoTccBackend.csproj
 │   ├── appsettings.json
 │   ├── appsettings.Development.json
 │   ├── Dockerfile
 │   └── docker-compose.development.yml
 │
-├── ProjetoTccBackend.Integration.Test/   # Testes de integração
+├── ProjetoTccBackend.Integration.Test/   # Integration tests
 │   ├── Exercise_GET.cs
 │   ├── Exercise_POST.cs
 │   ├── UserAuth_POST.cs
 │   ├── TCCWebApplicationFactory.cs
 │   └── DataBuilders/
 │
-├── ProjetoTCCBackend.Unit.Test/          # Testes unitários
+├── ProjetoTCCBackend.Unit.Test/          # Unit tests
 │   ├── Services/
 │   │   └── CompetitionRankingServiceTests.cs
 │   └── ProjetoTCCBackend.Unit.Test.csproj
 │
 ├── README.md
-├── AZURE_CONFIGURATION.md                # Guia de deploy Azure
+├── README.pt-br.md                       # Portuguese version
+├── AZURE_CONFIGURATION.md                # Azure deployment guide
 ├── SIGNALR_COMPETITION_HUB_DOCUMENTATION.md
 └── LICENSE.txt
 ```
 
-## ✨ Funcionalidades Principais
+## ✨ Main Features
 
-### 🔐 Autenticação e Autorização
-- **Registro de usuários** com validação de dados
-- **Login** com geração de JWT token
-- **Renovação automática** de tokens (refresh token)
-- **Logout** com invalidação de sessão
-- **Sistema de roles**: Admin, Teacher, Student
-- **Autenticação via cookie** para integração com frontend
-- **Proteção de endpoints** baseada em roles
+### 🔐 Authentication and Authorization
+- **User registration** with data validation
+- **Login** with JWT token generation
+- **Automatic token renewal** (refresh token)
+- **Logout** with session invalidation
+- **Role system**: Admin, Teacher, Student
+- **Cookie-based authentication** for frontend integration
+- **Endpoint protection** based on roles
 
-### 👥 Gestão de Usuários
-- CRUD completo de usuários
-- Filtragem por role (Admin, Teacher, Student)
-- Consulta paginada com ordenação
-- Atualização de perfil
-- Associação a grupos
-- Histórico de login e atividades
+### 👥 User Management
+- Complete CRUD for users
+- Filter by role (Admin, Teacher, Student)
+- Paginated queries with sorting
+- Profile updates
+- Group association
+- Login history and activities
 
-### 🏆 Gestão de Competições
-- Criação e configuração de competições
-- Controle de períodos (inscrição, início, fim)
-- Configuração de regras (penalidades, limites)
-- Gerenciamento de exercícios por competição
-- Sistema de ranking em tempo real
-- Estados da competição (Não Iniciada, Em Progresso, Finalizada)
-- Bloqueio de submissões por grupo
+### 🏆 Competition Management
+- Competition creation and configuration
+- Period control (registration, start, end)
+- Rules configuration (penalties, limits)
+- Exercise management per competition
+- Real-time ranking system
+- Competition states (Not Started, In Progress, Finished)
+- Group submission blocking
 
-### 📝 Gestão de Exercícios
-- CRUD de exercícios de programação
-- Upload de arquivos anexos (PDFs, imagens)
-- Definição de casos de teste (inputs/outputs)
-- Tipos de exercícios customizáveis
-- Integração com Judge API para avaliação automática
-- Suporte a múltiplas linguagens de programação
+### 📝 Exercise Management
+- Programming exercise CRUD
+- Attached file upload (PDFs, images)
+- Test case definition (inputs/outputs)
+- Customizable exercise types
+- Judge API integration for automatic evaluation
+- Multiple programming language support
 
-### 👨‍👩‍👦 Gestão de Grupos
-- Criação de grupos de estudantes
-- Sistema de convites com aprovação
-- Líderes de grupo com permissões especiais
-- Histórico de participação em competições
-- Controle de número máximo de membros
+### 👨‍👩‍👦 Group Management
+- Student group creation
+- Invitation system with approval
+- Group leaders with special permissions
+- Competition participation history
+- Maximum member control
 
-### 💬 Sistema de Perguntas e Respostas
-- Estudantes podem fazer perguntas durante competições
-- Perguntas podem ser gerais ou sobre exercícios específicos
-- Professores e admins recebem notificações em tempo real
-- Respostas públicas ou privadas
-- Histórico completo de Q&A por competição
+### 💬 Questions and Answers System
+- Students can ask questions during competitions
+- Questions can be general or exercise-specific
+- Teachers and admins receive real-time notifications
+- Public or private answers
+- Complete Q&A history per competition
 
-### 📊 Logs e Auditoria
-- Registro detalhado de todas as ações relevantes
-- Consulta paginada por usuário, grupo ou competição
-- Rastreamento de login/logout
-- Log de tentativas de exercícios
-- Registro de bloqueios e alterações administrativas
-- Informações de IP e timestamp
+### 📊 Logs and Audit
+- Detailed logging of all relevant actions
+- Paginated queries by user, group, or competition
+- Login/logout tracking
+- Exercise attempt logging
+- Administrative block and change logging
+- IP and timestamp information
 
-### ⚡ Comunicação em Tempo Real (SignalR)
-- **WebSocket** para comunicação bidirecional
-- **Separação por grupos** (Admin, Teacher, Student)
-- **Eventos em tempo real**:
-  - Atualizações de ranking
-  - Submissões de exercícios
-  - Perguntas e respostas
-  - Notificações de competições
-- **Reconexão automática**
+### ⚡ Real-Time Communication (SignalR)
+- **WebSocket** for bidirectional communication
+- **Group separation** (Admin, Teacher, Student)
+- **Real-time events**:
+  - Ranking updates
+  - Exercise submissions
+  - Questions and answers
+  - Competition notifications
+- **Automatic reconnection**
 - **Health checks** (Ping/Pong)
 
-### 🔄 Processamento Assíncrono
-- **ExerciseSubmissionWorker**: Avaliação de código em background
-- **CompetitionStateWorker**: Gerenciamento de estados de competições
-- **Sistema de filas** thread-safe para submissões
-- **Processamento paralelo** (até 8 submissões simultâneas)
-- **Retry logic** para falhas temporárias
+### 🔄 Asynchronous Processing
+- **ExerciseSubmissionWorker**: Background code evaluation
+- **CompetitionStateWorker**: Competition state management
+- **Thread-safe queue system** for submissions
+- **Parallel processing** (up to 8 simultaneous submissions)
+- **Retry logic** for temporary failures
 
-### 🛡️ Tratamento de Erros
-- **Middleware global** para captura de exceções
-- **Respostas padronizadas** de erro
-- **Validação automática** de modelos
-- **Logging estruturado** com Serilog
-- **Mensagens de erro** claras e descritivas
+### 🛡️ Error Handling
+- **Global middleware** for exception catching
+- **Standardized error responses**
+- **Automatic model validation**
+- **Structured logging** with Serilog
+- **Clear and descriptive error messages**
 
-### 📖 Documentação Automática
-- **Swagger UI** interativo em `/swagger`
+### 📖 Automatic Documentation
+- **Interactive Swagger UI** at `/swagger`
 - **OpenAPI 3.1** specification
-- **Exemplos de payloads** para todos os endpoints
-- **Schemas** detalhados de Request/Response
-- Disponível apenas em ambiente de desenvolvimento
+- **Payload examples** for all endpoints
+- **Detailed Request/Response schemas**
+- Available only in development environment
 
-## 🔧 Como Executar Localmente
+## 🔧 Running Locally
 
-### Pré-requisitos
+### Prerequisites
 
-- **Docker** e **Docker Compose** instalados
-- **.NET 10 SDK** (opcional para desenvolvimento sem Docker)
-- **Visual Studio 2022** ou **VS Code** (recomendado)
+- **Docker** and **Docker Compose** installed
+- **.NET 10 SDK** (optional for development without Docker)
+- **Visual Studio 2022** or **VS Code** (recommended)
 
-### Opção 1: Executar com Docker Compose (Recomendado)
+### Option 1: Run with Docker Compose (Recommended)
 
-1. **Clone o repositório**:
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/FalconCompetitions/FalconAPI.git
    cd FalconAPI/ProjetoTccBackend
    ```
 
-2. **Configure as variáveis de ambiente**:
+2. **Configure environment variables**:
    
-   Crie o arquivo `.env.development`:
+   Create the `.env.development` file:
    ```env
-   MARIADB_ROOT_PASSWORD=sua_senha_segura
+   MARIADB_ROOT_PASSWORD=your_secure_password
    MARIADB_DATABASE=falcon_dev
    ```
 
-3. **Inicie os containers**:
+3. **Start containers**:
    ```bash
    docker compose -f docker-compose.development.yml up --build
    ```
 
-4. **Configure usuários de teste** (opcional):
+4. **Configure test users** (optional):
    
-   Por padrão, o sistema cria automaticamente usuários de teste. Você pode personalizar as credenciais em `appsettings.Development.json`:
+   By default, the system automatically creates test users. You can customize credentials in `appsettings.Development.json`:
    ```json
    {
      "Admin": {
@@ -349,45 +352,45 @@ FalconAPI/
    }
    ```
    
-   **Configurações disponíveis**:
-   - `Admin:Email` - Email do usuário administrador (padrão: `admin@gmail.com`)
-   - `Admin:Password` - Senha do administrador (padrão: `Admin#1234`)
-   - `Local:TestUsers` - Criar usuários de teste? (padrão: `true`)
-   - `Local:TestUsersPassword` - Senha dos usuários de teste (padrão: `00000000#Ra`)
+   **Available settings**:
+   - `Admin:Email` - Admin user email (default: `admin@gmail.com`)
+   - `Admin:Password` - Admin password (default: `Admin#1234`)
+   - `Local:TestUsers` - Create test users? (default: `true`)
+   - `Local:TestUsersPassword` - Test users password (default: `00000000#Ra`)
 
-5. **Acesse a aplicação**:
+5. **Access the application**:
    - **Swagger**: http://localhost:8080/swagger
    - **API**: http://localhost:8080
    - **HTTPS**: https://localhost:7163
 
-6. **Usuários criados automaticamente** (se `Local:TestUsers` = `true`):
+6. **Automatically created users** (if `Local:TestUsers` = `true`):
    
    **Admin**:
-   - Email: Configurável em `Admin:Email` (padrão: `admin@gmail.com`)
-   - Senha: Configurável em `Admin:Password` (padrão: `Admin#1234`)
+   - Email: Configurable in `Admin:Email` (default: `admin@gmail.com`)
+   - Password: Configurable in `Admin:Password` (default: `Admin#1234`)
    - Role: `Admin`
    
-   **Professores** (4 usuários):
-   - Emails: `professor1@gmail.com` até `professor4@gmail.com`
-   - Senha: Configurável em `Local:TestUsersPassword` (padrão: `00000000#Ra`)
+   **Teachers** (4 users):
+   - Emails: `professor1@gmail.com` to `professor4@gmail.com`
+   - Password: Configurable in `Local:TestUsersPassword` (default: `00000000#Ra`)
    - Role: `Teacher`
-   - Nomes: João, Álvaro, Manuel, Renato Coach
+   - Names: João, Álvaro, Manuel, Renato Coach
    
-   **Estudantes** (4 usuários):
-   - Emails: `aluno1@gmail.com` até `aluno4@gmail.com`
-   - Senha: Configurável em `Local:TestUsersPassword` (padrão: `00000000#Ra`)
+   **Students** (4 users):
+   - Emails: `aluno1@gmail.com` to `aluno4@gmail.com`
+   - Password: Configurable in `Local:TestUsersPassword` (default: `00000000#Ra`)
    - Role: `Student`
-   - Nomes: Diego Júnior, Canário Arregaçado, Roberto, Coach Júnior
+   - Names: Diego Júnior, Canário Arregaçado, Roberto, Coach Júnior
 
-### Opção 2: Executar Localmente sem Docker
+### Option 2: Run Locally without Docker
 
-1. **Certifique-se de ter o SQL Server ou MariaDB instalado**
+1. **Make sure you have SQL Server or MariaDB installed**
 
-2. **Configure a connection string** em `appsettings.Development.json`:
+2. **Configure the connection string** in `appsettings.Development.json`:
    ```json
    {
      "ConnectionStrings": {
-       "DefaultConnection": "Server=localhost,1433;Database=falcon-dev;User ID=sa;Password=SuaSenha;TrustServerCertificate=True;"
+       "DefaultConnection": "Server=localhost,1433;Database=falcon-dev;User ID=sa;Password=YourPassword;TrustServerCertificate=True;"
      },
      "Admin": {
        "Email": "admin@gmail.com",
@@ -400,74 +403,74 @@ FalconAPI/
    }
    ```
    
-   > **💡 Dica**: Configure `Local:TestUsers` como `false` em produção para desabilitar a criação automática de usuários de teste.
+   > **💡 Tip**: Set `Local:TestUsers` to `false` in production to disable automatic test user creation.
 
-3. **Execute as migrations**:
+3. **Run migrations**:
    ```bash
    dotnet ef database update
    ```
 
-4. **Inicie a aplicação**:
+4. **Start the application**:
    ```bash
    dotnet run
    ```
    
-   Ou use o script PowerShell:
+   Or use the PowerShell script:
    ```powershell
    .\run.ps1
    ```
 
-5. **Acesse o Swagger**: https://localhost:7163/swagger
+5. **Access Swagger**: https://localhost:7163/swagger
 
-### Configuração de Usuários de Teste
+### Test Users Configuration
 
-O sistema permite a configuração de usuários de teste através do arquivo `appsettings.Development.json` ou `appsettings.json`:
+The system allows test user configuration through the `appsettings.Development.json` or `appsettings.json` file:
 
-#### Configurações Disponíveis
+#### Available Settings
 
-| Configuração | Descrição | Padrão | Ambiente |
-|-------------|-----------|--------|----------|
-| `Admin:Email` | Email do usuário administrador | `admin@gmail.com` | Todos |
-| `Admin:Password` | Senha do administrador | `Admin#1234` | Todos |
-| `Local:TestUsers` | Criar usuários de teste automaticamente | `true` | Development/Test |
-| `Local:TestUsersPassword` | Senha padrão para todos os usuários de teste | `00000000#Ra` | Development/Test |
+| Setting | Description | Default | Environment |
+|---------|-------------|---------|-------------|
+| `Admin:Email` | Admin user email | `admin@gmail.com` | All |
+| `Admin:Password` | Admin password | `Admin#1234` | All |
+| `Local:TestUsers` | Automatically create test users | `true` | Development/Test |
+| `Local:TestUsersPassword` | Default password for all test users | `00000000#Ra` | Development/Test |
 
-#### Usuários Criados Automaticamente
+#### Automatically Created Users
 
-Quando `Local:TestUsers` está configurado como `true`, os seguintes usuários são criados na inicialização:
+When `Local:TestUsers` is set to `true`, the following users are created at startup:
 
-**Administrador** (1 usuário):
-- Email: Configurável via `Admin:Email`
-- Senha: Configurável via `Admin:Password`
+**Administrator** (1 user):
+- Email: Configurable via `Admin:Email`
+- Password: Configurable via `Admin:Password`
 - RA: `999999`
 - Role: `Admin`
 
-**Professores** (4 usuários):
-- Emails fixos: `professor1@gmail.com`, `professor2@gmail.com`, `professor3@gmail.com`, `professor4@gmail.com`
-- Senha: Configurável via `Local:TestUsersPassword`
+**Teachers** (4 users):
+- Fixed emails: `professor1@gmail.com`, `professor2@gmail.com`, `professor3@gmail.com`, `professor4@gmail.com`
+- Password: Configurable via `Local:TestUsersPassword`
 - RAs: `222222`, `222223`, `222224`, `222225`
 - Role: `Teacher`
 
-**Estudantes** (4 usuários):
-- Emails fixos: `aluno1@gmail.com`, `aluno2@gmail.com`, `aluno3@gmail.com`, `aluno4@gmail.com`
-- Senha: Configurável via `Local:TestUsersPassword`
+**Students** (4 users):
+- Fixed emails: `aluno1@gmail.com`, `aluno2@gmail.com`, `aluno3@gmail.com`, `aluno4@gmail.com`
+- Password: Configurable via `Local:TestUsersPassword`
 - RAs: `111111`, `111112`, `111113`, `111114`
 - Role: `Student`
 
-#### Recomendações de Segurança
+#### Security Recommendations
 
-⚠️ **IMPORTANTE**: 
-- Em **produção**, defina `Local:TestUsers` como `false` no `appsettings.json`
-- Altere `Admin:Password` para uma senha forte e segura
-- Use **User Secrets** ou **Azure Key Vault** para armazenar credenciais sensíveis
-- Nunca commite senhas reais no repositório Git
+⚠️ **IMPORTANT**: 
+- In **production**, set `Local:TestUsers` to `false` in `appsettings.json`
+- Change `Admin:Password` to a strong and secure password
+- Use **User Secrets** or **Azure Key Vault** to store sensitive credentials
+- Never commit real passwords to the Git repository
 
-**Exemplo de configuração para produção**:
+**Production configuration example**:
 ```json
 {
   "Admin": {
-    "Email": "admin@suaempresa.com",
-    "Password": "SuaSenhaForteAqui!@#123"
+    "Email": "admin@yourcompany.com",
+    "Password": "YourStrongPasswordHere!@#123"
   },
   "Local": {
     "TestUsers": false
@@ -475,192 +478,192 @@ Quando `Local:TestUsers` está configurado como `true`, os seguintes usuários s
 }
 ```
 
-### Executar Migrações Manualmente
+### Run Migrations Manually
 
 ```bash
-# Aplicar todas as migrations
+# Apply all migrations
 dotnet ef database update
 
-# Criar nova migration
-dotnet ef migrations add NomeDaMigracao
+# Create new migration
+dotnet ef migrations add MigrationName
 
-# Reverter última migration
-dotnet ef database update NomeDaMigracao
+# Revert last migration
+dotnet ef database update MigrationName
 ```
 
-## ☁️ Deploy e Configuração Azure
+## ☁️ Azure Deployment and Configuration
 
-O projeto está configurado para deploy no **Azure App Service**. Consulte o arquivo [AZURE_CONFIGURATION.md](AZURE_CONFIGURATION.md) para instruções detalhadas sobre:
+The project is configured for deployment to **Azure App Service**. See the [AZURE_CONFIGURATION.md](AZURE_CONFIGURATION.md) file for detailed instructions on:
 
-- Configuração de variáveis de ambiente
-- Setup de CORS para frontend
-- Habilitação de WebSockets e Session Affinity
-- Troubleshooting de problemas comuns
-- Logs e monitoramento
+- Environment variable configuration
+- Frontend CORS setup
+- WebSocket and Session Affinity enablement
+- Common issue troubleshooting
+- Logging and monitoring
 
-### Variáveis de Ambiente Obrigatórias (Azure)
+### Required Environment Variables (Azure)
 
 ```
-JudgeApi__Url=https://sua-judge-api-url/v0
-JudgeApi__SecurityKey=sua-chave-seguranca
-Cors__FrontendURL=https://seu-frontend.azurewebsites.net
-ConnectionStrings__DefaultConnection=sua-connection-string-sql-server
-Jwt__Key=sua-chave-jwt
+JudgeApi__Url=https://your-judge-api-url/v0
+JudgeApi__SecurityKey=your-security-key
+Cors__FrontendURL=https://your-frontend.azurewebsites.net
+ConnectionStrings__DefaultConnection=your-sql-server-connection-string
+Jwt__Key=your-jwt-key
 Jwt__Issuer=System
 Jwt__Audience=System
 ```
 
-> **⚠️ Configuração de Usuários em Produção:**
-> - Defina `Local__TestUsers=false` para **desabilitar** a criação automática de usuários de teste
-> - Configure `Admin__Email` e `Admin__Password` com credenciais **seguras** (diferentes dos defaults)
-> - As senhas padrão (`00000000#Ra`, `Admin#1234`) devem ser alteradas em produção
-> - Consulte a seção [Configuração de Usuários de Teste](#configuração-de-usuários-de-teste) para mais detalhes
+> **⚠️ Production User Configuration:**
+> - Set `Local__TestUsers=false` to **disable** automatic test user creation
+> - Configure `Admin__Email` and `Admin__Password` with **secure** credentials (different from defaults)
+> - Default passwords (`00000000#Ra`, `Admin#1234`) must be changed in production
+> - See [Test Users Configuration](#test-users-configuration) section for more details
 
-## 🌐 API e Endpoints
+## 🌐 API and Endpoints
 
-### Autenticação (`/api/Auth`)
+### Authentication (`/api/Auth`)
 
-| Método | Endpoint | Descrição | Autorização |
-|--------|----------|-----------|-------------|
-| POST | `/api/Auth/register` | Registrar novo usuário | Público |
-| POST | `/api/Auth/login` | Login de usuário | Público |
-| POST | `/api/Auth/logout` | Logout de usuário | Autenticado |
+| Method | Endpoint | Description | Authorization |
+|--------|----------|-------------|---------------|
+| POST | `/api/Auth/register` | Register new user | Public |
+| POST | `/api/Auth/login` | User login | Public |
+| POST | `/api/Auth/logout` | User logout | Authenticated |
 
-### Usuários (`/api/User`)
+### Users (`/api/User`)
 
-| Método | Endpoint | Descrição | Autorização |
-|--------|----------|-----------|-------------|
-| GET | `/api/User` | Listar usuários (paginado) | Autenticado |
-| GET | `/api/User/{id}` | Buscar usuário por ID | Autenticado |
-| GET | `/api/User/role/{role}` | Filtrar por role | Admin, Teacher |
-| PUT | `/api/User/{id}` | Atualizar usuário | Próprio usuário ou Admin |
-| DELETE | `/api/User/{id}` | Deletar usuário | Admin |
+| Method | Endpoint | Description | Authorization |
+|--------|----------|-------------|---------------|
+| GET | `/api/User` | List users (paginated) | Authenticated |
+| GET | `/api/User/{id}` | Find user by ID | Authenticated |
+| GET | `/api/User/role/{role}` | Filter by role | Admin, Teacher |
+| PUT | `/api/User/{id}` | Update user | Own user or Admin |
+| DELETE | `/api/User/{id}` | Delete user | Admin |
 
-### Competições (`/api/Competition`)
+### Competitions (`/api/Competition`)
 
-| Método | Endpoint | Descrição | Autorização |
-|--------|----------|-----------|-------------|
-| GET | `/api/Competition` | Listar competições | Autenticado |
-| GET | `/api/Competition/{id}` | Buscar competição | Autenticado |
-| POST | `/api/Competition` | Criar competição | Admin, Teacher |
-| PUT | `/api/Competition/{id}` | Atualizar competição | Admin, Teacher |
-| DELETE | `/api/Competition/{id}` | Deletar competição | Admin |
-| POST | `/api/Competition/{id}/start` | Iniciar competição | Admin, Teacher |
-| POST | `/api/Competition/{id}/stop` | Finalizar competição | Admin, Teacher |
+| Method | Endpoint | Description | Authorization |
+|--------|----------|-------------|---------------|
+| GET | `/api/Competition` | List competitions | Authenticated |
+| GET | `/api/Competition/{id}` | Find competition | Authenticated |
+| POST | `/api/Competition` | Create competition | Admin, Teacher |
+| PUT | `/api/Competition/{id}` | Update competition | Admin, Teacher |
+| DELETE | `/api/Competition/{id}` | Delete competition | Admin |
+| POST | `/api/Competition/{id}/start` | Start competition | Admin, Teacher |
+| POST | `/api/Competition/{id}/stop` | End competition | Admin, Teacher |
 
-### Exercícios (`/api/Exercise`)
+### Exercises (`/api/Exercise`)
 
-| Método | Endpoint | Descrição | Autorização |
-|--------|----------|-----------|-------------|
-| GET | `/api/Exercise` | Listar exercícios | Autenticado |
-| GET | `/api/Exercise/{id}` | Buscar exercício | Autenticado |
-| POST | `/api/Exercise` | Criar exercício | Admin, Teacher |
-| PUT | `/api/Exercise/{id}` | Atualizar exercício | Admin, Teacher |
-| DELETE | `/api/Exercise/{id}` | Deletar exercício | Admin, Teacher |
+| Method | Endpoint | Description | Authorization |
+|--------|----------|-------------|---------------|
+| GET | `/api/Exercise` | List exercises | Authenticated |
+| GET | `/api/Exercise/{id}` | Find exercise | Authenticated |
+| POST | `/api/Exercise` | Create exercise | Admin, Teacher |
+| PUT | `/api/Exercise/{id}` | Update exercise | Admin, Teacher |
+| DELETE | `/api/Exercise/{id}` | Delete exercise | Admin, Teacher |
 
-### Grupos (`/api/Group`)
+### Groups (`/api/Group`)
 
-| Método | Endpoint | Descrição | Autorização |
-|--------|----------|-----------|-------------|
-| GET | `/api/Group` | Listar grupos | Autenticado |
-| GET | `/api/Group/{id}` | Buscar grupo | Autenticado |
-| POST | `/api/Group` | Criar grupo | Student |
-| PUT | `/api/Group/{id}` | Atualizar grupo | Líder do grupo |
-| DELETE | `/api/Group/{id}` | Deletar grupo | Líder ou Admin |
-| POST | `/api/Group/{id}/invite` | Convidar membro | Líder do grupo |
-| POST | `/api/Group/invite/{inviteId}/accept` | Aceitar convite | Student |
+| Method | Endpoint | Description | Authorization |
+|--------|----------|-------------|---------------|
+| GET | `/api/Group` | List groups | Authenticated |
+| GET | `/api/Group/{id}` | Find group | Authenticated |
+| POST | `/api/Group` | Create group | Student |
+| PUT | `/api/Group/{id}` | Update group | Group leader |
+| DELETE | `/api/Group/{id}` | Delete group | Leader or Admin |
+| POST | `/api/Group/{id}/invite` | Invite member | Group leader |
+| POST | `/api/Group/invite/{inviteId}/accept` | Accept invitation | Student |
 
 ### Logs (`/api/Log`)
 
-| Método | Endpoint | Descrição | Autorização |
-|--------|----------|-----------|-------------|
-| GET | `/api/Log` | Listar logs (paginado) | Admin |
-| GET | `/api/Log/{id}` | Buscar log por ID | Admin |
-| GET | `/api/Log/user/{userId}` | Logs por usuário | Admin ou próprio usuário |
-| GET | `/api/Log/competition/{competitionId}` | Logs por competição | Admin, Teacher |
-| GET | `/api/Log/group/{groupId}` | Logs por grupo | Admin, Teacher, Líder |
+| Method | Endpoint | Description | Authorization |
+|--------|----------|-------------|---------------|
+| GET | `/api/Log` | List logs (paginated) | Admin |
+| GET | `/api/Log/{id}` | Find log by ID | Admin |
+| GET | `/api/Log/user/{userId}` | Logs by user | Admin or own user |
+| GET | `/api/Log/competition/{competitionId}` | Logs by competition | Admin, Teacher |
+| GET | `/api/Log/group/{groupId}` | Logs by group | Admin, Teacher, Leader |
 
 ### Tokens (`/api/Token`)
 
-| Método | Endpoint | Descrição | Autorização |
-|--------|----------|-----------|-------------|
-| POST | `/api/Token/refresh` | Renovar token | Autenticado |
+| Method | Endpoint | Description | Authorization |
+|--------|----------|-------------|---------------|
+| POST | `/api/Token/refresh` | Renew token | Authenticated |
 
-### Arquivos (`/api/File`)
+### Files (`/api/File`)
 
-| Método | Endpoint | Descrição | Autorização |
-|--------|----------|-----------|-------------|
-| POST | `/api/File/upload` | Upload de arquivo | Autenticado |
-| GET | `/api/File/{id}` | Download de arquivo | Autenticado |
-| DELETE | `/api/File/{id}` | Deletar arquivo | Admin, Teacher |
+| Method | Endpoint | Description | Authorization |
+|--------|----------|-------------|---------------|
+| POST | `/api/File/upload` | File upload | Authenticated |
+| GET | `/api/File/{id}` | File download | Authenticated |
+| DELETE | `/api/File/{id}` | Delete file | Admin, Teacher |
 
-## 🔌 SignalR e Comunicação em Tempo Real
+## 🔌 SignalR and Real-Time Communication
 
-O sistema utiliza **SignalR** para comunicação em tempo real durante competições. Consulte [SIGNALR_COMPETITION_HUB_DOCUMENTATION.md](SIGNALR_COMPETITION_HUB_DOCUMENTATION.md) para documentação completa.
+The system uses **SignalR** for real-time communication during competitions. See [SIGNALR_COMPETITION_HUB_DOCUMENTATION.md](SIGNALR_COMPETITION_HUB_DOCUMENTATION.md) for complete documentation.
 
-### Endpoint SignalR
+### SignalR Endpoint
 ```
 /hub/competition
 ```
 
-### Principais Métodos
+### Main Methods
 
-#### Métodos do Cliente (Invocados pelo frontend)
+#### Client Methods (Invoked by frontend)
 
-| Método | Descrição | Autorização |
-|--------|-----------|-------------|
-| `GetAllCompetitionQuestions` | Buscar todas as perguntas | Todos |
-| `GetCompetitionRanking` | Buscar ranking completo | Todos |
-| `SendExerciseAttempt` | Enviar submissão de código | Student |
-| `SendCompetitionQuestion` | Enviar pergunta | Student |
-| `AnswerQuestion` | Responder pergunta | Admin, Teacher |
-| `ChangeJudgeSubmissionResponse` | Alterar resultado de submissão | Admin, Teacher |
-| `BlockGroupSubmission` | Bloquear grupo | Admin, Teacher |
-| `Ping` | Health check | Todos |
+| Method | Description | Authorization |
+|--------|-------------|---------------|
+| `GetAllCompetitionQuestions` | Fetch all questions | All |
+| `GetCompetitionRanking` | Fetch complete ranking | All |
+| `SendExerciseAttempt` | Submit code | Student |
+| `SendCompetitionQuestion` | Send question | Student |
+| `AnswerQuestion` | Answer question | Admin, Teacher |
+| `ChangeJudgeSubmissionResponse` | Change submission result | Admin, Teacher |
+| `BlockGroupSubmission` | Block group | Admin, Teacher |
+| `Ping` | Health check | All |
 
-#### Eventos do Servidor (Recebidos pelo frontend)
+#### Server Events (Received by frontend)
 
-| Evento | Descrição | Destinatários |
-|--------|-----------|---------------|
-| `OnConnectionResponse` | Dados iniciais da competição | Cliente que conectou |
-| `ReceiveRankingUpdate` | Atualização de ranking | Todos |
-| `ReceiveExerciseAttemptResponse` | Resultado da submissão | Estudante que submeteu |
-| `ReceiveExerciseAttempt` | Notificação de submissão | Admin, Teacher |
-| `ReceiveQuestionCreation` | Nova pergunta | Admin, Teacher |
-| `ReceiveQuestionAnswer` | Nova resposta | Admin, Teacher |
-| `Pong` | Resposta ao ping | Cliente que enviou ping |
+| Event | Description | Recipients |
+|-------|-------------|------------|
+| `OnConnectionResponse` | Initial competition data | Connected client |
+| `ReceiveRankingUpdate` | Ranking update | All |
+| `ReceiveExerciseAttemptResponse` | Submission result | Student who submitted |
+| `ReceiveExerciseAttempt` | Submission notification | Admin, Teacher |
+| `ReceiveQuestionCreation` | New question | Admin, Teacher |
+| `ReceiveQuestionAnswer` | New answer | Admin, Teacher |
+| `Pong` | Ping response | Client who sent ping |
 
-## ⚙️ Sistema de Workers e Filas
+## ⚙️ Workers and Queue System
 
 ### ExerciseSubmissionWorker
 
-Responsável por processar submissões de código de forma assíncrona:
+Responsible for processing code submissions asynchronously:
 
-- **Processamento paralelo**: Até 8 submissões simultâneas
-- **Integração com Judge API**: Avaliação automática de código
-- **Atualização de ranking**: Notifica todos os participantes via SignalR
-- **Retry automático**: Reprocessa falhas temporárias
-- **Logging detalhado**: Rastreamento completo do processo
+- **Parallel processing**: Up to 8 simultaneous submissions
+- **Judge API integration**: Automatic code evaluation
+- **Ranking update**: Notifies all participants via SignalR
+- **Automatic retry**: Reprocesses temporary failures
+- **Detailed logging**: Complete process tracking
 
-**Fluxo de processamento**:
-1. Submissão é adicionada à fila via `SendExerciseAttempt`
-2. Worker consome item da fila
-3. Envia código para Judge API
-4. Aguarda resultado da avaliação
-5. Atualiza banco de dados
-6. Recalcula ranking
-7. Notifica usuários via SignalR
+**Processing flow**:
+1. Submission is added to queue via `SendExerciseAttempt`
+2. Worker consumes item from queue
+3. Sends code to Judge API
+4. Awaits evaluation result
+5. Updates database
+6. Recalculates ranking
+7. Notifies users via SignalR
 
 ### CompetitionStateWorker
 
-Gerencia o estado das competições automaticamente:
+Automatically manages competition states:
 
-- **Monitoramento contínuo**: Verifica estados a cada 5-20 segundos
-- **Transições automáticas**: Inicia e finaliza competições no horário configurado
-- **Modo adaptativo**: Intervalo menor durante competições ativas
-- **Cache em memória**: Reduz consultas ao banco
+- **Continuous monitoring**: Checks states every 5-20 seconds
+- **Automatic transitions**: Starts and ends competitions at configured times
+- **Adaptive mode**: Shorter interval during active competitions
+- **Memory cache**: Reduces database queries
 
-### Sistema de Filas
+### Queue System
 
 ```csharp
 public class ExerciseSubmissionQueue
@@ -673,76 +676,76 @@ public class ExerciseSubmissionQueue
 }
 ```
 
-## 🧪 Testes
+## 🧪 Tests
 
-### Testes de Integração
+### Integration Tests
 
-Localizados em `ProjetoTccBackend.Integration.Test/`:
+Located in `ProjetoTccBackend.Integration.Test/`:
 
 ```bash
-# Executar todos os testes de integração
+# Run all integration tests
 dotnet test ProjetoTccBackend.Integration.Test/
 
-# Executar teste específico
+# Run specific test
 dotnet test --filter "FullyQualifiedName~Exercise_GET"
 ```
 
-**Testes disponíveis**:
-- `Exercise_GET.cs` - Testes de busca de exercícios
-- `Exercise_POST.cs` - Testes de criação de exercícios
-- `UserAuth_POST.cs` - Testes de autenticação
+**Available tests**:
+- `Exercise_GET.cs` - Exercise search tests
+- `Exercise_POST.cs` - Exercise creation tests
+- `UserAuth_POST.cs` - Authentication tests
 
-### Testes Unitários
+### Unit Tests
 
-Localizados em `ProjetoTCCBackend.Unit.Test/`:
+Located in `ProjetoTCCBackend.Unit.Test/`:
 
 ```bash
-# Executar todos os testes unitários
+# Run all unit tests
 dotnet test ProjetoTCCBackend.Unit.Test/
 
-# Com cobertura de código
+# With code coverage
 dotnet test /p:CollectCoverage=true
 ```
 
-**Testes disponíveis**:
-- `CompetitionRankingServiceTests.cs` - Testes de cálculo de ranking
-  - ✅ Cálculo de penalidades
-  - ✅ Contagem de pontos
-  - ✅ Ordenação de ranking
-  - ✅ Tentativas múltiplas
+**Available tests**:
+- `CompetitionRankingServiceTests.cs` - Ranking calculation tests
+  - ✅ Penalty calculation
+  - ✅ Point counting
+  - ✅ Ranking sorting
+  - ✅ Multiple attempts
 
-### Executar Todos os Testes
+### Run All Tests
 
 ```bash
-# Todos os testes do solution
+# All solution tests
 dotnet test ProjetoTccBackend.sln
 
-# Com relatório detalhado
+# With detailed report
 dotnet test --logger "console;verbosity=detailed"
 ```
 
-## 📚 Documentação Adicional
+## 📚 Additional Documentation
 
-- **[AZURE_CONFIGURATION.md](AZURE_CONFIGURATION.md)** - Guia completo de deploy no Azure
-- **[SIGNALR_COMPETITION_HUB_DOCUMENTATION.md](SIGNALR_COMPETITION_HUB_DOCUMENTATION.md)** - Documentação detalhada do SignalR Hub
-- **[LICENSE.txt](LICENSE.txt)** - Licença do projeto
-- **Swagger UI** - Documentação interativa em `/swagger` (apenas desenvolvimento)
+- **[AZURE_CONFIGURATION.md](AZURE_CONFIGURATION.md)** - Complete Azure deployment guide
+- **[SIGNALR_COMPETITION_HUB_DOCUMENTATION.md](SIGNALR_COMPETITION_HUB_DOCUMENTATION.md)** - Detailed SignalR Hub documentation
+- **[LICENSE.txt](LICENSE.txt)** - Project license
+- **Swagger UI** - Interactive documentation at `/swagger` (development only)
 
-## 🔒 Segurança
+## 🔒 Security
 
-- **JWT tokens** com expiração configurável
-- **HTTPS** obrigatório em produção
-- **CORS** configurado para origens específicas
-- **Validação de entrada** em todos os endpoints
-- **SQL Injection** protegido pelo Entity Framework
-- **XSS** protegido por sanitização de dados
-- **Rate limiting** (configurável)
-- **Secrets** gerenciados via User Secrets e Azure Key Vault
+- **JWT tokens** with configurable expiration
+- **HTTPS** mandatory in production
+- **CORS** configured for specific origins
+- **Input validation** on all endpoints
+- **SQL Injection** protected by Entity Framework
+- **XSS** protected by data sanitization
+- **Rate limiting** (configurable)
+- **Secrets** managed via User Secrets and Azure Key Vault
 
-## 📄 Licença
+## 📄 License
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE.txt](LICENSE.txt) para detalhes.
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
 
-## 👥 Autores
+## 👥 Authors
 
-- **Equipe Falcon Competitions** - [FalconCompetitions](https://github.com/FalconCompetitions)
+- **Falcon Competitions Team** - [FalconCompetitions](https://github.com/FalconCompetitions)
