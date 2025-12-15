@@ -8,7 +8,7 @@ namespace ProjetoTccBackend.Repositories
     {
         public ExerciseInCompetitionRepository(TccDbContext dbContext) : base(dbContext)
         {
-            
+
         }
 
 

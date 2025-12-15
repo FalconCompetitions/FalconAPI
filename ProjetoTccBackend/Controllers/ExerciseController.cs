@@ -10,6 +10,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing exercises.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class ExerciseController : ControllerBase
@@ -17,6 +20,11 @@ namespace ProjetoTccBackend.Controllers
         private readonly IExerciseService _exerciseService;
         private readonly ILogger<ExerciseController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExerciseController"/> class.
+        /// </summary>
+        /// <param name="exerciseService">The service responsible for exercise operations.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public ExerciseController(
             IExerciseService exerciseService,
             ILogger<ExerciseController> logger
@@ -32,7 +40,7 @@ namespace ProjetoTccBackend.Controllers
         /// <param name="id">The unique identifier of the exercise to retrieve.</param>
         /// <returns>The exercise if found, or <see cref="NotFoundResult"/> if not found.</returns>
         /// <remarks>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
         ///     GET /api/exercise/1
         /// </code>
@@ -49,7 +57,30 @@ namespace ProjetoTccBackend.Controllers
                 return NotFound(id);
             }
 
-            return Ok(exercise);
+            // Map to DTO to avoid circular references
+            ExerciseResponse response = new ExerciseResponse()
+            {
+                Id = exercise.Id,
+                Title = exercise.Title,
+                Description = exercise.Description ?? "",
+                ExerciseTypeId = exercise.ExerciseTypeId,
+                AttachedFileId = exercise.AttachedFileId ?? 0,
+                Inputs = exercise.ExerciseInputs.Select(i => new ExerciseInputResponse()
+                {
+                    Id = i.Id,
+                    ExerciseId = i.ExerciseId,
+                    Input = i.Input
+                }).ToList(),
+                Outputs = exercise.ExerciseOutputs.Select(o => new ExerciseOutputResponse()
+                {
+                    Id = o.Id,
+                    ExerciseId = o.ExerciseId,
+                    Output = o.Output,
+                    ExerciseInputId = o.ExerciseInputId
+                }).ToList()
+            };
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -60,9 +91,9 @@ namespace ProjetoTccBackend.Controllers
         /// <param name="search">Optional. A search term to filter exercises by title or description.</param>
         /// <returns>An <see cref="IActionResult"/> containing a paginated list of exercises.</returns>
         /// <remarks>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
-        ///     GET /api/exercise?page=1&pageSize=10&search=algoritmo
+        ///     GET /api/exercise?page=1&amp;pageSize=10&amp;search=algorithm
         /// </code>
         /// </remarks>
         /// <response code="200">Returns the paginated list of exercises.</response>
@@ -126,13 +157,13 @@ namespace ProjetoTccBackend.Controllers
         /// <returns>An <see cref="IActionResult"/> indicating the result of the operation. Returns <see cref="CreatedAtActionResult"/> with the created exercise if successful, or <see cref="BadRequestResult"/> if the creation fails.</returns>
         /// <remarks>
         /// This action is restricted to users with the "Admin" or "Teacher" roles.<br/>
-        /// Exemplo de request:
+        /// Example request:
         /// <code>
         ///     POST /api/exercise
         ///     {
         ///         "exerciseTypeId": 1,
-        ///         "title": "Soma de Números",
-        ///         "description": "Some dois números inteiros.",
+        ///         "title": "Sum of Numbers",
+        ///         "description": "Sum two integer numbers.",
         ///         "estimatedTime": "00:30:00",
         ///         "inputs": [...],
         ///         "outputs": [...]
@@ -236,14 +267,14 @@ namespace ProjetoTccBackend.Controllers
         /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
         /// <remarks>
         /// This action requires the caller to be authenticated and authorized with either the "Admin" or "Teacher" role.<br/>
-        /// Exemplo de request:
+        /// Example request:
         /// <code>
         ///     PUT /api/exercise/1
         ///     {
         ///         "id": 1,
         ///         "exerciseTypeId": 1,
-        ///         "title": "Nova Soma",
-        ///         "description": "Atualize a soma de dois números.",
+        ///         "title": "New Sum",
+        ///         "description": "Update the sum of two numbers.",
         ///         "estimatedTime": "00:20:00",
         ///         "inputs": [...],
         ///         "outputs": [...]
@@ -256,17 +287,10 @@ namespace ProjetoTccBackend.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateExercise(
             int id,
-            IFormFile file,
+            IFormFile? file,
             [FromForm(Name = "metadata")] string requestMetadata
         )
         {
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest(
-                    new InvalidFormResponse() { Target = "file", Error = "Arquivo é obrigatório!" }
-                );
-            }
-
             if (String.IsNullOrEmpty(requestMetadata))
             {
                 return BadRequest(
@@ -291,6 +315,17 @@ namespace ProjetoTccBackend.Controllers
                 );
             }
 
+            if (request == null)
+            {
+                return BadRequest(
+                    new InvalidFormResponse()
+                    {
+                        Target = "metadata",
+                        Error = "Invalid request data",
+                    }
+                );
+            }
+
             this.TryValidateModel(request);
 
             if (this.ModelState.IsValid is false)
@@ -298,13 +333,17 @@ namespace ProjetoTccBackend.Controllers
                 return ValidationProblem(modelStateDictionary: this.ModelState, statusCode: 400);
             }
 
-            Exercise updatedExercise = await this._exerciseService.UpdateExerciseAsync(id, file, request);
+            Exercise updatedExercise = await this._exerciseService.UpdateExerciseAsync(
+                id,
+                file,
+                request
+            );
 
             ExerciseResponse response = new ExerciseResponse()
             {
                 Id = updatedExercise.Id,
                 Title = updatedExercise.Title,
-                Description = updatedExercise.Description,
+                Description = updatedExercise.Description ?? "",
                 ExerciseTypeId = updatedExercise.ExerciseTypeId,
                 Inputs = updatedExercise
                     .ExerciseInputs.Select(x => new ExerciseInputResponse()
@@ -336,7 +375,7 @@ namespace ProjetoTccBackend.Controllers
         /// <returns>An <see cref="IActionResult"/> indicating the result of the operation. Returns <see cref="NoContentResult"/> if the deletion is successful.</returns>
         /// <remarks>
         /// This action requires the caller to be authorized with the "Admin" or "Teacher" role.<br/>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
         ///     DELETE /api/exercise/1
         /// </code>

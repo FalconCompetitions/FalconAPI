@@ -13,9 +13,15 @@ namespace ProjetoTccBackend.Models
         [Key]
         public int Id { get; set; }
 
+        /// <summary>
+        /// Gets or sets the exercise type identifier.
+        /// </summary>
         [Required]
         public int ExerciseTypeId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the exercise type.
+        /// </summary>
         public ExerciseType ExerciseType { get; set; }
 
         /// <summary>
@@ -50,14 +56,14 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// UUID used by the judge system to identify the exercise.
         /// </summary>
-        [StringLength(36, ErrorMessage = "UUID do exercício inválido")]
+        [StringLength(36, ErrorMessage = "Invalid exercise UUID")]
         public string? JudgeUuid { get; set; }
 
         /// <summary>
         /// Date and time when the exercise was created.
         /// </summary>
         [DataType(DataType.DateTime)]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Collection of input examples for the exercise.

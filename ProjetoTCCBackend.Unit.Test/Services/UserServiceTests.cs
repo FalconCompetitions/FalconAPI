@@ -15,7 +15,6 @@ namespace ProjetoTCCBackend.Unit.Test.Services
 {
     public class UserServiceTests
     {
-        
         // TODO
         [Fact]
         public async Task GetUserByIdAsync_ReturnsUser()
@@ -28,6 +27,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
             var signInManagerMock = new Mock<SignInManager<User>>();
             var userRepoMock = new Mock<IUserRepository>();
             var groupInviteRepoMock = new Mock<IGroupInviteRepository>();
+            var competitionRankingRepoMock = new Mock<ICompetitionRankingRepository>();
             var iHttpContextAcessorMock = new Mock<IHttpContextAccessor>();
             var tokenServiceMock = new Mock<ITokenService>();
             var loggerMock = new Mock<ILogger<UserService>>();
@@ -38,6 +38,7 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 userManagerMock.Object,
                 userRepoMock.Object,
                 groupInviteRepoMock.Object,
+                competitionRankingRepoMock.Object,
                 signInManagerMock.Object,
                 iHttpContextAcessorMock.Object,
                 tokenServiceMock.Object,

@@ -4,6 +4,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing file operations.
+    /// </summary>
     [Authorize]
     [Route("/api/[controller]")]
     [ApiController]
@@ -12,6 +15,11 @@ namespace ProjetoTccBackend.Controllers
         private readonly IAttachedFileService _attachedFileService;
         private readonly ILogger<FileController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileController"/> class.
+        /// </summary>
+        /// <param name="attachedFileService">The service responsible for file operations.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public FileController(
             IAttachedFileService attachedFileService,
             ILogger<FileController> logger
@@ -20,7 +28,7 @@ namespace ProjetoTccBackend.Controllers
             this._attachedFileService = attachedFileService;
             this._logger = logger;
         }
-        
+
         /// <summary>
         /// Retrieves a file by its unique identifier and returns it as a downloadable file stream.
         /// </summary>
@@ -35,10 +43,10 @@ namespace ProjetoTccBackend.Controllers
         /// specified <paramref name="fileId"/> does not exist.</description></item> <item><description>A <see
         /// cref="UnauthorizedResult"/> if access to the file is denied.</description></item> </list></returns>
         [HttpGet("{fileId}")]
-        [ProducesResponseType(200)]
+        [ProducesResponseType(typeof(FileStreamResult), 200)]
         [ProducesResponseType(401)]
         [ProducesResponseType(404)]
-        [Produces("application/pdf")]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> GetFile(int fileId)
         {
             try
@@ -46,29 +54,53 @@ namespace ProjetoTccBackend.Controllers
                 Tuple<string, string, string>? fileInfoTuple =
                     await this._attachedFileService.GetFileAsync(fileId);
 
-                if(fileInfoTuple == null)
+                if (fileInfoTuple == null)
                 {
-                    return NotFound(new { FileId = fileId });
+                    this._logger.LogWarning("File with ID {FileId} not found in database", fileId);
+                    return NotFound(new { FileId = fileId, Message = "Arquivo não encontrado" });
                 }
 
                 string fullFilePath = fileInfoTuple.Item1;
                 string fileName = fileInfoTuple.Item2;
                 string fileType = fileInfoTuple.Item3;
 
-                FileStream fileStream = new FileStream(
-                    fullFilePath,
-                    FileMode.Open,
-                    FileAccess.Read
+                // Check if file exists before trying to open it
+                if (!System.IO.File.Exists(fullFilePath))
+                {
+                    this._logger.LogError("File with ID {FileId} exists in database but not found on disk at path: {FilePath}", fileId, fullFilePath);
+                    return NotFound(new { FileId = fileId, Message = "Arquivo não encontrado no servidor", Path = fullFilePath });
+                }
+
+                // Set headers for file download - critical for CORS and browser handling
+                Response.Headers.Append(
+                    "Content-Disposition",
+                    $"attachment; filename=\"{fileName}\""
                 );
 
-                return new FileStreamResult(fileStream, fileType)
-                {
-                    FileDownloadName = fileName,
-                };
+                this._logger.LogInformation(
+                    "Successfully serving file {FileId} - {FileName} with type {FileType}",
+                    fileId,
+                    fileName,
+                    fileType
+                );
+
+                // Return file using PhysicalFile for better performance and proper content negotiation handling
+                return PhysicalFile(fullFilePath, fileType, fileName, enableRangeProcessing: true);
             }
             catch (UnauthorizedAccessException exception)
             {
-                return Unauthorized();
+                this._logger.LogError(exception, "Unauthorized access attempting to get file {FileId}", fileId);
+                return Unauthorized(new { Message = "Acesso não autorizado ao arquivo" });
+            }
+            catch (FileNotFoundException exception)
+            {
+                this._logger.LogError(exception, "File {FileId} not found on disk", fileId);
+                return NotFound(new { FileId = fileId, Message = "Arquivo não encontrado no servidor" });
+            }
+            catch (Exception exception)
+            {
+                this._logger.LogError(exception, "Error retrieving file {FileId}", fileId);
+                return StatusCode(500, new { Message = "Erro ao recuperar o arquivo" });
             }
         }
     }

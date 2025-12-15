@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Group;
@@ -16,7 +17,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Service responsible for managing group operations.
+    /// </summary>
     public class GroupService : IGroupService
     {
         private readonly IUserService _userService;
@@ -25,15 +28,27 @@ namespace ProjetoTccBackend.Services
         private readonly IGroupInviteService _groupInviteService;
         private readonly ILogger<GroupService> _logger;
         private readonly TccDbContext _dbContext;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private const int MAX_MEMBERS_PER_GROUP = 3;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GroupService"/> class.
+        /// </summary>
+        /// <param name="userService">The service for user operations.</param>
+        /// <param name="userRepository">The repository for user data access.</param>
+        /// <param name="groupRepository">The repository for group data access.</param>
+        /// <param name="groupInviteService">The service for group invite operations.</param>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
+        /// <param name="httpContextAccessor">The HTTP context accessor.</param>
         public GroupService(
             IUserService userService,
             IUserRepository userRepository,
             IGroupRepository groupRepository,
             IGroupInviteService groupInviteService,
             TccDbContext dbContext,
-            ILogger<GroupService> logger
+            ILogger<GroupService> logger,
+            IHttpContextAccessor httpContextAccessor
         )
         {
             this._userService = userService;
@@ -42,6 +57,21 @@ namespace ProjetoTccBackend.Services
             this._groupInviteService = groupInviteService;
             this._dbContext = dbContext;
             this._logger = logger;
+            this._httpContextAccessor = httpContextAccessor;
+        }
+
+        /// <summary>
+        /// Checks if the logged-in user is an Admin or Teacher.
+        /// </summary>
+        /// <returns>True if the user has Admin or Teacher role, false otherwise.</returns>
+        private bool IsAdminOrTeacher()
+        {
+            var userRoles = this._httpContextAccessor.HttpContext?.User
+                .Claims.Where(c => c.Type.Equals(ClaimTypes.Role))
+                .Select(c => c.Value)
+                .ToList();
+
+            return userRoles != null && (userRoles.Contains("Admin") || userRoles.Contains("Teacher"));
         }
 
         /// <inheritdoc/>
@@ -62,11 +92,6 @@ namespace ProjetoTccBackend.Services
             Group newGroup = new Group { Name = groupRequest.Name, LeaderId = loggedUser.Id };
 
             this._groupRepository.Add(newGroup);
-
-            if (loggedUser == null)
-            {
-                throw new UnauthorizedAccessException("Usuário não autenticado");
-            }
 
             await this._dbContext.SaveChangesAsync();
 
@@ -115,10 +140,14 @@ namespace ProjetoTccBackend.Services
                 return null;
             }
 
-            if (loggedUser.GroupId != group.Id)
+            bool isAdminOrTeacher = this.IsAdminOrTeacher();
+            bool isLeader = group.LeaderId == loggedUser.Id;
+
+            // Admin, Teacher ou líder do grupo podem alterar o nome
+            if (!isAdminOrTeacher && !isLeader)
             {
-                throw new UnauthorizedAccessException(
-                    "Usuário não pode mudar o nome do grupo requisitado"
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", "Você não tem permissão para alterar o nome deste grupo" } }
                 );
             }
 
@@ -134,10 +163,14 @@ namespace ProjetoTccBackend.Services
         public Group? GetGroupById(int id)
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
+            bool isAdminOrTeacher = this.IsAdminOrTeacher();
 
-            if (loggedUser.GroupId != id)
+            // Admin e Teacher podem acessar qualquer grupo, Student só pode acessar o próprio
+            if (!isAdminOrTeacher && loggedUser.GroupId != id)
             {
-                throw new UnauthorizedAccessException("Não possui acesso ao grupo requisitado");
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", "Você não tem permissão para acessar este grupo" } }
+                );
             }
 
             Group? group = this
@@ -171,6 +204,8 @@ namespace ProjetoTccBackend.Services
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Include(x => x.Users)
+                .Include(x => x.GroupInCompetitions)
+                    .ThenInclude(gic => gic.Competition)
                 .ToListAsync();
 
             List<GroupResponse> groupResponses = new List<GroupResponse>();
@@ -197,6 +232,10 @@ namespace ProjetoTccBackend.Services
                     );
                 }
 
+                DateTime? lastCompetitionDate = item.GroupInCompetitions
+                    ?.OrderByDescending(gic => gic.Competition?.StartTime)
+                    ?.FirstOrDefault()?.Competition?.StartTime;
+
                 groupResponses.Add(
                     new GroupResponse()
                     {
@@ -204,6 +243,7 @@ namespace ProjetoTccBackend.Services
                         Name = item.Name,
                         LeaderId = item.LeaderId,
                         Users = userInfoResponses,
+                        LastCompetitionDate = lastCompetitionDate,
                     }
                 );
             }
@@ -225,17 +265,20 @@ namespace ProjetoTccBackend.Services
             IList<string> userRoles
         )
         {
+            bool isAdmin = userRoles.Contains("Admin");
+            bool isTeacher = userRoles.Contains("Teacher");
+
             var group = await this
                 ._groupRepository.Query()
                 .Include(g => g.Users)
-                .Where(g => g.Id == groupId && g.LeaderId == userId)
+                .Where(g => g.Id == groupId)
                 .FirstOrDefaultAsync();
 
             if (group == null)
                 return null;
-            bool isAdmin = userRoles.Contains("Admin");
+
             bool isLeader = group.LeaderId == userId;
-            if (!isAdmin && !isLeader)
+            if (!isAdmin && !isTeacher && !isLeader)
                 return null;
 
             group.Name = request.Name;
@@ -279,6 +322,56 @@ namespace ProjetoTccBackend.Services
             };
 
             return response;
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> DeleteGroupAsync(int groupId, string userId, IList<string> userRoles)
+        {
+            bool isAdmin = userRoles.Contains("Admin");
+            bool isTeacher = userRoles.Contains("Teacher");
+
+            var group = await this
+                ._groupRepository.Query()
+                .Include(g => g.Users)
+                .Include(g => g.GroupInvites)
+                .Where(g => g.Id == groupId)
+                .FirstOrDefaultAsync();
+
+            if (group == null)
+                return false;
+
+            bool isLeader = group.LeaderId == userId;
+
+            // Somente Admin, Teacher ou líder do grupo podem deletar
+            if (!isAdmin && !isTeacher && !isLeader)
+                return false;
+
+            // Remove todas as associações de usuários com o grupo
+            foreach (var user in group.Users)
+            {
+                user.GroupId = null;
+                this._userRepository.Update(user);
+            }
+
+            // Remove todos os convites pendentes do grupo
+            if (group.GroupInvites.Any())
+            {
+                this._dbContext.GroupInvites.RemoveRange(group.GroupInvites);
+            }
+
+            // Remove o grupo
+            this._groupRepository.Remove(group);
+
+            try
+            {
+                await this._dbContext.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Erro ao deletar grupo {GroupId}", groupId);
+                return false;
+            }
         }
     }
 }

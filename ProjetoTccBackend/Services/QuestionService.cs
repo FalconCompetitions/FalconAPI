@@ -9,10 +9,17 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing question operations.
+    /// </summary>
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _questionRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QuestionService"/> class.
+        /// </summary>
+        /// <param name="questionRepository">The repository for question data access.</param>
         public QuestionService(IQuestionRepository questionRepository)
         {
             this._questionRepository = questionRepository;

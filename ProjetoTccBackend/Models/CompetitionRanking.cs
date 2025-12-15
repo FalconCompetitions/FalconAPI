@@ -38,16 +38,16 @@ namespace ProjetoTccBackend.Models
         /// </summary>
         public Group Group { get; set; }
 
-        [DefaultValue(0)]
         /// <summary>
         /// Total points earned by the group in the competition.
         /// </summary>
+        [DefaultValue(0)]
         public double Points { get; set; }
 
-        [DefaultValue(0)]
         /// <summary>
         /// Penalty points applied to the group's points in the competition.
         /// </summary>
+        [DefaultValue(0)]
         public double Penalty { get; set; } = 0;
 
         /// <summary>

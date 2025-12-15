@@ -35,7 +35,7 @@ namespace ProjetoTccBackend.Models
         /// <summary>
         /// Date and time when the attempt was submitted.
         /// </summary>
-        public DateTime SubmissionTime { get; set; } = DateTime.Now;
+        public DateTime SubmissionTime { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Programming language used for the submission.

@@ -2,6 +2,9 @@
 
 namespace ProjetoTccBackend.Services.Interfaces
 {
+    /// <summary>
+    /// Service interface for managing JWT tokens.
+    /// </summary>
     public interface ITokenService
     {
         /// <summary>

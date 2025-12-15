@@ -8,6 +8,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing competitions.
+    /// </summary>
     [Route("/api/[controller]")]
     [ApiController]
     public class CompetitionController : ControllerBase
@@ -15,6 +18,11 @@ namespace ProjetoTccBackend.Controllers
         private readonly ICompetitionService _competitionService;
         private readonly ILogger<CompetitionController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompetitionController"/> class.
+        /// </summary>
+        /// <param name="competitionService">The service responsible for competition operations.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public CompetitionController(
             ICompetitionService competitionService,
             ILogger<CompetitionController> logger
@@ -27,9 +35,9 @@ namespace ProjetoTccBackend.Controllers
         /// <summary>
         /// Retrieves the existing competition.
         /// </summary>
-        /// <returns>The existing <see cref="Competition"/> object if found, or <see cref="NoContentResult"/> if not found.</returns>
+        /// <returns>The existing <see cref="CompetitionResponse"/> object if found, or <see cref="NoContentResult"/> if not found.</returns>
         /// <remarks>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
         ///     GET /api/competition
         /// </code>
@@ -47,7 +55,28 @@ namespace ProjetoTccBackend.Controllers
                 return NoContent();
             }
 
-            return Ok(existentCompetition);
+            // Map to DTO to avoid circular references
+            CompetitionResponse response = new CompetitionResponse()
+            {
+                Id = existentCompetition.Id,
+                Name = existentCompetition.Name,
+                Description = existentCompetition.Description,
+                BlockSubmissions = existentCompetition.BlockSubmissions,
+                Duration = existentCompetition.Duration,
+                StartInscriptions = existentCompetition.StartInscriptions,
+                EndInscriptions = existentCompetition.EndInscriptions,
+                StartTime = existentCompetition.StartTime,
+                EndTime = existentCompetition.EndTime,
+                ExerciseIds = [],
+                MaxExercises = existentCompetition.MaxExercises,
+                MaxMembers = existentCompetition.MaxMembers,
+                MaxSubmissionSize = existentCompetition.MaxSubmissionSize,
+                Status = existentCompetition.Status,
+                StopRanking = existentCompetition.StopRanking,
+                SubmissionPenalty = existentCompetition.SubmissionPenalty,
+            };
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -87,26 +116,26 @@ namespace ProjetoTccBackend.Controllers
                 await this._competitionService.GetOpenSubscriptionCompetitionsAsync();
 
             List<CompetitionResponse> response = res.Select(x => new CompetitionResponse()
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    BlockSubmissions = x.BlockSubmissions,
-                    CompetitionRankings = null,
-                    Description = x.Description,
-                    Duration = x.Duration,
-                    StartInscriptions = x.StartInscriptions,
-                    EndInscriptions = x.EndInscriptions,
-                    StartTime = x.StartTime,
-                    EndTime = x.EndTime,
-                    ExerciseIds = [],
-                    Exercises = [],
-                    MaxExercises = x.MaxExercises,
-                    MaxMembers = x.MaxMembers,
-                    MaxSubmissionSize = x.MaxSubmissionSize,
-                    Status = x.Status,
-                    StopRanking = x.StopRanking,
-                    SubmissionPenalty = x.SubmissionPenalty,
-                })
+            {
+                Id = x.Id,
+                Name = x.Name,
+                BlockSubmissions = x.BlockSubmissions,
+                CompetitionRankings = null,
+                Description = x.Description,
+                Duration = x.Duration,
+                StartInscriptions = x.StartInscriptions,
+                EndInscriptions = x.EndInscriptions,
+                StartTime = x.StartTime,
+                EndTime = x.EndTime,
+                ExerciseIds = [],
+                Exercises = [],
+                MaxExercises = x.MaxExercises,
+                MaxMembers = x.MaxMembers,
+                MaxSubmissionSize = x.MaxSubmissionSize,
+                Status = x.Status,
+                StopRanking = x.StopRanking,
+                SubmissionPenalty = x.SubmissionPenalty,
+            })
                 .ToList();
 
             return Ok(response);
@@ -119,7 +148,7 @@ namespace ProjetoTccBackend.Controllers
         /// <returns>The created <see cref="Competition"/> object in <see cref="CompetitionResponse"/> format.</returns>
         /// <remarks>
         /// Accessible only to users with the "Admin" role.<br/>
-        /// Exemplo de request:
+        /// Example request:
         /// <code>
         ///     POST /api/competition
         ///     {
@@ -137,6 +166,13 @@ namespace ProjetoTccBackend.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> CreateNewCompetition([FromBody] CompetitionRequest request)
         {
+            // DEBUG: Verificar o que está chegando do frontend
+            this._logger.LogInformation(
+                "🔍 CreateCompetition recebeu: StartTime = {StartTime}, Kind = {Kind}",
+                request.StartTime,
+                request.StartTime.Kind
+            );
+            
             Competition? newCompetition = null;
 
             try
@@ -189,7 +225,7 @@ namespace ProjetoTccBackend.Controllers
         /// <returns>The updated <see cref="Competition"/> object in <see cref="CompetitionResponse"/> format.</returns>
         /// <remarks>
         /// Accessible only to users with the "Admin" role.<br/>
-        /// Exemplo de request:
+        /// Example request:
         /// <code>
         ///     PUT /api/competition/1
         ///     {
@@ -239,8 +275,38 @@ namespace ProjetoTccBackend.Controllers
             return Ok(response);
         }
 
+        /// <summary>
+        /// Inscribes a group to a competition.
+        /// </summary>
+        /// <param name="request">The request containing the group and competition IDs.</param>
+        /// <returns>
+        /// Returns an <see cref="IActionResult"/> containing the inscription details if successful.
+        /// On success, returns a 200 OK response with the group-competition registration.
+        /// On failure, returns appropriate error responses such as 400 Bad Request.
+        /// </returns>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     POST /api/Competition/inscribe
+        ///     {
+        ///         "groupId": 1,
+        ///         "competitionId": 1
+        ///     }
+        ///
+        /// Sample response:
+        ///
+        ///     {
+        ///         "groupId": 1,
+        ///         "competitionId": 1,
+        ///         "createdOn": "2024-01-15T10:30:00Z"
+        ///     }
+        /// </remarks>
+        /// <response code="200">Returns the group-competition registration details</response>
+        /// <response code="400">If the user is not the group leader, competition doesn't exist, group is already inscribed, competition is not valid for inscription, or group exceeds maximum members allowed</response>
         [Authorize(Roles = "Student")]
         [HttpPost("inscribe")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> InscribeGroupToCompetition(
             [FromBody] InscribeGroupToCompetitionRequest request
         )
@@ -287,6 +353,83 @@ namespace ProjetoTccBackend.Controllers
             {
                 return BadRequest(new { message = "Erro desconhecido" });
             }
+        }
+
+        /// <summary>
+        /// Retrieves all champion teams from finished competitions.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint returns a list of champion teams (first place) from all completed competitions,
+        /// ordered by year in descending order. Each entry includes the year, team name, competition details, and points scored.
+        /// </remarks>
+        /// <returns>A list of champion team records.</returns>
+        /// <response code="200">Returns the list of champion teams.</response>
+        [HttpGet("champions")]
+        [ProducesResponseType(typeof(List<ChampionTeamResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetChampionTeams()
+        {
+            var champions = await this._competitionService.GetChampionTeamsAsync();
+            return Ok(champions);
+        }
+
+        /// <summary>
+        /// Retrieves all finished competitions with their complete data.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is accessible only to Admin and Teacher roles.
+        /// Returns competitions with status "Finished", ordered by end date (most recent first).
+        /// Includes rankings, exercises, groups, and questions for each competition.
+        /// Useful for viewing archived competitions.
+        /// </remarks>
+        /// <returns>A collection of finished competitions.</returns>
+        /// <response code="200">Returns the list of finished competitions.</response>
+        /// <response code="401">If the user is not authenticated.</response>
+        /// <response code="403">If the user does not have Admin or Teacher role.</response>
+        [HttpGet("finished")]
+        [Authorize(Roles = "Admin,Teacher")]
+        [ProducesResponseType(typeof(ICollection<CompetitionResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetFinishedCompetitions()
+        {
+            var finishedCompetitions = await this._competitionService.GetFinishedCompetitionsAsync();
+            return Ok(finishedCompetitions);
+        }
+
+        /// <summary>
+        /// Retrieves a specific competition by its ID.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is accessible only to Admin and Teacher roles.
+        /// Returns the complete competition data including all related entities:
+        /// - Rankings with groups and users
+        /// - Exercises with inputs and outputs
+        /// - Questions with answers
+        /// - Logs
+        /// - Exercise attempts
+        /// </remarks>
+        /// <param name="id">The unique identifier of the competition.</param>
+        /// <returns>The competition details if found.</returns>
+        /// <response code="200">Returns the competition details.</response>
+        /// <response code="404">If the competition is not found.</response>
+        /// <response code="401">If the user is not authenticated.</response>
+        /// <response code="403">If the user does not have Admin or Teacher role.</response>
+        [HttpGet("{id:int}")]
+        [Authorize(Roles = "Admin,Teacher")]
+        [ProducesResponseType(typeof(CompetitionDetailResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetCompetitionById(int id)
+        {
+            var competition = await this._competitionService.GetCompetitionByIdAsync(id);
+            
+            if (competition == null)
+            {
+                return NotFound(new { message = $"Competição com ID {id} não encontrada." });
+            }
+
+            return Ok(competition);
         }
     }
 }

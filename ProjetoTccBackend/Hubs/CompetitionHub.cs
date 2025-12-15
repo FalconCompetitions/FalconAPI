@@ -11,11 +11,16 @@ using ProjetoTccBackend.Database.Responses.Group;
 using ProjetoTccBackend.Database.Responses.User;
 using ProjetoTccBackend.Enums.Log;
 using ProjetoTccBackend.Models;
+using ProjetoTccBackend.Repositories.Interfaces;
+using ProjetoTccBackend.Services;
 using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Workers.Queues;
 
 namespace ProjetoTccBackend.Hubs
 {
+    /// <summary>
+    /// SignalR hub for managing real-time competition communications and operations.
+    /// </summary>
     [Authorize]
     public class CompetitionHub : Hub
     {
@@ -24,12 +29,25 @@ namespace ProjetoTccBackend.Hubs
         private readonly ILogService _logService;
         private readonly IUserService _userService;
         private readonly IHttpContextAccessor _httpContextAcessor;
-        private readonly IMemoryCache _memoryCache;
+        private readonly ICompetitionCacheService _competitionCacheService;
         private readonly ExerciseSubmissionQueue _exerciseSubmissionQueue;
         private readonly ILogger<CompetitionHub> _logger;
         private readonly IGroupInCompetitionService _groupInCompetitionService;
-        private const string CompetitionCacheKey = "currentCompetition";
+        private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompetitionHub"/> class.
+        /// </summary>
+        /// <param name="groupAttemptService">The service for group attempt operations.</param>
+        /// <param name="groupInCompetitionService">The service for group-in-competition operations.</param>
+        /// <param name="competitionService">The service for competition operations.</param>
+        /// <param name="userService">The service for user operations.</param>
+        /// <param name="logService">The service for log operations.</param>
+        /// <param name="httpContextAcessor">The HTTP context accessor.</param>
+        /// <param name="competitionCacheService">The competition cache service.</param>
+        /// <param name="exerciseSubmissionQueue">The queue for exercise submissions.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
+        /// <param name="groupExerciseAttemptRepository">Repository for group exercise attempts.</param>
         public CompetitionHub(
             IGroupAttemptService groupAttemptService,
             IGroupInCompetitionService groupInCompetitionService,
@@ -37,9 +55,10 @@ namespace ProjetoTccBackend.Hubs
             IUserService userService,
             ILogService logService,
             IHttpContextAccessor httpContextAcessor,
-            IMemoryCache memoryCache,
+            ICompetitionCacheService competitionCacheService,
             ExerciseSubmissionQueue exerciseSubmissionQueue,
-            ILogger<CompetitionHub> logger
+            ILogger<CompetitionHub> logger,
+            IGroupExerciseAttemptRepository groupExerciseAttemptRepository
         )
         {
             this._groupAttemptService = groupAttemptService;
@@ -48,37 +67,23 @@ namespace ProjetoTccBackend.Hubs
             this._userService = userService;
             this._logService = logService;
             this._httpContextAcessor = httpContextAcessor;
-            this._memoryCache = memoryCache;
+            this._competitionCacheService = competitionCacheService;
             this._exerciseSubmissionQueue = exerciseSubmissionQueue;
             this._logger = logger;
+            this._groupExerciseAttemptRepository = groupExerciseAttemptRepository;
         }
 
         /// <summary>
         /// Asynchronously retrieves the current competition, either from the cache or by querying the competition
         /// service.
         /// </summary>
-        /// <remarks>If the competition is retrieved from the service, it is cached with an expiration
-        /// time based on the competition's end time.</remarks>
+        /// <remarks>Competition data is cached with short TTL (5s) to ensure quick updates during state transitions.</remarks>
         /// <returns>The current <see cref="Competition"/> if one is available; otherwise, <see langword="null"/>.</returns>
         private async Task<Competition?> FetchCurrentCompetitionAsync()
         {
-            if (_memoryCache.TryGetValue(CompetitionCacheKey, out Competition? competition))
-            {
-                return competition;
-            }
-
-            competition = await this._competitionService.GetCurrentCompetition();
-
-            if (competition is not null)
-            {
-                var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(
-                    competition.EndTime!.Value
-                );
-
-                this._memoryCache.Set(CompetitionCacheKey, competition, cacheEntryOptions);
-            }
-
-            return competition;
+            return await _competitionCacheService.GetOrFetchAsync(
+                async () => await this._competitionService.GetCurrentCompetition()
+            );
         }
 
         /// <summary>
@@ -86,9 +91,14 @@ namespace ProjetoTccBackend.Hubs
         /// </summary>
         private void InvalidateCompetitionCache()
         {
-            this._memoryCache.Remove(CompetitionCacheKey);
+            this._competitionCacheService.InvalidateCache();
         }
 
+        /// <summary>
+        /// Gets the current HTTP context from the hub.
+        /// </summary>
+        /// <returns>The current HTTP context.</returns>
+        /// <exception cref="Exception">Thrown when HTTP context is not available.</exception>
         private HttpContext GetHubHttpContext()
         {
             var httpContext = this._httpContextAcessor.HttpContext;
@@ -354,6 +364,25 @@ namespace ProjetoTccBackend.Hubs
                 return;
             }
 
+            // Check if the group has already solved this exercise
+            bool hasAlreadyAccepted = this._groupExerciseAttemptRepository.HasGroupAcceptedExercise(
+                loggedUser.GroupId.Value,
+                currentCompetition.Id,
+                request.ExerciseId
+            );
+
+            if (hasAlreadyAccepted)
+            {
+                await Clients.Caller.SendAsync(
+                    "ReceiveExerciseAttemptError",
+                    new
+                    {
+                        message = "Este exercício já foi aceito pelo seu grupo. Não é possível enviar novamente.",
+                    }
+                );
+                return;
+            }
+
             var queueItem = new ExerciseSubmissionQueueItem(
                 new GroupExerciseAttemptWorkerRequest()
                 {
@@ -441,6 +470,18 @@ namespace ProjetoTccBackend.Hubs
             await Clients.Caller.SendAsync("ReceiveQuestionCreationResponse", response);
             await Clients.Group("Teachers").SendAsync("ReceiveQuestionCreation", response);
             await Clients.Group("Admins").SendAsync("ReceiveQuestionCreation", response);
+
+            // Log the question submission
+            await this._logService.CreateLogAsync(
+                new CreateLogRequest()
+                {
+                    UserId = loggedUser.Id,
+                    ActionType = LogType.QuestionSent,
+                    CompetitionId = competition.Id,
+                    GroupId = loggedUser.GroupId,
+                    IpAddress = this.GetHubHttpContext().Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                }
+            );
         }
 
         /// <summary>
@@ -466,6 +507,18 @@ namespace ProjetoTccBackend.Hubs
             await Clients.Caller.SendAsync("ReceiveQuestionAnswerResponse", answer);
             await Clients.Group("Teachers").SendAsync("ReceiveQuestionAnswer", answer);
             await Clients.Group("Admins").SendAsync("ReceiveQuestionAnswer", answer);
+
+            // Log the answer
+            await this._logService.CreateLogAsync(
+                new CreateLogRequest()
+                {
+                    UserId = loggedUser.Id,
+                    ActionType = LogType.AnswerGiven,
+                    CompetitionId = competition.Id,
+                    GroupId = null,
+                    IpAddress = this.GetHubHttpContext().Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                }
+            );
         }
 
         [Authorize(Roles = "Admin,Teacher")]

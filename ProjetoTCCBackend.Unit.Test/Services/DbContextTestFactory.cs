@@ -11,7 +11,6 @@ public static class DbContextTestFactory
             .UseInMemoryDatabase(databaseName: dbName)
             .Options;
 
-        
         return new TccDbContext(options);
     }
 }

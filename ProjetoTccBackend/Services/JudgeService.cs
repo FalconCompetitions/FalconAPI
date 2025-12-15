@@ -13,6 +13,9 @@ using JudgeSubmissionResponseEnum = ProjetoTccBackend.Enums.Judge.JudgeSubmissio
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for interacting with the Judge system for exercise evaluation.
+    /// </summary>
     public class JudgeService : IJudgeService
     {
         private readonly HttpClient _httpClient;
@@ -22,6 +25,14 @@ namespace ProjetoTccBackend.Services
         private readonly ILogger<JudgeService> _logger;
         private const string judgeMemoryToken = "JudgeJwtToken";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JudgeService"/> class.
+        /// </summary>
+        /// <param name="httpClientFactory">The HTTP client factory for creating HTTP clients.</param>
+        /// <param name="exerciseRepository">The repository for exercise data access.</param>
+        /// <param name="tokenService">The service for token operations.</param>
+        /// <param name="memoryCache">The memory cache for storing tokens.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public JudgeService(
             IHttpClientFactory httpClientFactory,
             IExerciseRepository exerciseRepository,
@@ -289,21 +300,21 @@ namespace ProjetoTccBackend.Services
 
             switch (randomStatus)
             {
-                case "ACCEPTED":
+                case "Accepted":
                     return JudgeSubmissionResponseEnum.Accepted;
-                case "PRESENTATION ERROR":
+                case "PresentationError":
                     return JudgeSubmissionResponseEnum.PresentationError;
-                case "WRONG ANSWER":
+                case "WrongAnswer":
                     return JudgeSubmissionResponseEnum.WrongAnswer;
-                case "COMPILATION ERROR":
+                case "CompilationError":
                     return JudgeSubmissionResponseEnum.CompilationError;
-                case "TIME LIMIT EXCEEDED":
+                case "TimeLimitExceeded":
                     return JudgeSubmissionResponseEnum.TimeLimitExceeded;
-                case "MEMORY LIMIT EXCEEDED":
+                case "MemoryLimit Exceeded":
                     return JudgeSubmissionResponseEnum.MemoryLimitExceeded;
-                case "RUNTIME ERROR":
+                case "RuntimeError":
                     return JudgeSubmissionResponseEnum.RuntimeError;
-                case "SECURITY ERROR":
+                case "SecurityError":
                     return JudgeSubmissionResponseEnum.SecurityError;
                 default:
                     return JudgeSubmissionResponseEnum.WrongAnswer;

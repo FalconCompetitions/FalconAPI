@@ -10,6 +10,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing group exercise attempt operations.
+    /// </summary>
     public class GroupAttemptService : IGroupAttemptService
     {
         private readonly TccDbContext _dbContext;
@@ -19,6 +22,15 @@ namespace ProjetoTccBackend.Services
         private readonly ICompetitionRankingService _competitionRankingService;
         private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GroupAttemptService"/> class.
+        /// </summary>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="judgeService">The service for judge operations.</param>
+        /// <param name="userService">The service for user operations.</param>
+        /// <param name="groupRepository">The repository for group data access.</param>
+        /// <param name="competitionRankingService">The service for competition ranking operations.</param>
+        /// <param name="groupExerciseAttemptRepository">The repository for group exercise attempt data access.</param>
         public GroupAttemptService(TccDbContext dbContext, IJudgeService judgeService, IUserService userService, IGroupRepository groupRepository, ICompetitionRankingService competitionRankingService, IGroupExerciseAttemptRepository groupExerciseAttemptRepository)
         {
             this._dbContext = dbContext;
@@ -29,21 +41,13 @@ namespace ProjetoTccBackend.Services
             this._groupExerciseAttemptRepository = groupExerciseAttemptRepository;
         }
 
-        
+
         /// <inheritdoc />
         public async Task<(ExerciseSubmissionResponse submission, CompetitionRankingResponse ranking)> SubmitExerciseAttempt(Competition currentCompetition, GroupExerciseAttemptWorkerRequest request)
         {
             try
             {
                 var response = await this._judgeService.SendGroupExerciseAttempt(request);
-
-                var exerciseResponse = new ExerciseSubmissionResponse()
-                {
-                    ExerciseId = request.ExerciseId,
-                    Accepted = response.Equals(JudgeSubmissionResponse.Accepted),
-                    JudgeResponse = response,
-                    GroupId = request.GroupId,
-                };
 
                 var lastGroupAttempt = this._groupExerciseAttemptRepository
                     .GetLastGroupCompetitionAttempt(
@@ -56,23 +60,26 @@ namespace ProjetoTccBackend.Services
                     ? currentCompetition.StartTime
                     : lastGroupAttempt.SubmissionTime;
 
-                TimeSpan duration = DateTime.Now.Subtract(time);
+                TimeSpan duration = DateTime.UtcNow.Subtract(time);
 
 
                 GroupExerciseAttempt attempt = new GroupExerciseAttempt()
                 {
-                    Accepted = exerciseResponse.Accepted,
+                    Accepted = response.Equals(JudgeSubmissionResponse.Accepted),
                     Code = request.Code,
                     ExerciseId = request.ExerciseId,
                     CompetitionId = currentCompetition.Id,
                     GroupId = request.GroupId,
                     JudgeResponse = response,
                     Language = request.LanguageType,
-                    SubmissionTime = DateTime.Now,
+                    SubmissionTime = DateTime.UtcNow,
                     Time = duration,
                 };
 
                 this._groupExerciseAttemptRepository.Add(attempt);
+                
+                // Save the attempt BEFORE calculating ranking so it's included in the count
+                await this._dbContext.SaveChangesAsync();
 
                 Group? group = this._groupRepository.GetByIdWithUsers(request.GroupId);
 
@@ -83,7 +90,23 @@ namespace ProjetoTccBackend.Services
 
                 var rankingResponse = await this._competitionRankingService.UpdateRanking(currentCompetition, group, attempt);
 
-                exerciseResponse.Id = attempt.Id;
+                // Build the full submission response with all fields
+                var exerciseResponse = new ExerciseSubmissionResponse()
+                {
+                    Id = attempt.Id,
+                    ExerciseId = request.ExerciseId,
+                    Accepted = attempt.Accepted,
+                    JudgeResponse = response,
+                    GroupId = request.GroupId,
+                    Code = request.Code,
+                    LanguageId = request.LanguageType,
+                    SubmittedAt = attempt.SubmissionTime,
+                    ExecutionTime = 0, // Judge doesn't return this yet
+                    MemoryUsed = 0, // Judge doesn't return this yet
+                    Score = attempt.Accepted ? 1 : 0,
+                    Points = (int)rankingResponse.Points,
+                    Penalty = (int)rankingResponse.Penalty,
+                };
 
                 return (exerciseResponse, rankingResponse);
             }
@@ -99,7 +122,7 @@ namespace ProjetoTccBackend.Services
         {
             var groupAttempt = this._groupExerciseAttemptRepository.GetById(attemptId);
 
-            if(groupAttempt is null)
+            if (groupAttempt is null)
             {
                 return false;
             }

@@ -11,6 +11,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing exercise operations.
+    /// </summary>
     public class ExerciseService : IExerciseService
     {
         private readonly IExerciseRepository _exerciseRepository;
@@ -21,6 +24,16 @@ namespace ProjetoTccBackend.Services
         private readonly TccDbContext _dbContext;
         private readonly ILogger<ExerciseService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExerciseService"/> class.
+        /// </summary>
+        /// <param name="exerciseRepository">The repository for exercise data access.</param>
+        /// <param name="exerciseInputRepository">The repository for exercise input data access.</param>
+        /// <param name="exerciseOutputRepository">The repository for exercise output data access.</param>
+        /// <param name="judgeService">The service for judge operations.</param>
+        /// <param name="attachedFileService">The service for attached file operations.</param>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public ExerciseService(
             IExerciseRepository exerciseRepository,
             IExerciseInputRepository exerciseInputRepository,
@@ -50,7 +63,7 @@ namespace ProjetoTccBackend.Services
 
             if (isFileFormatValid is false)
             {
-                throw new InvalidAttachedFileException("Formato de arquivo inválido!");
+                throw new InvalidAttachedFileException("Invalid file format!");
             }
 
             AttachedFile attachedFile = await this._attachedFileService.ProcessAndSaveFile(file);
@@ -60,7 +73,9 @@ namespace ProjetoTccBackend.Services
             /*
             if (judgeUuid == null)
             {
-                throw new ErrorException(new { Message = "Não foi possível criar o exercício" });
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", "Não foi possível criar o exercício no sistema de avaliação" } }
+                );
             }
             */
 
@@ -189,33 +204,40 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc/>
         public async Task<Exercise> UpdateExerciseAsync(
             int id,
-            IFormFile file,
+            IFormFile? file,
             UpdateExerciseRequest request
         )
         {
             var exercise = this._exerciseRepository.GetById(id);
 
             if (exercise == null)
-                throw new ErrorException($"Exercício com id {id} não encontrado.");
-
-            bool isFileValid = this._attachedFileService.IsSubmittedFileValid(file);
-
-            if (isFileValid is false)
-            {
-                throw new InvalidAttachedFileException("Formato de arquivo inválido!");
-            }
-
-            AttachedFile newAttachedFile =
-                await this._attachedFileService.DeleteAndReplaceExistentFile(
-                    (int)exercise.AttachedFileId!,
-                    file
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", $"Exercício com id {id} não encontrado" } }
                 );
+
+            // Only update the file if a new one is provided
+            if (file != null && file.Length > 0)
+            {
+                bool isFileValid = this._attachedFileService.IsSubmittedFileValid(file);
+
+                if (isFileValid is false)
+                {
+                    throw new InvalidAttachedFileException("Formato de arquivo inválido!");
+                }
+
+                AttachedFile newAttachedFile =
+                    await this._attachedFileService.DeleteAndReplaceExistentFile(
+                        (int)exercise.AttachedFileId!,
+                        file
+                    );
+
+                exercise.AttachedFileId = newAttachedFile.Id;
+            }
 
             exercise.Title = request.Title;
             exercise.Description = request.Description;
             exercise.EstimatedTime = TimeSpan.FromMinutes(20);
             exercise.ExerciseTypeId = request.ExerciseTypeId;
-            exercise.AttachedFileId = newAttachedFile.Id;
 
             // Current inputs and outputs in the database
 
@@ -297,6 +319,29 @@ namespace ProjetoTccBackend.Services
             this._exerciseOutputRepository.AddRange(createdOutputs);
             await this._dbContext.SaveChangesAsync();
 
+            // Update existing inputs and outputs
+            foreach (var inputRequest in request.Inputs.Where(x => x.Id is not null))
+            {
+                var existingInput = currentInputs.FirstOrDefault(x => x.Id == inputRequest.Id);
+                if (existingInput != null)
+                {
+                    existingInput.Input = inputRequest.Input;
+                    this._exerciseInputRepository.Update(existingInput);
+                }
+            }
+
+            foreach (var outputRequest in request.Outputs.Where(x => x.Id is not null))
+            {
+                var existingOutput = currentOutputs.FirstOrDefault(x => x.Id == outputRequest.Id);
+                if (existingOutput != null)
+                {
+                    existingOutput.Output = outputRequest.Output;
+                    this._exerciseOutputRepository.Update(existingOutput);
+                }
+            }
+
+            await this._dbContext.SaveChangesAsync();
+
             List<ExerciseInput> inputsToDelete = new List<ExerciseInput>();
             List<ExerciseOutput> outputsToDelete = new List<ExerciseOutput>();
 
@@ -350,7 +395,9 @@ namespace ProjetoTccBackend.Services
                 .FirstOrDefault();
 
             if (exercise == null)
-                throw new ErrorException($"Exercício com id {id} não encontrado.");
+                throw new FormException(
+                    new Dictionary<string, string> { { "form", $"Exercício com id {id} não encontrado" } }
+                );
 
             var outputs = this._exerciseOutputRepository.Find(x => x.ExerciseId == id).ToList();
             var inputs = this._exerciseInputRepository.Find(x => x.ExerciseId == id).ToList();

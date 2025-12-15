@@ -23,6 +23,14 @@ namespace ProjetoTccBackend.Workers
         private readonly TimeSpan _operationalTime;
         private const string CompetitionCacheKey = "currentCompetition";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompetitionStateWorker"/> class.
+        /// </summary>
+        /// <param name="configuration">Configuration for worker settings.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
+        /// <param name="memoryCache">Memory cache for storing competition data.</param>
+        /// <param name="scopeFactory">Factory for creating service scopes.</param>
+        /// <param name="competitionStateService">Service for managing competition state operations.</param>
         public CompetitionStateWorker(
             IConfiguration configuration,
             ILogger<CompetitionStateWorker> logger,
@@ -148,13 +156,20 @@ namespace ProjetoTccBackend.Workers
                 if (!competitions.Any())
                 {
                     this._competitionStateService.SignalNoActiveCompetitions();
+                    this._logger.LogDebug("No active competitions to process");
                     return;
                 }
 
                 DateTime now = DateTime.UtcNow;
+                this._logger.LogDebug("Processing {Count} competition(s) at {Time}", competitions.Count, now);
 
                 foreach (var competition in competitions)
                 {
+                    this._logger.LogDebug(
+                        "Processing competition {CompetitionId} with status {Status}",
+                        competition.Id,
+                        competition.Status
+                    );
                     await this.ProcessCompetitionAsync(competition, competitionService, now);
                 }
             }
@@ -223,7 +238,24 @@ namespace ProjetoTccBackend.Workers
             {
                 if (competition.StartTime < now)
                 {
+                    this._logger.LogInformation(
+                        "Starting competition {CompetitionId} - {CompetitionName} (StartTime: {StartTime}, Now: {Now})",
+                        competition.Id,
+                        competition.Name,
+                        competition.StartTime,
+                        now
+                    );
                     await competitionService.StartCompetitionAsync(competition);
+                }
+                else
+                {
+                    this._logger.LogDebug(
+                        "Competition {CompetitionId} not ready to start yet. StartTime: {StartTime}, Now: {Now}, Remaining: {Remaining}s",
+                        competition.Id,
+                        competition.StartTime,
+                        now,
+                        (competition.StartTime - now).TotalSeconds
+                    );
                 }
                 return;
             }

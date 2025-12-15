@@ -56,11 +56,11 @@ namespace ProjetoTccBackend.Controllers
         /// </returns>
         /// <remarks>
         /// Accessible to users with the roles "Admin", "Teacher", or "Student".<br/>
-        /// Exemplo de request:
+        /// Example request:
         /// <code>
         ///     POST /api/group
         ///     {
-        ///         "name": "Grupo 1"
+        ///         "name": "Group 1"
         ///     }
         /// </code>
         /// </remarks>
@@ -135,7 +135,7 @@ namespace ProjetoTccBackend.Controllers
         /// </returns>
         /// <remarks>
         /// Accessible to users with the roles "Admin", "Teacher", or "Student".<br/>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
         ///     GET /api/group/1
         /// </code>
@@ -210,9 +210,9 @@ namespace ProjetoTccBackend.Controllers
         /// <returns>An <see cref="IActionResult"/> containing a paginated list of groups.</returns>
         /// <remarks>
         /// Accessible to users with the roles "Admin" or "Teacher".<br/>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
-        ///     GET /api/group?page=1&pageSize=10&search=grupo
+        ///     GET /api/group?page=1&amp;pageSize=10&amp;search=group
         /// </code>
         /// </remarks>
         /// <response code="200">Returns the paginated list of groups.</response>
@@ -236,12 +236,12 @@ namespace ProjetoTccBackend.Controllers
         /// <param name="request">The update request data, including the new name and the list of user IDs to associate with the group.</param>
         /// <returns>The updated group if successful. Returns <see cref="ForbidResult"/> if the user does not have permission, or <see cref="NotFoundResult"/> if the group does not exist.</returns>
         /// <remarks>
-        /// Accessible to users with the roles "Admin", "Teacher" ou membros do grupo.<br/>
-        /// Exemplo de request:
+        /// Accessible to users with the roles "Admin", "Teacher" or group members.<br/>
+        /// Example request:
         /// <code>
         ///     PUT /api/group/1
         ///     {
-        ///         "name": "Novo Nome do Grupo",
+        ///         "name": "New Group Name",
         ///         "userIds": ["userId1", "userId2"]
         ///     }
         /// </code>
@@ -258,7 +258,7 @@ namespace ProjetoTccBackend.Controllers
         {
             var loggedUserId = User.Claims.FirstOrDefault(c => c.Type.Equals("id"))?.Value;
             var userRoles = User
-                .Claims.Where(c => c.Type.Equals("role"))
+                .Claims.Where(c => c.Type.Equals(ClaimTypes.Role))
                 .Select(c => c.Value)
                 .ToList();
             try
@@ -279,8 +279,35 @@ namespace ProjetoTccBackend.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves all group invitations for the currently authenticated user.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="IActionResult"/> containing a list of group invitations for the user.
+        /// </returns>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     GET /api/group/invite
+        ///
+        /// Sample response:
+        ///
+        ///     [
+        ///         {
+        ///             "id": 1,
+        ///             "groupId": 1,
+        ///             "userId": "user123",
+        ///             "accepted": false,
+        ///             "createdAt": "2024-01-15T10:30:00Z"
+        ///         }
+        ///     ]
+        /// </remarks>
+        /// <response code="200">Returns the list of group invitations for the user</response>
+        /// <response code="401">If the user is not authenticated</response>
         [HttpGet("invite")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetGroupInvitations()
         {
             User loggedUser = this._userService.GetHttpContextLoggedUser();
@@ -289,7 +316,31 @@ namespace ProjetoTccBackend.Controllers
                 loggedUser.Id
             );
 
-            return Ok(invitations);
+            // Map to DTO to avoid circular references
+            List<GroupInvitationResponse> response = invitations.Select(invite => new GroupInvitationResponse()
+            {
+                Id = invite.Id,
+                Accepted = invite.Accepted,
+                Group = new GroupResponse()
+                {
+                    Id = invite.Group.Id,
+                    Name = invite.Group.Name,
+                    LeaderId = invite.Group.LeaderId,
+                },
+                User = new GenericUserInfoResponse()
+                {
+                    Id = invite.User.Id,
+                    Name = invite.User.Name,
+                    Email = invite.User.Email,
+                    Ra = invite.User.RA,
+                    JoinYear = invite.User.JoinYear,
+                    Department = invite.User.Department,
+                    CreatedAt = invite.User.CreatedAt,
+                    LastLoggedAt = invite.User.LastLoggedAt,
+                }
+            }).ToList();
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -471,6 +522,61 @@ namespace ProjetoTccBackend.Controllers
             }
 
             return Ok(groupInCompetition);
+        }
+
+        /// <summary>
+        /// Deletes a group by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the group to delete.</param>
+        /// <returns>
+        /// An <see cref="IActionResult"/> indicating the result of the operation.
+        /// Returns <see cref="OkResult"/> if the deletion is successful,
+        /// <see cref="NotFoundResult"/> if the group does not exist,
+        /// or <see cref="ForbidResult"/> if the user does not have permission.
+        /// </returns>
+        /// <remarks>
+        /// Accessible to users with the roles "Admin", "Teacher", or the group leader (Student).<br/>
+        /// Example:
+        /// <code>
+        ///     DELETE /api/group/1
+        /// </code>
+        /// </remarks>
+        /// <response code="200">If the group is successfully deleted.</response>
+        /// <response code="403">If the user does not have permission to delete the group.</response>
+        /// <response code="404">If the group is not found.</response>
+        [Authorize(Roles = "Admin,Teacher")]
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteGroup(int id)
+        {
+            var loggedUserId = User.Claims.FirstOrDefault(c => c.Type.Equals("id"))?.Value;
+            var userRoles = User
+                .Claims.Where(c => c.Type.Equals(ClaimTypes.Role))
+                .Select(c => c.Value)
+                .ToList();
+
+            if (string.IsNullOrEmpty(loggedUserId))
+            {
+                return Forbid();
+            }
+
+            var deleted = await this._groupService.DeleteGroupAsync(id, loggedUserId, userRoles);
+
+            if (!deleted)
+            {
+                // Verificar se o grupo existe
+                var group = this._groupService.GetGroupById(id);
+                if (group == null)
+                {
+                    return NotFound(new { message = $"Grupo com id {id} não encontrado." });
+                }
+                // Se existe mas não foi deletado, é problema de permissão
+                return Forbid();
+            }
+
+            return Ok(new { message = "Grupo deletado com sucesso." });
         }
     }
 }

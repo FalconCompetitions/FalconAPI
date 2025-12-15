@@ -10,6 +10,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing group invitation operations.
+    /// </summary>
     public class GroupInviteService : IGroupInviteService
     {
         private readonly IUserService _userService;
@@ -19,6 +22,15 @@ namespace ProjetoTccBackend.Services
         private readonly ILogger<GroupInviteService> _logger;
         private readonly TccDbContext _dbContext;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GroupInviteService"/> class.
+        /// </summary>
+        /// <param name="userService">The service for user operations.</param>
+        /// <param name="userRepository">The repository for user data access.</param>
+        /// <param name="groupRepository">The repository for group data access.</param>
+        /// <param name="groupInviteRepository">The repository for group invite data access.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
+        /// <param name="dbContext">The database context.</param>
         public GroupInviteService(
             IUserService userService,
             IUserRepository userRepository,
@@ -53,7 +65,7 @@ namespace ProjetoTccBackend.Services
         public async Task<GroupInvite?> SendGroupInviteToUser(InviteUserToGroupRequest request)
         {
             const int MAX_GROUP_MEMBERS = 3;
-            
+
             User loggedUser = this._userService.GetHttpContextLoggedUser();
 
             User? user = await this
@@ -90,7 +102,7 @@ namespace ProjetoTccBackend.Services
 
             int currentMembersCount = group.Users.Count;
             int pendingInvitesCount = group.GroupInvites.Count(inv => !inv.Accepted);
-            
+
             if (currentMembersCount + pendingInvitesCount >= MAX_GROUP_MEMBERS)
             {
                 throw new MaxMembersExceededException($"O grupo já possui {currentMembersCount} membros e {pendingInvitesCount} convites pendentes. Limite máximo: {MAX_GROUP_MEMBERS}");

@@ -11,24 +11,41 @@ using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Models;
 using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
+using ProjetoTccBackend.Enums.Competition;
 
 namespace ApiEstoqueASP.Services;
 
+/// <summary>
+/// Service responsible for user management operations.
+/// </summary>
 public class UserService : IUserService
 {
     //private IMapper _mapper;
     private UserManager<User> _userManager;
     private readonly IUserRepository _userRepository;
     private readonly IGroupInviteRepository _groupInviteRepository;
+    private readonly ICompetitionRankingRepository _competitionRankingRepository;
     private SignInManager<User> _signInManager;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ITokenService _tokenService;
     private readonly ILogger<UserService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UserService"/> class.
+    /// </summary>
+    /// <param name="userManager">Manager for user operations.</param>
+    /// <param name="userRepository">Repository for user data access.</param>
+    /// <param name="groupInviteRepository">Repository for group invite data access.</param>
+    /// <param name="competitionRankingRepository">Repository for competition ranking data access.</param>
+    /// <param name="signInManager">Manager for sign-in operations.</param>
+    /// <param name="httpContextAccessor">Accessor for HTTP context.</param>
+    /// <param name="tokenService">Service for token operations.</param>
+    /// <param name="logger">Logger for registering information and errors.</param>
     public UserService(
         UserManager<User> userManager,
         IUserRepository userRepository,
         IGroupInviteRepository groupInviteRepository,
+        ICompetitionRankingRepository competitionRankingRepository,
         SignInManager<User> signInManager,
         IHttpContextAccessor httpContextAccessor,
         ITokenService tokenService,
@@ -38,6 +55,7 @@ public class UserService : IUserService
         this._userManager = userManager;
         this._userRepository = userRepository;
         this._groupInviteRepository = groupInviteRepository;
+        this._competitionRankingRepository = competitionRankingRepository;
         this._signInManager = signInManager;
         this._tokenService = tokenService;
 
@@ -82,22 +100,31 @@ public class UserService : IUserService
     {
         User? existentUser = this._userRepository.GetByEmail(user.Email);
 
-        this._logger.LogDebug("Test");
-
         if (existentUser is not null)
         {
-            this._logger.LogError("Email already in use");
+            this._logger.LogWarning("Registration attempt with existing email: {Email}", user.Email);
             throw new FormException(
-                new Dictionary<string, string>() { { "email", """E-mail já utilizado""" } }
+                new Dictionary<string, string>() { { "email", "E-mail já utilizado" } }
+            );
+        }
+
+        // Validar se o RA já existe
+        User? existentUserByRa = this._userRepository.GetByRa(user.RA);
+        if (existentUserByRa is not null)
+        {
+            this._logger.LogWarning("Registration attempt with existing RA: {RA}", user.RA);
+            throw new FormException(
+                new Dictionary<string, string>() { { "ra", "RA já cadastrado no sistema" } }
             );
         }
 
         if (user.Role.Equals("Admin"))
         {
+            this._logger.LogWarning("Attempt to register Admin user via public endpoint");
             throw new FormException(
                 new Dictionary<string, string>()
                 {
-                    { "general", "Não foi possível criar o usuário" },
+                    { "form", "Não foi possível criar o usuário" },
                 }
             );
         }
@@ -110,6 +137,7 @@ public class UserService : IUserService
 
             if (!isValid)
             {
+                this._logger.LogWarning("Invalid teacher access code provided");
                 throw new FormException(
                     new Dictionary<string, string>()
                     {
@@ -135,10 +163,43 @@ public class UserService : IUserService
 
         if (result.Succeeded == false)
         {
-            this._logger.LogDebug(result.Errors.Count().ToString());
-            throw new FormException(
-                new Dictionary<string, string> { { "Error", result.Errors.First().Code } }
-            );
+            this._logger.LogWarning("User registration failed: {Errors}", string.Join(", ", result.Errors.Select(e => e.Code)));
+
+            // Mapear erros do Identity para mensagens amigáveis em PT-BR
+            var errorMessages = new Dictionary<string, string>();
+
+            foreach (var error in result.Errors)
+            {
+                string message = error.Code switch
+                {
+                    "PasswordTooShort" => "A senha deve ter no mínimo 8 caracteres",
+                    "PasswordRequiresDigit" => "A senha deve conter pelo menos um número",
+                    "PasswordRequiresLower" => "A senha deve conter letras minúsculas",
+                    "PasswordRequiresUpper" => "A senha deve conter letras maiúsculas",
+                    "PasswordRequiresNonAlphanumeric" => "A senha deve conter caracteres especiais",
+                    "DuplicateUserName" => "Este e-mail já está em uso",
+                    "DuplicateEmail" => "Este e-mail já está em uso",
+                    "InvalidEmail" => "Formato de e-mail inválido",
+                    "InvalidUserName" => "Nome de usuário inválido",
+                    _ => error.Description
+                };
+
+                // Todos os erros de senha vão para o campo "password"
+                if (error.Code.StartsWith("Password"))
+                {
+                    errorMessages["password"] = message;
+                }
+                else if (error.Code.Contains("Email"))
+                {
+                    errorMessages["email"] = message;
+                }
+                else
+                {
+                    errorMessages["form"] = message;
+                }
+            }
+
+            throw new FormException(errorMessages);
         }
 
         newUser.LastLoggedAt = DateTime.UtcNow;
@@ -213,7 +274,7 @@ public class UserService : IUserService
                 .Include(g => g.User)
                 .ToListAsync();
         }
-        
+
 
         return Tuple.Create(existentUser, userRole);
     }
@@ -310,11 +371,14 @@ public class UserService : IUserService
         var user = this._userRepository.GetById(userId);
         if (user == null)
             return null;
+        
         user.Name = request.Name;
         user.Email = request.Email;
         user.UserName = request.Email;
         user.PhoneNumber = request.PhoneNumber;
         user.JoinYear = request.JoinYear;
+        user.Department = request.Department;
+        
         await this._userManager.UpdateAsync(user);
 
         return user;
@@ -333,5 +397,58 @@ public class UserService : IUserService
 
         await this._userRepository.DeleteByIdAsync(userId);
         return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<UserCompetitionHistoryResponse>> GetUserCompetitionHistoryAsync(string userId)
+    {
+        var user = await this._userRepository
+            .Query()
+            .Include(u => u.Group)
+                .ThenInclude(g => g.GroupInCompetitions)
+                    .ThenInclude(gic => gic.Competition)
+                        .ThenInclude(c => c.ExercisesInCompetition)
+            .Include(u => u.Group)
+                .ThenInclude(g => g.GroupExerciseAttempts)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user?.Group == null)
+            return new List<UserCompetitionHistoryResponse>();
+
+        var history = new List<UserCompetitionHistoryResponse>();
+
+        // Get all competitions the user's group participated in
+        var participatedCompetitions = user.Group.GroupInCompetitions
+            .Where(gic => gic.Competition != null && 
+                         gic.Competition.Status == CompetitionStatus.Finished)
+            .Select(gic => gic.Competition)
+            .Distinct()
+            .ToList();
+
+        foreach (var competition in participatedCompetitions)
+        {
+            // Get total exercises in the competition
+            var totalExercises = competition.ExercisesInCompetition?.Count ?? 0;
+            
+            // Count solved exercises - exercises with at least one accepted submission
+            var solvedExercises = user.Group.GroupExerciseAttempts
+                .Where(attempt => 
+                    attempt.CompetitionId == competition.Id && 
+                    attempt.Accepted == true)
+                .Select(attempt => attempt.ExerciseId)
+                .Distinct()
+                .Count();
+
+            history.Add(new UserCompetitionHistoryResponse
+            {
+                Year = competition.StartTime.Year,
+                GroupName = user.Group.Name,
+                Questions = $"{solvedExercises}/{totalExercises}",
+                CompetitionId = competition.Id,
+                CompetitionName = competition.Name
+            });
+        }
+
+        return history.OrderByDescending(h => h.Year).ToList();
     }
 }

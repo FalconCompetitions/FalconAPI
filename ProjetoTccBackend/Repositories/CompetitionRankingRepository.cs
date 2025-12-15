@@ -8,7 +8,7 @@ namespace ProjetoTccBackend.Repositories
     {
         public CompetitionRankingRepository(TccDbContext tccDbContext) : base(tccDbContext)
         {
-            
+
         }
 
 

@@ -1,65 +1,69 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MockQueryable.Moq;
 using Moq;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Database.Requests.Group;
-using ProjetoTccBackend.Database.Responses.Group;
+using ProjetoTccBackend.Exceptions;
 using ProjetoTccBackend.Exceptions.Group;
 using ProjetoTccBackend.Models;
-using ProjetoTccBackend.Repositories.Interfaces;
+using ProjetoTccBackend.Repositories;
 using ProjetoTccBackend.Services;
 using ProjetoTccBackend.Services.Interfaces;
+using System.Security.Claims;
 using Xunit;
 
 namespace ProjetoTCCBackend.Unit.Test.Services
 {
-    public class GroupServiceTests
+    /// <summary>
+    /// Unit tests for the <see cref="GroupService"/> class.
+    /// </summary>
+    public class GroupServiceTests : IDisposable
     {
+        private readonly TccDbContext _dbContext;
         private readonly Mock<IUserService> _userServiceMock;
-        private readonly Mock<IUserRepository> _userRepositoryMock;
-        private readonly Mock<IGroupRepository> _groupRepositoryMock;
         private readonly Mock<IGroupInviteService> _groupInviteServiceMock;
         private readonly Mock<ILogger<GroupService>> _loggerMock;
-        private TccDbContext? _dbContext;
+        private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
+        private readonly GroupService _groupService;
 
         public GroupServiceTests()
         {
+            _dbContext = DbContextTestFactory.Create($"TestDb_{Guid.NewGuid()}");
+            
+            var userRepository = new UserRepository(_dbContext);
+            var groupRepository = new GroupRepository(_dbContext);
+            
             _userServiceMock = new Mock<IUserService>();
-            _userRepositoryMock = new Mock<IUserRepository>();
-            _groupRepositoryMock = new Mock<IGroupRepository>();
             _groupInviteServiceMock = new Mock<IGroupInviteService>();
             _loggerMock = new Mock<ILogger<GroupService>>();
-        }
+            _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
 
-        private GroupService CreateService()
-        {
-            _dbContext = DbContextTestFactory.Create($"TestDb_{Guid.NewGuid()}");
-            return new GroupService(
+            _groupService = new GroupService(
                 _userServiceMock.Object,
-                _userRepositoryMock.Object,
-                _groupRepositoryMock.Object,
+                userRepository,
+                groupRepository,
                 _groupInviteServiceMock.Object,
                 _dbContext,
-                _loggerMock.Object
+                _loggerMock.Object,
+                _httpContextAccessorMock.Object
             );
         }
 
+        public void Dispose()
+        {
+            _dbContext?.Dispose();
+        }
+
         [Fact]
-        public async Task CreateGroupAsync_CreatesGroup_WhenUserHasNoGroup()
+        public async Task CreateGroupAsync_CreatesGroup_Successfully()
         {
             // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                UserName = "testuser",
-                Email = "test@test.com",
-                GroupId = null
-            };
+            var user = new User { Id = "user1", Name = "Test User", UserName = "Test User", RA = "123456", Email = "test@test.com" };
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync();
+
+            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(user);
 
             var request = new CreateGroupRequest
             {
@@ -67,370 +71,239 @@ namespace ProjetoTCCBackend.Unit.Test.Services
                 UserRAs = null
             };
 
-            // Simulates the group after being saved to the database with generated ID
-            var savedGroup = new Group
-            {
-                Id = 1,
-                Name = "Test Group",
-                LeaderId = "user1",
-                Users = new List<User> { loggedUser },
-                GroupInvites = new List<GroupInvite>()
-            };
-
-            // First call: check if user already has a group (returns empty)
-            var emptyGroupsQuery = new List<Group>().AsQueryable().BuildMock();
-            
-            // Second call: fetch the newly created group
-            var groupQueryWithNew = new List<Group> { savedGroup }.AsQueryable().BuildMock();
-
-            _groupRepositoryMock.SetupSequence(r => r.Query())
-                .Returns(emptyGroupsQuery)
-                .Returns(groupQueryWithNew);
-
-            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
-
-            // Mock the Add to set the group ID
-            _groupRepositoryMock
-                .Setup(r => r.Add(It.IsAny<Group>()))
-                .Callback<Group>(g => g.Id = 1);
-
-            var service = CreateService();
-
             // Act
-            var result = await service.CreateGroupAsync(request);
+            var result = await _groupService.CreateGroupAsync(request);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Test Group", result.Name);
-            Assert.Equal(1, result.Id);
-            _groupRepositoryMock.Verify(r => r.Add(It.IsAny<Group>()), Times.Once);
-            _userRepositoryMock.Verify(r => r.Update(loggedUser), Times.Once);
+            Assert.Equal(user.Id, result.LeaderId);
+            
+            var updatedUser = await _dbContext.Users.FindAsync(user.Id);
+            Assert.Equal(result.Id, updatedUser!.GroupId);
         }
 
         [Fact]
         public async Task CreateGroupAsync_ThrowsException_WhenUserAlreadyHasGroup()
         {
             // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                UserName = "testuser",
-                Email = "test@test.com"
-            };
+            var user = new User { Id = "user1", Name = "Test User", UserName = "Test User", RA = "123456", Email = "test@test.com" };
+            var existingGroup = new Group { Name = "Existing Group", LeaderId = user.Id };
+            
+            _dbContext.Users.Add(user);
+            _dbContext.Groups.Add(existingGroup);
+            await _dbContext.SaveChangesAsync();
 
-            var existingGroup = new Group
-            {
-                Id = 1,
-                Name = "Existing Group",
-                LeaderId = "user1"
-            };
+            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(user);
 
-            var request = new CreateGroupRequest
-            {
-                Name = "New Group"
-            };
-
-            var groups = new List<Group> { existingGroup }.AsQueryable().BuildMock();
-            _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
-            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
-
-            var service = CreateService();
+            var request = new CreateGroupRequest { Name = "New Group" };
 
             // Act & Assert
-            await Assert.ThrowsAsync<UserHasGroupException>(
-                () => service.CreateGroupAsync(request)
-            );
+            await Assert.ThrowsAsync<UserHasGroupException>(() => _groupService.CreateGroupAsync(request));
         }
 
         [Fact]
         public async Task CreateGroupAsync_SendsInvites_WhenUserRAsProvided()
         {
             // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                UserName = "testuser",
-                Email = "test@test.com",
-                GroupId = null
-            };
+            var leader = new User { Id = "leader1", Name = "Leader", UserName = "Leader", RA = "111111", Email = "leader@test.com" };
+            var invitee = new User { Id = "invitee1", Name = "Invitee", UserName = "Invitee", RA = "222222", Email = "invitee@test.com" };
+            
+            _dbContext.Users.AddRange(leader, invitee);
+            await _dbContext.SaveChangesAsync();
 
-            var invitedUser = new User
-            {
-                Id = "user2",
-                RA = "12345",
-                UserName = "inviteduser"
-            };
+            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(leader);
 
             var request = new CreateGroupRequest
             {
                 Name = "Test Group",
-                UserRAs = new List<string> { "12345" }
+                UserRAs = new List<string> { "222222" }
             };
-
-            var savedGroup = new Group
-            {
-                Id = 1,
-                Name = "Test Group",
-                LeaderId = "user1",
-                Users = new List<User> { loggedUser },
-                GroupInvites = new List<GroupInvite>()
-            };
-
-            var emptyGroupsQuery = new List<Group>().AsQueryable().BuildMock();
-            var groupQueryWithNew = new List<Group> { savedGroup }.AsQueryable().BuildMock();
-
-            _groupRepositoryMock.SetupSequence(r => r.Query())
-                .Returns(emptyGroupsQuery)
-                .Returns(groupQueryWithNew);
-
-            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
-            _userRepositoryMock.Setup(r => r.GetByRa("12345")).Returns(invitedUser);
-            
-            _groupRepositoryMock
-                .Setup(r => r.Add(It.IsAny<Group>()))
-                .Callback<Group>(g => g.Id = 1);
-
-            var service = CreateService();
 
             // Act
-            var result = await service.CreateGroupAsync(request);
+            var result = await _groupService.CreateGroupAsync(request);
 
             // Assert
             Assert.NotNull(result);
             _groupInviteServiceMock.Verify(
-                s => s.SendGroupInviteToUser(It.IsAny<InviteUserToGroupRequest>()),
+                s => s.SendGroupInviteToUser(It.Is<InviteUserToGroupRequest>(r => r.RA == "222222" && r.GroupId == result.Id)),
                 Times.Once
             );
         }
 
         [Fact]
-        public void ChangeGroupName_ChangesName_WhenUserIsInGroup()
+        public void ChangeGroupName_ChangesName_WhenUserIsLeader()
         {
             // Arrange
-            var loggedUser = new User
+            var user = new User { Id = "user1", Name = "Test User", UserName = "Test User", RA = "123456", Email = "test@test.com" };
+            var group = new Group { Id = 1, Name = "Old Name", LeaderId = user.Id };
+            
+            _dbContext.Users.Add(user);
+            _dbContext.Groups.Add(group);
+            _dbContext.SaveChanges();
+
+            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(user);
+            
+            var httpContext = new DefaultHttpContext();
+            httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {
-                Id = "user1",
-                GroupId = 1
-            };
+                new Claim(ClaimTypes.Role, "Student")
+            }));
+            _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
 
-            var group = new Group
-            {
-                Id = 1,
-                Name = "Old Name",
-                LeaderId = "user1"
-            };
-
-            var request = new ChangeGroupNameRequest
-            {
-                Id = 1,
-                Name = "New Name"
-            };
-
-            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
-            _groupRepositoryMock.Setup(r => r.GetById(1)).Returns(group);
-
-            var service = CreateService();
+            var request = new ChangeGroupNameRequest { Id = 1, Name = "New Name" };
 
             // Act
-            var result = service.ChangeGroupName(request);
+            var result = _groupService.ChangeGroupName(request);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal("New Name", result.Name);
-            _groupRepositoryMock.Verify(r => r.Update(It.IsAny<Group>()), Times.Once);
+            
+            var updatedGroup = _dbContext.Groups.Find(1);
+            Assert.Equal("New Name", updatedGroup!.Name);
+        }
+
+        [Fact]
+        public void ChangeGroupName_ThrowsException_WhenUserIsNotLeaderOrAdmin()
+        {
+            // Arrange
+            var user = new User { Id = "user1", Name = "Test User", UserName = "Test User", RA = "123456", Email = "test@test.com" };
+            var otherUser = new User { Id = "user2", Name = "Other User", UserName = "Other User", RA = "654321", Email = "other@test.com" };
+            var group = new Group { Id = 1, Name = "Test Group", LeaderId = otherUser.Id };
+            
+            _dbContext.Users.AddRange(user, otherUser);
+            _dbContext.Groups.Add(group);
+            _dbContext.SaveChanges();
+
+            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(user);
+            
+            var httpContext = new DefaultHttpContext();
+            httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.Role, "Student")
+            }));
+            _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
+
+            var request = new ChangeGroupNameRequest { Id = 1, Name = "New Name" };
+
+            // Act & Assert
+            Assert.Throws<FormException>(() => _groupService.ChangeGroupName(request));
         }
 
         [Fact]
         public void ChangeGroupName_ReturnsNull_WhenGroupNotFound()
         {
             // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                GroupId = 1
-            };
+            var user = new User { Id = "user1", Name = "Test User", UserName = "Test User", RA = "123456", Email = "test@test.com" };
+            _dbContext.Users.Add(user);
+            _dbContext.SaveChanges();
 
-            var request = new ChangeGroupNameRequest
-            {
-                Id = 999,
-                Name = "New Name"
-            };
+            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(user);
 
-            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
-            _groupRepositoryMock.Setup(r => r.GetById(999)).Returns((Group)null!);
-
-            var service = CreateService();
+            var request = new ChangeGroupNameRequest { Id = 999, Name = "New Name" };
 
             // Act
-            var result = service.ChangeGroupName(request);
+            var result = _groupService.ChangeGroupName(request);
 
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public void ChangeGroupName_ThrowsException_WhenUserNotInGroup()
+        public void GetGroupById_ReturnsGroup_WhenUserIsLeader()
         {
             // Arrange
-            var loggedUser = new User
+            var user = new User { Id = "user1", Name = "Test User", UserName = "Test User", RA = "123456", Email = "test@test.com", GroupId = 1 };
+            var group = new Group { Id = 1, Name = "Test Group", LeaderId = user.Id };
+            
+            _dbContext.Users.Add(user);
+            _dbContext.Groups.Add(group);
+            _dbContext.SaveChanges();
+
+            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(user);
+            
+            var httpContext = new DefaultHttpContext();
+            httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {
-                Id = "user1",
-                GroupId = 2
-            };
-
-            var group = new Group
-            {
-                Id = 1,
-                Name = "Old Name",
-                LeaderId = "user2"
-            };
-
-            var request = new ChangeGroupNameRequest
-            {
-                Id = 1,
-                Name = "New Name"
-            };
-
-            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
-            _groupRepositoryMock.Setup(r => r.GetById(1)).Returns(group);
-
-            var service = CreateService();
-
-            // Act & Assert
-            Assert.Throws<UnauthorizedAccessException>(
-                () => service.ChangeGroupName(request)
-            );
-        }
-
-        [Fact]
-        public void GetGroupById_ReturnsGroup_WhenUserHasAccess()
-        {
-            // Arrange
-            var loggedUser = new User
-            {
-                Id = "user1",
-                GroupId = 1
-            };
-
-            var group = new Group
-            {
-                Id = 1,
-                Name = "Test Group",
-                LeaderId = "user1",
-                Users = new List<User> { loggedUser }
-            };
-
-            var groups = new List<Group> { group }.AsQueryable().BuildMock();
-            _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
-            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
-
-            var service = CreateService();
+                new Claim(ClaimTypes.Role, "Student")
+            }));
+            _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
 
             // Act
-            var result = service.GetGroupById(1);
+            var result = _groupService.GetGroupById(1);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(1, result.Id);
             Assert.Equal("Test Group", result.Name);
         }
 
         [Fact]
-        public void GetGroupById_ThrowsException_WhenUserHasNoAccess()
+        public void GetGroupById_ThrowsException_WhenStudentAccessesOtherGroup()
         {
             // Arrange
-            var loggedUser = new User
+            var user = new User { Id = "user1", Name = "Test User", UserName = "Test User", RA = "123456", Email = "test@test.com", GroupId = 2 };
+            var otherUser = new User { Id = "user2", Name = "Other User", UserName = "Other User", RA = "654321", Email = "other@test.com" };
+            var group = new Group { Id = 1, Name = "Test Group", LeaderId = otherUser.Id };
+            
+            _dbContext.Users.AddRange(user, otherUser);
+            _dbContext.Groups.Add(group);
+            _dbContext.SaveChanges();
+
+            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(user);
+            
+            var httpContext = new DefaultHttpContext();
+            httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {
-                Id = "user1",
-                GroupId = 2
-            };
-
-            _userServiceMock.Setup(s => s.GetHttpContextLoggedUser()).Returns(loggedUser);
-
-            var service = CreateService();
+                new Claim(ClaimTypes.Role, "Student")
+            }));
+            _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
 
             // Act & Assert
-            Assert.Throws<UnauthorizedAccessException>(
-                () => service.GetGroupById(1)
-            );
+            Assert.Throws<FormException>(() => _groupService.GetGroupById(1));
         }
 
         [Fact]
         public async Task GetGroupsAsync_ReturnsAllGroups_WithoutSearch()
         {
             // Arrange
-            var user1 = new User { Id = "user1", UserName = "User 1", RA = "001" };
-            var user2 = new User { Id = "user2", UserName = "User 2", RA = "002" };
-
             var groups = new List<Group>
             {
-                new Group
-                {
-                    Id = 1,
-                    Name = "Group 1",
-                    LeaderId = "user1",
-                    Users = new List<User> { user1 }
-                },
-                new Group
-                {
-                    Id = 2,
-                    Name = "Group 2",
-                    LeaderId = "user2",
-                    Users = new List<User> { user2 }
-                }
+                new Group { Name = "Group A", LeaderId = "user1" },
+                new Group { Name = "Group B", LeaderId = "user2" },
+                new Group { Name = "Group C", LeaderId = "user3" }
             };
-
-            var mock = groups.AsQueryable().BuildMock();
-            _groupRepositoryMock.Setup(r => r.Query()).Returns(mock);
-
-            var service = CreateService();
+            _dbContext.Groups.AddRange(groups);
+            await _dbContext.SaveChangesAsync();
 
             // Act
-            var result = await service.GetGroupsAsync(1, 10, null);
+            var result = await _groupService.GetGroupsAsync(1, 10, null);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(2, result.Items.Count());
-            Assert.Equal(2, result.TotalCount);
+            Assert.Equal(3, result.TotalCount);
+            Assert.Equal(3, result.Items.Count());
         }
 
         [Fact]
-        public async Task GetGroupsAsync_ReturnsFilteredGroups_WithSearch()
+        public async Task GetGroupsAsync_FiltersGroups_WithSearch()
         {
             // Arrange
-            var user1 = new User { Id = "user1", UserName = "User 1", RA = "001" };
-            var user2 = new User { Id = "user2", UserName = "User 2", RA = "002" };
-
             var groups = new List<Group>
             {
-                new Group
-                {
-                    Id = 1,
-                    Name = "Python Group",
-                    LeaderId = "user1",
-                    Users = new List<User> { user1 }
-                },
-                new Group
-                {
-                    Id = 2,
-                    Name = "Java Group",
-                    LeaderId = "user2",
-                    Users = new List<User> { user2 }
-                }
+                new Group { Name = "Alpha Group", LeaderId = "user1" },
+                new Group { Name = "Beta Group", LeaderId = "user2" },
+                new Group { Name = "Alpha Team", LeaderId = "user3" }
             };
-
-            var mock = groups.AsQueryable().BuildMock();
-            _groupRepositoryMock.Setup(r => r.Query()).Returns(mock);
-
-            var service = CreateService();
+            _dbContext.Groups.AddRange(groups);
+            await _dbContext.SaveChangesAsync();
 
             // Act
-            var result = await service.GetGroupsAsync(1, 10, "Python");
+            var result = await _groupService.GetGroupsAsync(1, 10, "Alpha");
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Single(result.Items);
-            Assert.Equal("Python Group", result.Items.First().Name);
+            Assert.Equal(2, result.TotalCount);
+            Assert.Equal(2, result.Items.Count());
+            Assert.All(result.Items, item => Assert.Contains("Alpha", item.Name));
         }
 
         [Fact]
@@ -438,214 +311,24 @@ namespace ProjetoTCCBackend.Unit.Test.Services
         {
             // Arrange
             var groups = new List<Group>();
-            for (int i = 1; i <= 5; i++)
+            for (int i = 1; i <= 15; i++)
             {
-                groups.Add(new Group
-                {
-                    Id = i,
-                    Name = $"Group {i}",
-                    LeaderId = $"user{i}",
-                    Users = new List<User>()
-                });
+                groups.Add(new Group { Name = $"Group {i}", LeaderId = $"user{i}" });
             }
-
-            var mock = groups.AsQueryable().BuildMock();
-            _groupRepositoryMock.Setup(r => r.Query()).Returns(mock);
-
-            var service = CreateService();
+            _dbContext.Groups.AddRange(groups);
+            await _dbContext.SaveChangesAsync();
 
             // Act
-            var result = await service.GetGroupsAsync(1, 2, null);
+            var page1 = await _groupService.GetGroupsAsync(1, 10, null);
+            var page2 = await _groupService.GetGroupsAsync(2, 10, null);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(2, result.Items.Count());
-            Assert.Equal(5, result.TotalCount);
-            Assert.Equal(1, result.Page);
-            Assert.Equal(2, result.PageSize);
-        }
-
-        [Fact]
-        public async Task UpdateGroupAsync_UpdatesGroup_WhenUserIsLeader()
-        {
-            // Arrange
-            var userId = "user1";
-            var userRoles = new List<string> { "User" };
-
-            var group = new Group
-            {
-                Id = 1,
-                Name = "Old Name",
-                LeaderId = userId,
-                Users = new List<User>()
-            };
-
-            var request = new UpdateGroupRequest
-            {
-                Name = "New Name",
-                MembersToRemove = new List<string>()
-            };
-
-            var groups = new List<Group> { group }.AsQueryable().BuildMock();
-            _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
-
-            var service = CreateService();
-
-            // Act
-            var result = await service.UpdateGroupAsync(1, request, userId, userRoles);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("New Name", result.Name);
-            Assert.Equal(1, result.Id);
-        }
-
-        [Fact]
-        public async Task UpdateGroupAsync_ReturnsNull_WhenGroupNotFound()
-        {
-            // Arrange
-            var userId = "user1";
-            var userRoles = new List<string> { "User" };
-
-            var request = new UpdateGroupRequest
-            {
-                Name = "New Name",
-                MembersToRemove = new List<string>()
-            };
-
-            var emptyGroups = new List<Group>().AsQueryable().BuildMock();
-            _groupRepositoryMock.Setup(r => r.Query()).Returns(emptyGroups);
-
-            var service = CreateService();
-
-            // Act
-            var result = await service.UpdateGroupAsync(999, request, userId, userRoles);
-
-            // Assert
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public async Task UpdateGroupAsync_ReturnsNull_WhenUserIsNotLeaderOrAdmin()
-        {
-            // Arrange
-            var userId = "user1";
-            var userRoles = new List<string> { "User" };
-
-            var group = new Group
-            {
-                Id = 1,
-                Name = "Test Group",
-                LeaderId = "user2", // Different user
-                Users = new List<User>()
-            };
-
-            var request = new UpdateGroupRequest
-            {
-                Name = "New Name",
-                MembersToRemove = new List<string>()
-            };
-
-            var groups = new List<Group> { group }.AsQueryable().BuildMock();
-            _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
-
-            var service = CreateService();
-
-            // Act
-            var result = await service.UpdateGroupAsync(1, request, userId, userRoles);
-
-            // Assert
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public async Task UpdateGroupAsync_AllowsUpdate_WhenUserIsAdmin()
-        {
-            // Arrange
-            var userId = "user1";
-            var userRoles = new List<string> { "Admin" };
-
-            var group = new Group
-            {
-                Id = 1,
-                Name = "Old Name",
-                LeaderId = userId, // Admin is the leader to pass the first query
-                Users = new List<User>()
-            };
-
-            var request = new UpdateGroupRequest
-            {
-                Name = "New Name",
-                MembersToRemove = new List<string>()
-            };
-
-            var updatedGroup = new Group
-            {
-                Id = 1,
-                Name = "New Name",
-                LeaderId = userId,
-                Users = new List<User>()
-            };
-
-            var groupsQuery1 = new List<Group> { group }.AsQueryable().BuildMock();
-            var groupsQuery2 = new List<Group> { updatedGroup }.AsQueryable().BuildMock();
-
-            _groupRepositoryMock.SetupSequence(r => r.Query())
-                .Returns(groupsQuery1)
-                .Returns(groupsQuery2);
-
-            var service = CreateService();
-
-            // Act
-            var result = await service.UpdateGroupAsync(1, request, userId, userRoles);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("New Name", result.Name);
-        }
-
-        [Fact]
-        public async Task UpdateGroupAsync_RemovesMembers_WhenSpecified()
-        {
-            // Arrange
-            var userId = "user1";
-            var userRoles = new List<string> { "User" };
-
-            var group = new Group
-            {
-                Id = 1,
-                Name = "Test Group",
-                LeaderId = userId,
-                Users = new List<User>()
-            };
-
-            var request = new UpdateGroupRequest
-            {
-                Name = "Test Group",
-                MembersToRemove = new List<string> { "user2", "user3" }
-            };
-
-            var groups = new List<Group> { group }.AsQueryable().BuildMock();
-            _groupRepositoryMock.Setup(r => r.Query()).Returns(groups);
-            _groupInviteServiceMock
-                .Setup(s => s.RemoveUserFromGroupAsync(It.IsAny<int>(), It.IsAny<string>()))
-                .ReturnsAsync(true);
-
-            var service = CreateService();
-
-            // Act
-            var result = await service.UpdateGroupAsync(1, request, userId, userRoles);
-
-            // Assert
-            Assert.NotNull(result);
-            _groupInviteServiceMock.Verify(
-                s => s.RemoveUserFromGroupAsync(1, "user2"),
-                Times.Once
-            );
-            _groupInviteServiceMock.Verify(
-                s => s.RemoveUserFromGroupAsync(1, "user3"),
-                Times.Once
-            );
+            Assert.Equal(15, page1.TotalCount);
+            Assert.Equal(10, page1.Items.Count());
+            Assert.Equal(15, page2.TotalCount);
+            Assert.Equal(5, page2.Items.Count());
         }
     }
 }
+
+

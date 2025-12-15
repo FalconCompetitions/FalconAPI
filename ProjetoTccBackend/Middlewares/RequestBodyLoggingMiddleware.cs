@@ -14,6 +14,11 @@ namespace ProjetoTccBackend.Middlewares
         private readonly RequestDelegate _next;
         private readonly ILogger<RequestBodyLoggingMiddleware> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RequestBodyLoggingMiddleware"/> class.
+        /// </summary>
+        /// <param name="next">The next middleware in the pipeline.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public RequestBodyLoggingMiddleware(
             RequestDelegate next,
             ILogger<RequestBodyLoggingMiddleware> logger

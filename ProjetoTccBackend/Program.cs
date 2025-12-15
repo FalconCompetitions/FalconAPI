@@ -22,6 +22,7 @@ using ProjetoTccBackend.Swagger.Extensions;
 using ProjetoTccBackend.Swagger.Filters;
 using ProjetoTccBackend.Workers;
 using ProjetoTccBackend.Workers.Queues;
+using ProjetoTccBackend.Converters;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 
@@ -53,25 +54,38 @@ namespace ProjetoTccBackend
             }
         }
 
+        /// <summary>
+        /// Creates an admin user and optionally test teacher and student users in the database.
+        /// <para>
+        /// This method retrieves configuration values for admin and test users, checks if the users already exist,
+        /// and creates them if they do not. It also assigns the appropriate roles ("Admin", "Teacher", "Student")
+        /// to each user. The method saves changes to the database context at the end.
+        /// </para>
+        /// <param name="serviceProvider">The service provider used to resolve required services such as DbContext, UserManager, RoleManager, and IConfiguration.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <remarks>
+        /// - Admin user credentials are retrieved from configuration ("Admin:Email", "Admin:Password").
+        /// - Test users are created only if "Local:TestUsers" configuration is set to true.
+        /// - Test users' password is retrieved from configuration ("Local:TestUsersPassword").
+        /// - Roles must exist in the system before assigning them to users.
+        /// </remarks>
         public static async Task CreateAdminUser(IServiceProvider serviceProvider)
         {
             var dbContext = serviceProvider.GetRequiredService<TccDbContext>();
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
             var signInManager = serviceProvider.GetRequiredService<SignInManager<User>>();
+            IConfiguration configuration = serviceProvider.GetRequiredService<IConfiguration>();
 
-            List<User> adminUser = new List<User>()
+            User adminUser = new User()
             {
-                new User()
-                {
-                    RA = "999999",
-                    Email = "admin@gmail.com",
-                    Name = "admin",
-                    UserName = "admin",
-                    EmailConfirmed = false,
-                    PhoneNumberConfirmed = false,
-                    TwoFactorEnabled = false,
-                },
+                RA = "999999",
+                Email = configuration["Admin:Email"] ?? "admin@gmail.com",
+                Name = "admin",
+                UserName = "admin",
+                EmailConfirmed = false,
+                PhoneNumberConfirmed = false,
+                TwoFactorEnabled = false,
             };
 
             List<User> teacherUsers = new List<User>()
@@ -162,26 +176,33 @@ namespace ProjetoTccBackend
                 },
             };
 
-            foreach (User user in adminUser)
+            string adminPassword = configuration["Admin:Password"]!;
+
+            User? existentUser = await userManager.FindByEmailAsync(adminUser.Email);
+            if (existentUser is null)
             {
-                User? existentUser = await userManager.FindByEmailAsync(user.Email!);
-                if (existentUser is null)
+                var result = await userManager.CreateAsync(adminUser, adminPassword);
+                if (result.Succeeded)
                 {
-                    var result = await userManager.CreateAsync(user, "00000000#Ra");
-                    if (result.Succeeded)
-                    {
-                        var createdUser = await userManager.FindByEmailAsync(user.Email!);
-                        await userManager.AddToRoleAsync(createdUser, "Admin");
-                    }
+                    var createdUser = await userManager.FindByEmailAsync(adminUser.Email);
+                    await userManager.AddToRoleAsync(createdUser!, "Admin");
                 }
             }
 
+            bool testUsers = configuration.GetValue<bool>("Local:TestUsers");
+            if (testUsers is false)
+            {
+                return;
+            }
+
+            string? testUsersPassword = configuration["Local:TestUsersPassword"];
+
             foreach (User user in teacherUsers)
             {
-                User? existentUser = await userManager.FindByEmailAsync(user.Email!);
+                existentUser = await userManager.FindByEmailAsync(user.Email!);
                 if (existentUser is null)
                 {
-                    var result = await userManager.CreateAsync(user, "00000000#Ra");
+                    var result = await userManager.CreateAsync(user, testUsersPassword);
 
                     if (result.Succeeded)
                     {
@@ -193,10 +214,10 @@ namespace ProjetoTccBackend
 
             foreach (User user in studentUsers)
             {
-                User? existentUser = await userManager.FindByEmailAsync(user.Email!);
+                existentUser = await userManager.FindByEmailAsync(user.Email!);
                 if (existentUser is null)
                 {
-                    var result = await userManager.CreateAsync(user, "00000000#Ra");
+                    var result = await userManager.CreateAsync(user, testUsersPassword);
 
                     if (result.Succeeded)
                     {
@@ -223,7 +244,12 @@ namespace ProjetoTccBackend
             var options = new WebSocketOptions()
             {
                 KeepAliveInterval = TimeSpan.FromMinutes(2),
-                AllowedOrigins = { "http://localhost:3000", "https://localhost:3000" },
+                AllowedOrigins =
+                {
+                    "http://localhost:3000",
+                    "https://localhost:3000",
+                    "https://falconcompetitions.azurewebsites.net",
+                },
             };
 
             app.UseWebSockets(options);
@@ -303,12 +329,20 @@ namespace ProjetoTccBackend
 
             builder.Services.AddHttpContextAccessor();
 
+            var judgeApiUrl = builder.Configuration["JudgeApi:Url"];
+            if (string.IsNullOrEmpty(judgeApiUrl))
+            {
+                throw new InvalidOperationException(
+                    "Configuration 'JudgeApi:Url' is missing. Please ensure it is set in appsettings.json or environment variables."
+                );
+            }
+
             builder
                 .Services.AddHttpClient(
                     "JudgeAPI",
                     client =>
                     {
-                        client.BaseAddress = new Uri(builder.Configuration["JudgeApi:Url"]!);
+                        client.BaseAddress = new Uri(judgeApiUrl);
                         //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
                         //client.DefaultRequestHeaders.Add("Accept", "application/json");
                         client.Timeout = TimeSpan.FromSeconds(40);
@@ -342,6 +376,9 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<ICompetitionService, CompetitionService>();
             builder.Services.AddScoped<IGroupAttemptService, GroupAttemptService>();
             builder.Services.AddScoped<IQuestionService, QuestionService>();
+            
+            // Competition cache service (singleton to share cache across requests)
+            builder.Services.AddSingleton<ICompetitionCacheService, CompetitionCacheService>();
 
             // Queues
             builder.Services.AddSingleton<ExerciseSubmissionQueue>();
@@ -369,12 +406,24 @@ namespace ProjetoTccBackend
                         .Serialization
                         .ReferenceHandler
                         .IgnoreCycles;
+                    // Adiciona conversor customizado para interpretar DateTimes sem timezone como horário local
+                    options.JsonSerializerOptions.Converters.Add(new LocalDateTimeConverter());
                 });
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
+                options.SwaggerDoc(
+                    "v1",
+                    new Microsoft.OpenApi.OpenApiInfo
+                    {
+                        Version = "openapi: 3.1.0",
+                        Title = "Falcon Competition API",
+                        Description = "API para gerenciamento de competições de programação",
+                    }
+                );
+
                 string xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 string xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
 
@@ -456,19 +505,55 @@ namespace ProjetoTccBackend
                     lc
                         .WriteTo.Console(
                             outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}",
-                            theme: AnsiConsoleTheme.Code // ou SystemConsoleTheme.Literate para um visual mais clássico
+                            theme: AnsiConsoleTheme.Code
                         )
                         .ReadFrom.Configuration(ctx.Configuration)
             );
 
             builder.Services.AddCors(options =>
             {
+                // Try both formats: "Cors:FrontendURL" (appsettings) and "Cors__FrontendURL" (Azure env var)
+                string? frontendUrl =
+                    builder.Configuration["Cors:FrontendURL"]
+                    ?? builder.Configuration["Cors__FrontendURL"];
+
+                // Use List to properly add origins
+                List<string> allowedOrigins = new List<string>();
+
+                if (!String.IsNullOrEmpty(frontendUrl))
+                {
+                    allowedOrigins.Add(frontendUrl);
+                    Console.WriteLine($"[CORS] Added FrontendURL from config: {frontendUrl}");
+                }
+                else
+                {
+                    Console.WriteLine(
+                        "[CORS] WARNING: Cors:FrontendURL not configured, using fallback"
+                    );
+                    // Fallback to production URL if not configured
+                    allowedOrigins.Add("https://falconcompetitions.azurewebsites.net");
+                }
+
+                // Explicitly add localhost:3000 for development WebSocket connections
+                if (!allowedOrigins.Contains("https://localhost:3000"))
+                {
+                    allowedOrigins.Add("https://localhost:3000");
+                }
+                if (!allowedOrigins.Contains("http://localhost:3000"))
+                {
+                    allowedOrigins.Add("http://localhost:3000");
+                }
+
+                Console.WriteLine(
+                    $"[CORS] Configured origins: {string.Join(", ", allowedOrigins)}"
+                );
+
                 options.AddPolicy(
                     "FrontendAppPolicy",
                     policy =>
                     {
                         policy
-                            .WithOrigins("https://localhost:3000")
+                            .WithOrigins(allowedOrigins.ToArray())
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials()
@@ -493,7 +578,7 @@ namespace ProjetoTccBackend
                     policy =>
                     {
                         policy
-                            .WithOrigins("https://localhost:8000")
+                            .WithOrigins("https://localhost:3000")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials();

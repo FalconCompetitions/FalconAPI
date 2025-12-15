@@ -4,12 +4,19 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing questions.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class QuestionController : ControllerBase
     {
         private readonly IQuestionService _questionService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QuestionController"/> class.
+        /// </summary>
+        /// <param name="questionService">The service responsible for question operations.</param>
         public QuestionController(IQuestionService questionService)
         {
             this._questionService = questionService;
@@ -22,9 +29,9 @@ namespace ProjetoTccBackend.Controllers
         /// <param name="pageSize">The number of questions per page. Default is 10.</param>
         /// <returns>An <see cref="IActionResult"/> containing a paginated list of questions.</returns>
         /// <remarks>
-        /// Exemplo de uso:
+        /// Example usage:
         /// <code>
-        ///     GET /api/question?page=1&pageSize=10
+        ///     GET /api/question?page=1&amp;pageSize=10
         /// </code>
         /// </remarks>
         /// <response code="200">Returns the paginated list of questions.</response>

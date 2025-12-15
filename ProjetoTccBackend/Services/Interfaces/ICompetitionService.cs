@@ -192,5 +192,35 @@ namespace ProjetoTccBackend.Services.Interfaces
         /// <param name="competitionId">The ID of the competition to stop.</param>
         /// <returns>True if the competition was stopped successfully, false otherwise.</returns>
         Task<bool> StopCompetitionAsync(int competitionId);
+
+        /// <summary>
+        /// Retrieves all champion teams from finished competitions.
+        /// </summary>
+        /// <returns>A list of champion team records ordered by year descending.</returns>
+        Task<List<ChampionTeamResponse>> GetChampionTeamsAsync();
+
+        /// <summary>
+        /// Retrieves all competitions that have finished.
+        /// </summary>
+        /// <remarks>
+        /// This method returns competitions with status <see cref="CompetitionStatus.Finished"/>,
+        /// ordered by end time descending (most recent first).
+        /// Includes related data: rankings, exercises, groups, and questions.
+        /// </remarks>
+        /// <returns>A collection of <see cref="CompetitionResponse"/> objects representing finished competitions.</returns>
+        Task<ICollection<CompetitionResponse>> GetFinishedCompetitionsAsync();
+
+        /// <summary>
+        /// Retrieves a specific competition by its ID with all related data.
+        /// </summary>
+        /// <remarks>
+        /// This method fetches a competition regardless of its status,
+        /// including all related entities: rankings, exercises, groups, questions, and logs.
+        /// Useful for viewing archived/finished competitions.
+        /// Returns a DTO to avoid circular reference issues during serialization.
+        /// </remarks>
+        /// <param name="id">The unique identifier of the competition.</param>
+        /// <returns>The <see cref="CompetitionDetailResponse"/> object if found; otherwise, null.</returns>
+        Task<CompetitionDetailResponse?> GetCompetitionByIdAsync(int id);
     }
 }

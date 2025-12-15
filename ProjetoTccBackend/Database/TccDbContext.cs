@@ -46,6 +46,25 @@ namespace ProjetoTccBackend.Database
         {
             base.OnModelCreating(builder);
 
+            // Converter para garantir que todos os DateTime sejam tratados como UTC
+            // IMPORTANTE: Apenas força o Kind, SEM converter o valor
+            // O LocalDateTimeConverter já garante que recebemos UTC do frontend
+            var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc), // Ao salvar: apenas marca como UTC
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc)); // Ao ler: apenas marca como UTC
+
+            // Aplicar o converter a todas as propriedades DateTime em todas as entidades
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                    {
+                        property.SetValueConverter(dateTimeConverter);
+                    }
+                }
+            }
+
             // Configurar todas as chaves estrangeiras para User.Id com nvarchar(450)
             // para compatibilidade com SQL Server Identity
             builder.Entity<Group>()

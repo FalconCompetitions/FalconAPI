@@ -8,6 +8,9 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for JWT token generation and validation.
+    /// </summary>
     public class TokenService : ITokenService
     {
         private readonly string _secretKey;
@@ -17,6 +20,12 @@ namespace ProjetoTccBackend.Services
         private const string _tokenKey = "privateAccessToken";
         private readonly ILogger<TokenService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TokenService"/> class.
+        /// </summary>
+        /// <param name="configuration">The application configuration containing JWT settings.</param>
+        /// <param name="memoryCache">The memory cache for storing tokens.</param>
+        /// <param name="logger">Logger for registering information and errors.</param>
         public TokenService(
             IConfiguration configuration,
             IMemoryCache memoryCache,
@@ -33,7 +42,7 @@ namespace ProjetoTccBackend.Services
         /// <inheritdoc />
         public string? FetchPrivateAccessToken()
         {
-            if(this._memoryCache.TryGetValue(_tokenKey, out string? token))
+            if (this._memoryCache.TryGetValue(_tokenKey, out string? token))
             {
                 return token!;
             }
@@ -58,7 +67,7 @@ namespace ProjetoTccBackend.Services
             var signInCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                expires: DateTime.Now.AddDays(5),
+                expires: DateTime.UtcNow.AddDays(5),
                 claims: claims,
                 issuer: this._issuer,
                 audience: this._audience,
@@ -125,7 +134,7 @@ namespace ProjetoTccBackend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Token JWT inválido.");
+                _logger.LogWarning(ex, "Invalid JWT token.");
                 return false;
             }
         }
@@ -141,7 +150,7 @@ namespace ProjetoTccBackend.Services
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                expires: DateTime.Now.AddDays(1),
+                expires: DateTime.UtcNow.AddDays(1),
                 claims: claims,
                 issuer: this._issuer,
                 audience: this._audience,

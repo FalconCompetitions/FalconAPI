@@ -8,7 +8,7 @@ namespace ProjetoTccBackend.Repositories
     {
         public GroupExerciseAttemptRepository(TccDbContext dbContext) : base(dbContext) { }
 
-        
+
         /// <inheritdoc />
         public GroupExerciseAttempt? GetLastGroupCompetitionAttempt(int groupId, int competitionId)
         {
@@ -18,6 +18,16 @@ namespace ProjetoTccBackend.Repositories
                 .FirstOrDefault();
 
             return response;
+        }
+
+        /// <inheritdoc />
+        public bool HasGroupAcceptedExercise(int groupId, int competitionId, int exerciseId)
+        {
+            return this._dbContext.GroupExerciseAttempts
+                .Any(x => x.GroupId == groupId 
+                    && x.CompetitionId == competitionId 
+                    && x.ExerciseId == exerciseId 
+                    && x.Accepted == true);
         }
     }
 }

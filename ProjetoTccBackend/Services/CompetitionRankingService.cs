@@ -8,12 +8,21 @@ using ProjetoTccBackend.Services.Interfaces;
 
 namespace ProjetoTccBackend.Services
 {
+    /// <summary>
+    /// Service responsible for managing competition ranking operations.
+    /// </summary>
     public class CompetitionRankingService : ICompetitionRankingService
     {
         private readonly ICompetitionRankingRepository _competitionRankingRepository;
         private readonly IGroupExerciseAttemptRepository _groupExerciseAttemptRepository;
         private readonly TccDbContext _dbContext;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompetitionRankingService"/> class.
+        /// </summary>
+        /// <param name="competitionRankingRepository">The repository for competition ranking data access.</param>
+        /// <param name="groupExerciseAttemptRepository">The repository for group exercise attempt data access.</param>
+        /// <param name="dbContext">The database context.</param>
         public CompetitionRankingService(ICompetitionRankingRepository competitionRankingRepository, IGroupExerciseAttemptRepository groupExerciseAttemptRepository, TccDbContext dbContext)
         {
             this._competitionRankingRepository = competitionRankingRepository;
@@ -22,10 +31,10 @@ namespace ProjetoTccBackend.Services
         }
 
         /// <inheritdoc />
-        public async Task<CompetitionRankingResponse> UpdateRanking(Competition competition, Models.Group group, Models.GroupExerciseAttempt exerciseAttempt)
+        public async Task<CompetitionRankingResponse> UpdateRanking(Competition competition, Group group, GroupExerciseAttempt exerciseAttempt)
         {
-            List<Models.GroupExerciseAttempt> attempts = this._groupExerciseAttemptRepository.Find(
-                e => 
+            List<GroupExerciseAttempt> attempts = this._groupExerciseAttemptRepository.Find(
+                e =>
                     e.GroupId.Equals(group.Id)
                     && e.CompetitionId.Equals(competition.Id)
                 ).ToList();
@@ -35,9 +44,22 @@ namespace ProjetoTccBackend.Services
                     c.CompetitionId.Equals(competition.Id)
                 ).ToList();
 
-            int totalPenaltys = attempts.Count;
+            // Get the list of exercise IDs that were accepted at some point
+            var acceptedExerciseIds = attempts
+                .Where(x => x.Accepted)
+                .Select(x => x.ExerciseId)
+                .Distinct()
+                .ToList();
+
+            // Calculate total points (number of DISTINCT exercises solved)
+            int totalPoints = acceptedExerciseIds.Count;
+
+            // Calculate penalty: count ALL attempts for exercises that were accepted
+            int totalPenaltys = attempts
+                .Where(x => acceptedExerciseIds.Contains(x.ExerciseId))
+                .Count();
+            
             double totalPenalty = totalPenaltys * competition.SubmissionPenalty.TotalMinutes;
-            int totalPoints = attempts.Count(x => x.Accepted);
 
             int groupRankingIndex = rankings.FindIndex(x => x.GroupId.Equals(group.Id));
 
@@ -73,7 +95,7 @@ namespace ProjetoTccBackend.Services
             {
                 int primaryComparisonResult = y.Points.CompareTo(x.Points);
 
-                if(primaryComparisonResult == 0)
+                if (primaryComparisonResult == 0)
                 {
                     return x.Penalty.CompareTo(y.Penalty);
                 }
@@ -81,7 +103,7 @@ namespace ProjetoTccBackend.Services
                 return primaryComparisonResult;
             });
 
-            for(int i = 0; i < rankings.Count; i++)
+            for (int i = 0; i < rankings.Count; i++)
             {
                 rankings[i].RankOrder = i + 1;
             }
@@ -94,11 +116,12 @@ namespace ProjetoTccBackend.Services
             // Group attempts by exercise to get the count per exercise
             var exerciseAttemptsGrouped = attempts
                 .GroupBy(a => a.ExerciseId)
-                .Select(g => new Database.Responses.Competition.GroupExerciseAttemptResponse()
+                .Select(g => new GroupExerciseAttemptResponse()
                 {
                     GroupId = group.Id,
                     ExerciseId = g.Key,
-                    Attempts = g.Count()
+                    Attempts = g.Count(),
+                    Accepted = g.Any(a => a.Accepted) // Include whether exercise was solved
                 }).ToList();
 
             var response = new CompetitionRankingResponse()
