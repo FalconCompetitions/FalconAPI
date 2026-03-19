@@ -13,7 +13,7 @@ using ProjetoTccBackend.Repositories.Interfaces;
 using ProjetoTccBackend.Services.Interfaces;
 using ProjetoTccBackend.Enums.Competition;
 
-namespace ApiEstoqueASP.Services;
+namespace ProjetoTccBackend.Services;
 
 /// <summary>
 /// Service responsible for user management operations.

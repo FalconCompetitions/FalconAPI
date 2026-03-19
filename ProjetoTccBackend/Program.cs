@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Text;
-using ApiEstoqueASP.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +8,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer;
 using Microsoft.IdentityModel.Tokens;
+using ProjetoTccBackend.Converters;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Filters;
 using ProjetoTccBackend.Hubs;
@@ -22,7 +22,6 @@ using ProjetoTccBackend.Swagger.Extensions;
 using ProjetoTccBackend.Swagger.Filters;
 using ProjetoTccBackend.Workers;
 using ProjetoTccBackend.Workers.Queues;
-using ProjetoTccBackend.Converters;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 
@@ -230,15 +229,6 @@ namespace ProjetoTccBackend
             await dbContext.SaveChangesAsync();
         }
 
-        public static void ExecuteMigrations(WebApplication app)
-        {
-            using (var scope = app.Services.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<TccDbContext>();
-                db.Database.Migrate();
-            }
-        }
-
         private static void ConfigureWebSocketOptions(WebApplication app)
         {
             var options = new WebSocketOptions()
@@ -255,7 +245,7 @@ namespace ProjetoTccBackend
             app.UseWebSockets(options);
         }
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -376,7 +366,7 @@ namespace ProjetoTccBackend
             builder.Services.AddScoped<ICompetitionService, CompetitionService>();
             builder.Services.AddScoped<IGroupAttemptService, GroupAttemptService>();
             builder.Services.AddScoped<IQuestionService, QuestionService>();
-            
+
             // Competition cache service (singleton to share cache across requests)
             builder.Services.AddSingleton<ICompetitionCacheService, CompetitionCacheService>();
 
@@ -588,13 +578,46 @@ namespace ProjetoTccBackend
 
             var app = builder.Build();
 
-            CreateRoles(app.Services.CreateScope().ServiceProvider!).GetAwaiter().GetResult();
-            CreateAdminUser(app.Services.CreateScope().ServiceProvider!).GetAwaiter().GetResult();
+            // 1. Unified and Safe Database Initialization
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                var context = services.GetRequiredService<TccDbContext>();
+                var logger = services.GetRequiredService<ILogger<ProjetoTccBackend>>();
+
+                try
+                {
+                    logger.LogInformation("Attempting to apply database migrations...");
+
+                    // Migrate unconditionally to ensure the database exists.
+                    // In a mature production environment, this should be handled via a CI/CD pipeline,
+                    // but for this topology, it must run before the app starts.
+                    await context.Database.MigrateAsync();
+
+                    logger.LogInformation(
+                        "Database migrated successfully. Seeding initial data..."
+                    );
+
+                    // Await the seeding methods sequentially within the SAME scope
+                    await CreateRoles(services);
+                    await CreateAdminUser(services);
+
+                    logger.LogInformation("Initial data seeded successfully.");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogCritical(
+                        ex,
+                        "A fatal error occurred during database migration or seeding."
+                    );
+                    // Crash the app if the DB is unvailable. It cannot function without persistence.
+                    throw;
+                }
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                ExecuteMigrations(app);
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {

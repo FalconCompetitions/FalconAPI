@@ -327,13 +327,12 @@ FalconAPI/
    
    Crie o arquivo `.env.development`:
    ```env
-   MARIADB_ROOT_PASSWORD=sua_senha_segura
-   MARIADB_DATABASE=falcon_dev
+   MSSQL_SA_PASSWORD=sua_senha_segura
    ```
 
 3. **Inicie os containers**:
    ```bash
-   docker compose -f docker-compose.development.yml up --build
+   docker-compose --env-file .env.development --file .\docker-compose.development.yml up -d
    ```
 
 4. **Configure usuários de teste** (opcional):
@@ -359,8 +358,8 @@ FalconAPI/
    - `Local:TestUsersPassword` - Senha dos usuários de teste (padrão: `00000000#Ra`)
 
 5. **Acesse a aplicação**:
-   - **Swagger**: http://localhost:8080/swagger
-   - **API**: http://localhost:8080
+   - **Swagger**: http://localhost:7163/swagger
+   - **API**: http://localhost:7163
    - **HTTPS**: https://localhost:7163
 
 6. **Usuários criados automaticamente** (se `Local:TestUsers` = `true`):

@@ -1,19 +1,20 @@
-version: "3.9"
-
 services:
   db:
-    image: mariadb:11
+    image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: falcon_database
     environment:
-      - MARIADB_ROOT_PASSWORD={MARIADB_ROOT_PASSWORD}
-      - MARIADB_DATABASE={MARIADB_DATABASE}
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
     ports:
-      - "3306:3306"
+      # Standard SQL Server TCP port
+      - "1433:1433"
     volumes:
-      - db_data:/var/lib/mysql
+      # Official internal path where SQL Server persists data, logs, and secrets
+      - db_data:/var/opt/mssql
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
-      interval: 5s
+      # Using mssql-tools18. The -No flag is crucial here to trust the container's self-signed TLS certificate
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-No", "-Q", "SELECT 1"]
+      interval: 10s
       timeout: 5s
       retries: 10
 
@@ -23,13 +24,11 @@ services:
         context: .
         dockerfile: /Dockerfile
     ports:
-    - "8080:8080"
-    - "80:80"
     - "443:443"
-    - "7163:7163"
+    - "7163:8080"
     environment:
     - ASPNETCORE_ENVIRONMENT=Development
-    - ConnectionStrings__DefaultConnection=server=db;user=root;password={MARIADB_ROOT_PASSWORD};database={MARIADB_DATABASE}
+    - ConnectionStrings__DefaultConnection=server=db;user=sa;password=${MSSQL_SA_PASSWORD};database=falcondb;TrustServerCertificate=True
     
     depends_on:
       db:
