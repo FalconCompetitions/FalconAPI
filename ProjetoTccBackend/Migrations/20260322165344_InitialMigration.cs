@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,113 +12,139 @@ namespace ProjetoTccBackend.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AlterDatabase()
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Name = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NormalizedName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ConcurrencyStamp = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetRoles", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "AttachedFiles",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Type = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Size = table.Column<long>(type: "bigint", nullable: false),
-                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    FilePath = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AttachedFiles", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Competitions",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     MaxExercises = table.Column<int>(type: "int", nullable: true),
                     MaxMembers = table.Column<int>(type: "int", nullable: false),
                     MaxSubmissionSize = table.Column<int>(type: "int", nullable: true),
-                    StartInscriptions = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndInscriptions = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StartInscriptions = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndInscriptions = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    StartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Duration = table.Column<TimeSpan>(type: "time", nullable: false),
-                    StopRanking = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    BlockSubmissions = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SubmissionPenalty = table.Column<TimeSpan>(type: "time", nullable: false)
+                    StartTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    Duration = table.Column<TimeSpan>(type: "time(6)", nullable: false),
+                    StopRanking = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    BlockSubmissions = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    SubmissionPenalty = table.Column<TimeSpan>(type: "time(6)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Competitions", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "ExerciseSubmissionQueueItems",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Request = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ConnectionId = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Request = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ConnectionId = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ExerciseSubmissionQueueItems", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "ExerciseTypes",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Label = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Label = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ExerciseTypes", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Groups",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LeaderId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LeaderId = table.Column<string>(type: "varchar(450)", maxLength: 450, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RowVersion = table.Column<DateTime>(type: "timestamp(6)", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Groups", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    RoleId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ClaimType = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ClaimValue = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -128,21 +155,25 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "AspNetRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Exercises",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ExerciseTypeId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Title = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     AttachedFileId = table.Column<int>(type: "int", nullable: true),
-                    EstimatedTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    JudgeUuid = table.Column<string>(type: "nvarchar(36)", maxLength: 36, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    EstimatedTime = table.Column<TimeSpan>(type: "time(6)", nullable: false),
+                    JudgeUuid = table.Column<string>(type: "varchar(36)", maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -159,34 +190,47 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "ExerciseTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "AspNetUsers",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PasswordHash = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NormalizedEmail = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NormalizedUserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ConcurrencyStamp = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LockoutEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    EmailConfirmed = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    SecurityStamp = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     AccessFailedCount = table.Column<int>(type: "int", nullable: false),
-                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
+                    Name = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     JoinYear = table.Column<int>(type: "int", nullable: true),
-                    Department = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RA = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
+                    Department = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RA = table.Column<string>(type: "varchar(15)", maxLength: 15, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     GroupId = table.Column<int>(type: "int", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    LastLoggedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    LastLoggedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    Email = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PhoneNumber = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PhoneNumberConfirmed = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -197,18 +241,19 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "Groups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "CompetitionRankings",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     CompetitionId = table.Column<int>(type: "int", nullable: false),
                     GroupId = table.Column<int>(type: "int", nullable: false),
-                    Points = table.Column<double>(type: "float", nullable: false),
-                    Penalty = table.Column<double>(type: "float", nullable: false),
+                    Points = table.Column<double>(type: "double", nullable: false),
+                    Penalty = table.Column<double>(type: "double", nullable: false),
                     RankOrder = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -226,7 +271,8 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "Groups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "GroupsInCompetitions",
@@ -234,8 +280,8 @@ namespace ProjetoTccBackend.Migrations
                 {
                     GroupId = table.Column<int>(type: "int", nullable: false),
                     CompetitionId = table.Column<int>(type: "int", nullable: false),
-                    CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
-                    Blocked = table.Column<bool>(type: "bit", nullable: false)
+                    CreatedOn = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP()"),
+                    Blocked = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -252,17 +298,20 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "Groups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "ExerciseInputs",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ExerciseId = table.Column<int>(type: "int", nullable: false),
-                    JudgeUuid = table.Column<string>(type: "nvarchar(36)", maxLength: 36, nullable: false),
-                    Input = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    JudgeUuid = table.Column<string>(type: "varchar(36)", maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Input = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -273,7 +322,8 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "Exercises",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "ExercisesInCompetitions",
@@ -297,22 +347,24 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "Exercises",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "GroupExerciseAttempts",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ExerciseId = table.Column<int>(type: "int", nullable: false),
-                    Time = table.Column<TimeSpan>(type: "time", nullable: false),
-                    SubmissionTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Time = table.Column<TimeSpan>(type: "time(6)", nullable: false),
+                    SubmissionTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     Language = table.Column<int>(type: "int", nullable: false),
                     CompetitionId = table.Column<int>(type: "int", nullable: false),
                     GroupId = table.Column<int>(type: "int", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Accepted = table.Column<bool>(type: "bit", nullable: false),
+                    Code = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Accepted = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     JudgeResponse = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -336,16 +388,19 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "Groups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Answers",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Content = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UserId = table.Column<string>(type: "varchar(450)", maxLength: 450, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -355,17 +410,21 @@ namespace ProjetoTccBackend.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "AspNetUserClaims",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    UserId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ClaimType = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ClaimValue = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -376,16 +435,21 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "AspNetUserLogins",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    LoginProvider = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ProviderKey = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ProviderDisplayName = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UserId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -396,14 +460,17 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "AspNetUserRoles",
                 columns: table => new
                 {
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    UserId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RoleId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -420,16 +487,21 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "AspNetUserTokens",
                 columns: table => new
                 {
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    UserId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LoginProvider = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Name = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Value = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -440,17 +512,19 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "GroupInvites",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     GroupId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    Accepted = table.Column<bool>(type: "bit", nullable: false)
+                    UserId = table.Column<string>(type: "varchar(450)", maxLength: 450, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Accepted = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -467,18 +541,21 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "Groups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Logs",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ActionType = table.Column<int>(type: "int", nullable: false),
-                    ActionTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IpAddress = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    ActionTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IpAddress = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UserId = table.Column<string>(type: "varchar(450)", maxLength: 450, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     GroupId = table.Column<int>(type: "int", nullable: true),
                     CompetitionId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -503,18 +580,21 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "Groups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "ExerciseOutputs",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ExerciseId = table.Column<int>(type: "int", nullable: false),
-                    JudgeUuid = table.Column<string>(type: "nvarchar(36)", maxLength: 36, nullable: true),
+                    JudgeUuid = table.Column<string>(type: "varchar(36)", maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     ExerciseInputId = table.Column<int>(type: "int", nullable: false),
-                    Output = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Output = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -530,19 +610,22 @@ namespace ProjetoTccBackend.Migrations
                         column: x => x.ExerciseId,
                         principalTable: "Exercises",
                         principalColumn: "Id");
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Questions",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     CompetitionId = table.Column<int>(type: "int", nullable: false),
                     AnswerId = table.Column<int>(type: "int", nullable: true),
                     ExerciseId = table.Column<int>(type: "int", nullable: true),
-                    UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<string>(type: "varchar(450)", maxLength: 450, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Content = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     QuestionType = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -570,7 +653,8 @@ namespace ProjetoTccBackend.Migrations
                         principalTable: "Exercises",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Answers_UserId",
@@ -586,8 +670,7 @@ namespace ProjetoTccBackend.Migrations
                 name: "RoleNameIndex",
                 table: "AspNetRoles",
                 column: "NormalizedName",
-                unique: true,
-                filter: "[NormalizedName] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserClaims_UserId",
@@ -618,8 +701,7 @@ namespace ProjetoTccBackend.Migrations
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
-                unique: true,
-                filter: "[NormalizedUserName] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CompetitionRankings_CompetitionId",
@@ -711,8 +793,7 @@ namespace ProjetoTccBackend.Migrations
                 name: "IX_Questions_AnswerId",
                 table: "Questions",
                 column: "AnswerId",
-                unique: true,
-                filter: "[AnswerId] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Questions_CompetitionId",

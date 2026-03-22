@@ -12,7 +12,7 @@ using ProjetoTccBackend.Database;
 namespace ProjetoTccBackend.Migrations
 {
     [DbContext(typeof(TccDbContext))]
-    [Migration("20251112031738_InitialMigration")]
+    [Migration("20260322165344_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -20,34 +20,33 @@ namespace ProjetoTccBackend.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.12")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("NormalizedName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
-                        .HasFilter("[NormalizedName] IS NOT NULL");
+                        .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
                 });
@@ -58,17 +57,17 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("RoleId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -83,17 +82,17 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -105,17 +104,17 @@ namespace ProjetoTccBackend.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ProviderKey")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ProviderDisplayName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("LoginProvider", "ProviderKey");
 
@@ -127,10 +126,10 @@ namespace ProjetoTccBackend.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("RoleId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("UserId", "RoleId");
 
@@ -142,16 +141,16 @@ namespace ProjetoTccBackend.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Value")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
@@ -164,16 +163,16 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(450)");
 
                     b.HasKey("Id");
 
@@ -188,25 +187,25 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("FilePath")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<long>("Size")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -219,27 +218,27 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime?>("BlockSubmissions")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasAnnotation("Relational:JsonPropertyName", "blockSubmissions");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasAnnotation("Relational:JsonPropertyName", "description");
 
                     b.Property<TimeSpan>("Duration")
-                        .HasColumnType("time")
+                        .HasColumnType("time(6)")
                         .HasAnnotation("Relational:JsonPropertyName", "duration");
 
                     b.Property<DateTime>("EndInscriptions")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasAnnotation("Relational:JsonPropertyName", "endInscriptions");
 
                     b.Property<DateTime?>("EndTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasAnnotation("Relational:JsonPropertyName", "endTime");
 
                     b.Property<int?>("MaxExercises")
@@ -256,15 +255,15 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("longtext")
                         .HasAnnotation("Relational:JsonPropertyName", "name");
 
                     b.Property<DateTime>("StartInscriptions")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasAnnotation("Relational:JsonPropertyName", "startInscriptions");
 
                     b.Property<DateTime>("StartTime")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasAnnotation("Relational:JsonPropertyName", "startTime");
 
                     b.Property<int>("Status")
@@ -272,11 +271,11 @@ namespace ProjetoTccBackend.Migrations
                         .HasAnnotation("Relational:JsonPropertyName", "status");
 
                     b.Property<DateTime?>("StopRanking")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime(6)")
                         .HasAnnotation("Relational:JsonPropertyName", "stopRanking");
 
                     b.Property<TimeSpan>("SubmissionPenalty")
-                        .HasColumnType("time")
+                        .HasColumnType("time(6)")
                         .HasAnnotation("Relational:JsonPropertyName", "submissionPenalty");
 
                     b.HasKey("Id");
@@ -290,7 +289,7 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CompetitionId")
                         .HasColumnType("int");
@@ -299,10 +298,10 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("int");
 
                     b.Property<double>("Penalty")
-                        .HasColumnType("float");
+                        .HasColumnType("double");
 
                     b.Property<double>("Points")
-                        .HasColumnType("float");
+                        .HasColumnType("double");
 
                     b.Property<int>("RankOrder")
                         .HasColumnType("int");
@@ -324,31 +323,31 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int?>("AttachedFileId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<TimeSpan>("EstimatedTime")
-                        .HasColumnType("time");
+                        .HasColumnType("time(6)");
 
                     b.Property<int>("ExerciseTypeId")
                         .HasColumnType("int");
 
                     b.Property<string>("JudgeUuid")
                         .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("varchar(200)");
 
                     b.HasKey("Id");
 
@@ -382,19 +381,19 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ExerciseId")
                         .HasColumnType("int");
 
                     b.Property<string>("Input")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("JudgeUuid")
                         .IsRequired()
                         .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
+                        .HasColumnType("varchar(36)");
 
                     b.HasKey("Id");
 
@@ -409,7 +408,7 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ExerciseId")
                         .HasColumnType("int");
@@ -419,11 +418,11 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<string>("JudgeUuid")
                         .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Output")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -439,15 +438,15 @@ namespace ProjetoTccBackend.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("ConnectionId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Request")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -460,12 +459,12 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("varchar(100)");
 
                     b.HasKey("Id");
 
@@ -478,21 +477,21 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("LeaderId")
                         .IsRequired()
                         .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
-                    b.Property<byte[]>("RowVersion")
+                    b.Property<DateTime?>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("timestamp(6)");
 
                     b.HasKey("Id");
 
@@ -505,14 +504,14 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Accepted")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("CompetitionId")
                         .HasColumnType("int");
@@ -530,10 +529,10 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("SubmissionTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<TimeSpan>("Time")
-                        .HasColumnType("time");
+                        .HasColumnType("time(6)");
 
                     b.HasKey("Id");
 
@@ -557,12 +556,12 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("Blocked")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime>("CreatedOn")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP()");
 
                     b.HasKey("CompetitionId", "GroupId");
 
@@ -579,10 +578,10 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Accepted")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("GroupId")
                         .HasColumnType("int");
@@ -590,7 +589,7 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(450)");
 
                     b.HasKey("Id");
 
@@ -607,10 +606,10 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("ActionTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("ActionType")
                         .HasColumnType("int");
@@ -624,11 +623,11 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<string>("IpAddress")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("varchar(128)");
 
                     b.Property<string>("UserId")
                         .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(450)");
 
                     b.HasKey("Id");
 
@@ -649,7 +648,7 @@ namespace ProjetoTccBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int?>("AnswerId")
                         .HasColumnType("int");
@@ -659,7 +658,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<int?>("ExerciseId")
                         .HasColumnType("int");
@@ -670,13 +669,12 @@ namespace ProjetoTccBackend.Migrations
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AnswerId")
-                        .IsUnique()
-                        .HasFilter("[AnswerId] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("CompetitionId");
 
@@ -692,27 +690,27 @@ namespace ProjetoTccBackend.Migrations
             modelBuilder.Entity("ProjetoTccBackend.Models.User", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Department")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int?>("GroupId")
                         .HasColumnType("int");
@@ -721,50 +719,50 @@ namespace ProjetoTccBackend.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("LastLoggedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("RA")
                         .IsRequired()
                         .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
+                        .HasColumnType("varchar(15)");
 
                     b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.HasKey("Id");
 
@@ -775,8 +773,7 @@ namespace ProjetoTccBackend.Migrations
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
-                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+                        .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });

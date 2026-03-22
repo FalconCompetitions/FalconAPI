@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoTccBackend.Database;
 using ProjetoTccBackend.Filters;
@@ -266,14 +265,15 @@ namespace ProjetoTccBackend
             //builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
             builder.Services.AddDbContext<TccDbContext>(options =>
             {
-                options.UseSqlServer(
+                options.UseMySql(
                     builder.Configuration.GetConnectionString("DefaultConnection"),
+                    new MariaDbServerVersion(new Version(11, 0)),
                     options =>
                     {
                         options.EnableRetryOnFailure(
                             maxRetryCount: 5,
                             maxRetryDelay: TimeSpan.FromSeconds(30),
-                            errorNumbersToAdd: null
+                            errorNumbersToAdd: Array.Empty<int>()
                         );
                     }
                 );

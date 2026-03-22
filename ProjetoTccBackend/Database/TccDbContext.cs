@@ -36,8 +36,10 @@ namespace ProjetoTccBackend.Database
         {
             if (_configuration != null)
             {
-                optionsBuilder.UseSqlServer(
-                    _configuration.GetConnectionString("DefaultConnection")
+                var connectionString = _configuration.GetConnectionString("DefaultConnection")!;
+                optionsBuilder.UseMySql(
+                    connectionString,
+                    new MariaDbServerVersion(new Version(11, 0))
                 );
             }
         }
@@ -102,7 +104,7 @@ namespace ProjetoTccBackend.Database
                 .HasMany<Group>(e => e.Groups)
                 .WithMany(u => u.Competitions)
                 .UsingEntity<GroupInCompetition>(e =>
-                    e.Property(p => p.CreatedOn).HasDefaultValueSql("GETDATE()")
+                    e.Property(p => p.CreatedOn).HasDefaultValueSql("CURRENT_TIMESTAMP()")
                 );
 
             // CompetitionRanking - Competition
