@@ -22,7 +22,7 @@ services:
     container_name: falcon_api
     build:
         context: .
-        dockerfile: /Dockerfile
+        dockerfile: Dockerfile
     ports:
     - "443:443"
     - "7163:8080"
