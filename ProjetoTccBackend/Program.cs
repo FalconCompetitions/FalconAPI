@@ -562,18 +562,6 @@ namespace ProjetoTccBackend
                             .AllowCredentials();
                     }
                 );
-
-                options.AddPolicy(
-                    "JudgeApiPolicy",
-                    policy =>
-                    {
-                        policy
-                            .WithOrigins("https://localhost:3000")
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowCredentials();
-                    }
-                );
             });
 
             var app = builder.Build();
@@ -660,7 +648,6 @@ namespace ProjetoTccBackend
             app.UseRouting();
 
             app.UseCors("FrontendAppPolicy");
-            //app.UseCors("JudgeApiPolicy");
             //app.UseCors("ApiTestingPolicy");
 
             ConfigureWebSocketOptions(app);
